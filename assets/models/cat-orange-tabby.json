@@ -1,0 +1,20 @@
+{
+  "id": "cat-orange-tabby",
+  "name": "Cat (Orange tabby)",
+  "file": "cat-orange-tabby.glb",
+  "scale": 1,
+  "anchor": [
+    0,
+    0,
+    0
+  ],
+  "clips": {
+    "idle": "idle",
+    "walk": "walk",
+    "click": "click",
+    "drag": "drag",
+    "land": "land",
+    "sleep": "sleep"
+  },
+  "license": "Self-made. Generated in code by scripts/generate-cat.mts. No third-party assets."
+}

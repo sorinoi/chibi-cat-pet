@@ -1,0 +1,34 @@
+# Windows x64 NSIS installer (NFR-08, NFR-09). Build with: npm run dist
+appId: com.sorinoi.desktoppet
+productName: Desktop Pet
+copyright: Personal use, not distributed
+directories:
+  buildResources: build
+  output: dist
+# Vite bundles everything (including vue and three) into out/, so node_modules is not needed.
+files:
+  - out/**
+  - resources/**
+  - package.json
+asar: true
+npmRebuild: false
+# Ship only the Chromium locales we need; saves about 40 MB.
+electronLanguages:
+  - en-US
+  - th
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+nsis:
+  oneClick: true
+  perMachine: false
+  # Uninstall removes %APPDATA%\Desktop Pet (settings.json and Chromium caches).
+  deleteAppDataOnUninstall: true
+  include: build/installer.nsh
+  shortcutName: Desktop Pet
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  artifactName: desktop-pet-setup-${version}.${ext}

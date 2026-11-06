@@ -1,0 +1,42 @@
+{
+  "name": "desktop-pet",
+  "version": "0.1.0",
+  "description": "A 3D cat that lives on the Windows desktop",
+  "private": true,
+  "main": "./out/main/index.js",
+  "author": "sorinoi",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
+    "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web && npm run typecheck:scripts",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "model:build": "node scripts/generate-cat.mts",
+    "typecheck:scripts": "tsc -p tsconfig.scripts.json",
+    "icons:build": "node scripts/generate-icons.mts",
+    "dist": "npm run build && electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/three": "^0.187.0",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "@vue/eslint-config-typescript": "^14.9.0",
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.1",
+    "electron-vite": "^6.0.0",
+    "eslint": "^10.14.0",
+    "eslint-plugin-vue": "^10.12.0",
+    "prettier": "^3.9.10",
+    "three": "^0.187.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0",
+    "vue": "^3.5.45",
+    "vue-tsc": "^3.3.14"
+  }
+}
