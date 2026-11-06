@@ -5,6 +5,7 @@
 import type { Mood, Needs } from './needs'
 import type { Settings } from './settings'
 import type { Language } from './strings'
+import type { FocusReaction, FocusView } from './focusText'
 
 export const IpcChannel = {
   /** renderer -> main (send): boolean, true = mouse passes through the window. */
@@ -53,7 +54,13 @@ export const IpcChannel = {
   /** pet or adoption window -> main (invoke): -> Language (FR-43). */
   AppGetLanguage: 'app:get-language',
   /** main -> pet and adoption windows: Language, after it changes (FR-44). */
-  AppLanguageChanged: 'app:language-changed'
+  AppLanguageChanged: 'app:language-changed',
+  /** pet or settings -> main (invoke): -> FocusView (FR-36, FR-39). */
+  FocusGet: 'focus:get',
+  /** main -> pet and settings: FocusView, after every change and once a minute while running. */
+  FocusState: 'focus:state',
+  /** main -> pet: FocusReaction to play at a phase change (FR-38). */
+  FocusReaction: 'focus:reaction'
 } as const
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
@@ -120,6 +127,11 @@ export interface PetApi extends LanguageApi {
   onCareRequest(listener: (request: CareRequest) => void): () => void
   /** Applies a care action in main; resolves null when there is no pet. */
   careAct(act: CareAct): Promise<CareActResult | null>
+  getFocus(): Promise<FocusView>
+  /** Returns an unsubscribe function. */
+  onFocusState(listener: (view: FocusView) => void): () => void
+  /** Returns an unsubscribe function. */
+  onFocusReaction(listener: (reaction: FocusReaction) => void): () => void
 }
 
 export interface SettingsSnapshot {
@@ -143,6 +155,9 @@ export interface SettingsApi {
   /** Asks for confirmation; on yes deletes the pet and opens adoption. Resolves true if wiped. */
   adoptNew(): Promise<boolean>
   openAdopt(): void
+  getFocus(): Promise<FocusView>
+  /** Returns an unsubscribe function. */
+  onFocusChanged(listener: (view: FocusView) => void): () => void
 }
 
 /** API exposed to the adoption window as `window.adoptApi`. */

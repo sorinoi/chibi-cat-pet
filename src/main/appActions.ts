@@ -2,11 +2,14 @@ import { app, dialog, nativeImage, type BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { RESOURCES } from './config'
 import type { Strings } from '../shared/strings'
+import type { FocusEngine } from './focusEngine'
 
 /** Actions shared by the tray menu and the pet's right-click menu. */
 export interface AppActions extends CareActions {
   /** UI text in the current language (FR-43). */
   text(): Strings
+  /** v3 focus timer, controlled from both menus (FR-35). */
+  focus: FocusEngine
   isPetVisible(): boolean
   /** Shows the pet, or opens adoption when there is none yet (FR-22). */
   showPet(): void
@@ -38,11 +41,13 @@ export function createAppActions(
   openSettings: () => void,
   onPetHidden: () => void,
   care: CareActions,
-  text: () => Strings
+  text: () => Strings,
+  focus: FocusEngine
 ): AppActions {
   return {
     ...care,
     text,
+    focus,
     isPetVisible() {
       return getPetWindow()?.isVisible() ?? false
     },

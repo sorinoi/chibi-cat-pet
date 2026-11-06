@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, renameSync, rmSync } from 'node:fs'
 import { writeJsonAtomic } from './lib/jsonFile'
+import type { FocusView } from '../shared/focusText'
 import { FOCUS, type FocusConfig } from '../shared/focusConfig'
 import {
   IDLE,
@@ -29,6 +30,16 @@ export interface FocusSnapshot {
   minutesLeft: number | null
   /** Focus sessions completed today (FR-36, FR-40). */
   completedToday: number
+}
+
+/** The part of a snapshot the windows and menus show (FR-35, FR-36). */
+export function toFocusView({ state, minutesLeft, completedToday }: FocusSnapshot): FocusView {
+  return {
+    kind: state.kind,
+    phase: state.kind === 'idle' ? null : state.phase,
+    minutesLeft,
+    completedToday
+  }
 }
 
 export type FocusFileStatus = 'missing' | 'ok' | 'damaged'

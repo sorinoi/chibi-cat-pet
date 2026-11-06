@@ -4,8 +4,8 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v3 in progress. V3-M2 approved; V3-M3 (timer UI) in progress.
-- Next step: when the user approves, start V3-M3: Focus submenus (tray + cat), tooltips with phase/minutes/today, Windows notifications (Electron Notification), settings Focus timer section, reactions with fallback clips. Engine events (focusStarted, focusCompleted, breakStarted, breakOver, focusInterrupted) are ready in focusEngine.onChange. V3-M2 is not committed yet (last commit fdf5d05).
+- Current phase: v3 in progress. V3-M1..M3 done and approved. V3-M4 blocked until the user sends cat-focus.png (requirement-v3.md section 9).
+- Next step: when the user puts cat-focus.png in assets/sprites-inbox/, start V3-M4: sprite:prepare, add sheet `focus` + clips focusStart/focusDone/breakOver/longBreak to cat-sprite.json, check feet alignment and each reaction, rerun readme:art. V3-M5 (measure, 3.0.0 installer) could also run before the art if the user prefers.
 - Git (check `git status` and `git log` first; this line can lag): main and origin/main at b506a6a (pushed 2026-11-06). Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea. Older: 87cde4e V2-M4, 7770fe1 V2-M3, d196771 V2-M2, f706658 V2-M1, 42360ca (3D restore point). Remote: origin = github.com/sorinoi/chibi-cat-pet. Push and tag only when the user asks.
 - Machine state: Desktop Pet 2.0.0 is installed per-user (over 1.0.0) and running with the user's adopted cat; data in %APPDATA%desktop-pet (settings.json, pet.json). Dev data %APPDATA%desktop-pet-dev has settings.json only. dist/ has the 1.0.0 and 2.0.0 installers.
 - Waiting on the user: nothing.
@@ -54,8 +54,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | v3 | Requirements (requirement-v3.md) | done | approved by the user 2026-11-06 |
 | V3-M1 | Language: Thai/English | done | 134 tests; all windows checked in the app; tray/menus/About checked by hand |
 | V3-M2 | Timer engine | done | 172 tests; damaged focus.json checked in the app; no UI yet (V3-M3) |
-| V3-M3 | Timer UI, notifications, reactions (fallback clips) | in progress | started 2026-11-06 |
-| V3-M4 | Focus sprite sheet and clips | todo | needs the user's art |
+| V3-M3 | Timer UI, notifications, reactions (fallback clips) | done | 186 tests; full cycle checked in the app; tray menu + notifications checked by hand |
+| V3-M4 | Focus sprite sheet and clips | blocked | waiting for the user's cat-focus.png |
 | V3-M5 | Polish, measure, release v3.0 | todo | |
 
 ## Phase approvals
@@ -74,6 +74,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V2-M5 | 2026-11-06 | yes, 2026-11-06 (v2.0 accepted) |
 | V3-M1 | 2026-11-06 | yes, 2026-11-06 (user checked Thai tray/menus/About by hand) |
 | V3-M2 | 2026-11-06 | yes, 2026-11-06 |
+| V3-M3 | 2026-11-06 | yes, 2026-11-06 (user checked tray Focus menu and notifications by hand) |
 
 ## Log
 
@@ -187,3 +188,6 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: V3-M2 code: src/shared/focusConfig.ts (defaults 25/5/15/every 4, auto-start breaks on, focus off, notifications on; limits; 5 min sleep gap; 60 s tick), src/shared/focusTimer.ts (pure: states idle/running/paused/waiting, startFocus/startBreak/pause/resume/skip/stop/advance, next phase starts at now, run resets after a long break or stop, skipped focus not counted, focus through >5 min gap interrupted; today's count by local date, msUntilMidnight, parseFocusDay), src/main/focusEngine.ts (one timeout to the phase end + 60 s tick only while running + midnight timer; focus.json {version,date,completed}, damaged -> focus.json.bad; sessions not saved). Settings gained the timer fields (sanitized, v2 files get defaults). Main creates the engine and calls check() on powerMonitor resume. Tests 172 (focusTimer 23, focusEngine 12, settings +3).
 - 2026-11-06: App check: an old dev run (npm run dev from the user's V3-M1 hand check, PID 25868, started 8:20 PM) still holds the single-instance lock for desktop-pet-dev; left it running. Tested with --user-data-dir in the scratchpad instead: damaged focus.json -> focus.json.bad, app runs (adoption window). Test data removed. Note: desktop-pet-dev now has the user's dev pet.json from the hand check. V3-M2 gate passed; waiting for approval.
 - 2026-11-06: User approved V3-M2 and said go for V3-M3. Committed V3-M2.
+- 2026-11-06: V3-M3 code: strings focus.* (EN/TH); src/shared/focusText.ts (FocusView, focusStatus, focusNotice, focusReaction; tests); menus get a Focus submenu (status line + only the actions that apply) in the tray (with or without a cat) and the cat menu; tray tooltip = app + care + focus lines; IPC focus:get / focus:state / focus:reaction; Electron Notification per phase end when focusNotifications is on; app.setAppUserModelId(appId) when packaged. Pet: FOCUS_CLIPS + resolveClip() fallbacks (focusStart/breakOver -> click, focusDone -> happy -> click, longBreak -> focusDone), state machine cues and reaction states (tests), queue of one during another reaction, skipped while hidden/dragged/no pet; tooltip shows the focus line. Settings: FocusSection.vue; settings window now two columns, 820 x 690 (one column needed 901 px). Tests 186.
+- 2026-11-06: App check (production build, isolated --user-data-dir in the scratchpad because the user's old dev run PID 25868 still holds the dev lock; CDP into app pages; keys posted only to the app's own menu window): Start focus from the cat menu; full cycle with 1-minute phases and long break every 2: focus 8:44 -> short 8:45 -> focus 8:46 -> long 8:47 -> focus 8:48, each on the minute, reactions focusStart, focusDone, breakOver, longBreak, breakOver; today 2 saved to focus.json; settings showed the count. Pause from the menu -> paused; cat tooltip "ส้ม · อิ่ม 69% · ... / หยุดชั่วคราว (พักสั้น) · เหลือ 1 นาที · วันนี้: 3 🍅"; Stop -> idle. Not checked: tray Focus submenu, tray tooltip, Windows notifications (need a hand check). Test data removed, debug port closed. V3-M3 gate passed; waiting for approval.
+- 2026-11-06: User hand check: tray Focus submenu and Windows notifications work. User approved V3-M3. Committed V3-M3.

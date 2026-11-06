@@ -56,8 +56,8 @@ export const STORE = {
 } as const
 
 export const SETTINGS_WINDOW = {
-  width: 440,
-  height: 680
+  width: 820,
+  height: 690
 } as const
 
 export const ADOPT_WINDOW = {
@@ -73,3 +73,6 @@ export const RESOURCES = {
   trayIcon: 'resources/tray.png',
   appIcon: 'resources/icon.png'
 } as const
+
+/** Must match `appId` in electron-builder.yml (notifications, FR-37). */
+export const APP_USER_MODEL_ID = 'com.sorinoi.desktoppet'

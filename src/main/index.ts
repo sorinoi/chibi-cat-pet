@@ -1,10 +1,10 @@
-import { app, dialog, powerMonitor, type Tray } from 'electron'
+import { Notification, app, dialog, nativeImage, powerMonitor, type Tray } from 'electron'
 import { join } from 'node:path'
-import { createAppActions } from './appActions'
+import { createAppActions, resourcePath } from './appActions'
 import { createCareEngine, type CareSnapshot } from './careEngine'
 import { applySettings } from './applySettings'
-import { FOCUS_FILE, PET_FILE, STORE } from './config'
-import { createFocusEngine } from './focusEngine'
+import { APP_USER_MODEL_ID, FOCUS_FILE, PET_FILE, RESOURCES, STORE } from './config'
+import { createFocusEngine, toFocusView } from './focusEngine'
 import { registerIpcHandlers, type CareUi } from './ipc'
 import { createTray, showPetContextMenu } from './menus'
 import { createPetMotion } from './petMotion'
@@ -16,6 +16,8 @@ import { watchFullscreen } from './fullscreenWatcher'
 import { watchUserIdle } from './userIdle'
 import { IpcChannel, type CareRequest, type CareView } from '../shared/ipc'
 import { careSummary } from '../shared/careText'
+import { focusNotice, focusReaction, focusStatus } from '../shared/focusText'
+import type { TimerEvent } from '../shared/focusTimer'
 import { DEFAULT_SETTINGS } from '../shared/settings'
 import { languageForLocales, stringsFor, type Strings } from '../shared/strings'
 
@@ -81,10 +83,44 @@ function start(): void {
     const view = toView(care.current())
     sendToPet(IpcChannel.CareState, view)
     settingsWindow.get()?.webContents.send(IpcChannel.CareChanged, view)
-    tray?.setToolTip(`${text().tray.tooltip}\n${careSummary(view, text())}`)
+    updateTrayTooltip()
   }
   care.onChange(publishCare)
   win.webContents.on('did-finish-load', publishCare)
+
+  /** FR-28 + FR-36: app name, the cat's status and the timer's status. */
+  function updateTrayTooltip(): void {
+    const t = text()
+    const lines = [
+      t.tray.tooltip,
+      careSummary(toView(care.current()), t),
+      focusStatus(toFocusView(focus.current()), t)
+    ]
+    tray?.setToolTip(lines.join('\n'))
+  }
+
+  /** Timer status everywhere it is shown; notifications and reactions at phase changes. */
+  const publishFocus = (events: readonly TimerEvent[]): void => {
+    const view = toFocusView(focus.current())
+    sendToPet(IpcChannel.FocusState, view)
+    settingsWindow.get()?.webContents.send(IpcChannel.FocusState, view)
+    updateTrayTooltip()
+    if (events.length === 0) return
+    // FR-38: the pet renderer decides whether the cat can react (drag, hidden, busy).
+    const reaction = focusReaction(events)
+    if (reaction && hasPet()) sendToPet(IpcChannel.FocusReaction, reaction)
+    // FR-37: Windows notification, unless turned off.
+    const notice = focusNotice(events, view, store.settings, text())
+    if (notice && store.settings.focusNotifications && Notification.isSupported()) {
+      new Notification({
+        title: notice.title,
+        body: notice.body,
+        icon: nativeImage.createFromPath(resourcePath(RESOURCES.appIcon))
+      }).show()
+    }
+  }
+  focus.onChange((_snapshot, events) => publishFocus(events))
+  win.webContents.on('did-finish-load', () => publishFocus([]))
 
   /**
    * Menu care actions are requests: the pet renderer knows whether the cat can react right
@@ -151,7 +187,8 @@ function start(): void {
       openAdopt: careUi.openAdopt,
       openPetStatus: () => settingsWindow.open()
     },
-    text
+    text,
+    focus
   )
 
   const unregister = registerIpcHandlers({
@@ -162,6 +199,7 @@ function start(): void {
     store,
     care,
     careUi,
+    focus,
     showContextMenu: () => showPetContextMenu(win, actions)
   })
 
@@ -236,6 +274,9 @@ if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
   lockDownWebContents()
+  // Windows shows notifications only for an app id that matches its Start menu shortcut,
+  // which the installer creates with the appId (FR-37). Dev runs keep Electron's default.
+  if (app.isPackaged) app.setAppUserModelId(APP_USER_MODEL_ID)
 
   app.on('second-instance', (_event, argv) => onSecondInstance(argv))
 

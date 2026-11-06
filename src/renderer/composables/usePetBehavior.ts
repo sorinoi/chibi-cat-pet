@@ -5,6 +5,7 @@ import { clipFor, transition, type PetEvent, type PetState } from '../lib/petMac
 import type { PetScene } from './usePetScene'
 import type { ClipName } from '../../shared/modelConfig'
 import type { CareRequest, CareView } from '../../shared/ipc'
+import type { FocusReaction } from '../../shared/focusText'
 
 export interface PetBehavior {
   state: Readonly<Ref<PetState>>
@@ -15,6 +16,14 @@ export interface PetBehavior {
   click(): void
   /** A recognized stroke (FR-18): plays pet and counts the bonus. */
   stroke(): void
+}
+
+/** Focus timer reaction -> state machine event (requirement-v3.md section 10). */
+const FOCUS_CUE: Record<FocusReaction, PetEvent> = {
+  focusStart: 'cueFocusStart',
+  focusDone: 'cueFocusDone',
+  breakOver: 'cueBreakOver',
+  longBreak: 'cueLongBreak'
 }
 
 const randomBetween = (min: number, max: number): number => min + Math.random() * (max - min)
@@ -35,6 +44,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   let lastHungryReminderAt: number | null = null
   /** The pending care:act request for a Feed from a menu (main decides eat or refuse). */
   let feedInFlight: ReturnType<typeof api.careAct> | null = null
+  /** A focus reaction that arrived during another reaction; plays on the next idle. */
+  let queuedCue: PetEvent | null = null
   const unsubscribers: Array<() => void> = []
 
   function clearWander(): void {
@@ -93,6 +104,12 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
 
     switch (to) {
       case 'idle':
+        if (queuedCue) {
+          const cue = queuedCue
+          queuedCue = null
+          dispatch(cue)
+          break
+        }
         // The user may have gone away during a reaction; sleep right away then.
         if (userIdle) dispatch('sleep')
         else scheduleWander()
@@ -155,6 +172,17 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     }
   }
 
+  /**
+   * FR-38: react to a focus phase change. Skipped while hidden, dragged or without a pet;
+   * during another reaction it waits (at most one queued, the latest wins).
+   */
+  function onFocusReaction(reaction: FocusReaction): void {
+    if (mood === null || document.hidden || state.value === 'drag') return
+    const cue = FOCUS_CUE[reaction]
+    if (transition(state.value, cue)) dispatch(cue)
+    else queuedCue = cue
+  }
+
   function onCareRequest(request: CareRequest): void {
     if (request === 'feed') void feedNow()
     else if (request === 'pet') petNow()
@@ -174,7 +202,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
         careView.value = view
         mood = view ? view.mood : null
       }),
-      api.onCareRequest(onCareRequest)
+      api.onCareRequest(onCareRequest),
+      api.onFocusReaction(onFocusReaction)
     )
     enter(state.value)
 

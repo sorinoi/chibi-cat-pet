@@ -6,6 +6,7 @@ import { spriteSheetUrl } from '../models/registry'
 import { ACTIVE_MODEL } from '../../shared/activeModel'
 import {
   modelFrame,
+  resolveClip,
   type ClipName,
   type SpriteClip,
   type SpriteSheet
@@ -136,7 +137,8 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
   }
 
   function play(name: ClipName, options?: { once?: boolean }): void {
-    const next = model.clips[name]
+    // Missing optional clips fall back (e.g. focus reactions before their art exists).
+    const next = model.clips[resolveClip(name, model.clips)]
     if (!next) console.warn(`Model ${model.id} has no "${name}" clip; showing idle`)
     clipName = name
     const base = next ?? model.clips.idle

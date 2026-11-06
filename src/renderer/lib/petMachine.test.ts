@@ -99,3 +99,35 @@ describe('pet state machine: adoption welcome', () => {
     expect(transition('welcome', 'feed')).toBeNull()
   })
 })
+
+describe('focus timer reactions (requirement-v3.md section 10)', () => {
+  const cues = [
+    ['cueFocusStart', 'focusStart'],
+    ['cueFocusDone', 'focusDone'],
+    ['cueBreakOver', 'breakOver'],
+    ['cueLongBreak', 'longBreak']
+  ] as const
+
+  it('start from idle, walk, sleep and land', () => {
+    for (const [cue, state] of cues) {
+      for (const from of ['idle', 'walk', 'sleep', 'land'] as const) {
+        expect(transition(from, cue)).toBe(state)
+      }
+    }
+  })
+
+  it('do not interrupt a drag or another reaction (the renderer queues them)', () => {
+    for (const [cue] of cues) {
+      for (const from of ['drag', 'click', 'eat', 'happy', 'hungry', 'pet', 'focusDone'] as const) {
+        expect(transition(from, cue)).toBeNull()
+      }
+    }
+  })
+
+  it('return to idle when the clip ends; a drag can interrupt', () => {
+    for (const [, state] of cues) {
+      expect(transition(state, 'clipFinished')).toBe('idle')
+      expect(transition(state, 'dragStart')).toBe('drag')
+    }
+  })
+})

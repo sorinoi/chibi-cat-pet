@@ -15,6 +15,7 @@ import {
 import type { CareEngine } from './careEngine'
 import type { PetMotion } from './petMotion'
 import type { SettingsStore } from './settingsStore'
+import { toFocusView, type FocusEngine } from './focusEngine'
 import { canStartWithWindows } from './applySettings'
 
 const isCareAct = (value: unknown): value is CareAct =>
@@ -32,6 +33,7 @@ export interface IpcContext {
   motion: PetMotion
   store: SettingsStore
   care: CareEngine
+  focus: FocusEngine
   showContextMenu(): void
   getAdoptWindow(): BrowserWindow | null
   /** Adoption, rename and re-adoption flows (they touch several windows, so main wires them). */
@@ -111,6 +113,10 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
     fromPet(event) || fromAdopt(event) ? store.settings.language : 'en'
   )
 
+  ipcMain.handle(IpcChannel.FocusGet, (event) =>
+    fromPet(event) || fromSettings(event) ? toFocusView(ctx.focus.current()) : null
+  )
+
   ipcMain.handle(IpcChannel.SettingsGet, (event): SettingsSnapshot | null => {
     if (!fromSettings(event)) return null
     return {
@@ -144,7 +150,8 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
       IpcChannel.CareAdoptNew,
       IpcChannel.SettingsGet,
       IpcChannel.SettingsUpdate,
-      IpcChannel.AppGetLanguage
+      IpcChannel.AppGetLanguage,
+      IpcChannel.FocusGet
     ]) {
       ipcMain.removeHandler(channel)
     }

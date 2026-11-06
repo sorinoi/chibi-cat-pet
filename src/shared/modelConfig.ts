@@ -6,8 +6,31 @@ export type StandardClip = (typeof STANDARD_CLIPS)[number]
 export const CARE_CLIPS = ['eat', 'happy', 'hungry', 'pet'] as const
 export type CareClip = (typeof CARE_CLIPS)[number]
 
-export const CLIP_NAMES = [...STANDARD_CLIPS, ...CARE_CLIPS] as const
+/** Optional v3 focus timer reactions (requirement-v3.md section 5); fall back until art exists. */
+export const FOCUS_CLIPS = ['focusStart', 'focusDone', 'breakOver', 'longBreak'] as const
+export type FocusClip = (typeof FOCUS_CLIPS)[number]
+
+export const CLIP_NAMES = [...STANDARD_CLIPS, ...CARE_CLIPS, ...FOCUS_CLIPS] as const
 export type ClipName = (typeof CLIP_NAMES)[number]
+
+/** What to play instead when a model lacks a clip (section 5 fallbacks). */
+const CLIP_FALLBACK: Partial<Record<ClipName, ClipName>> = {
+  focusStart: 'click',
+  focusDone: 'happy',
+  happy: 'click',
+  breakOver: 'click',
+  longBreak: 'focusDone'
+}
+
+/** The clip the model can actually play for `name`, following fallbacks; idle as a last resort. */
+export function resolveClip(name: ClipName, clips: Partial<Record<ClipName, unknown>>): ClipName {
+  let current: ClipName | undefined = name
+  for (let hops = 0; current && hops < CLIP_NAMES.length; hops++) {
+    if (clips[current]) return current
+    current = CLIP_FALLBACK[current]
+  }
+  return 'idle'
+}
 
 /** NFR-02: frames never change faster than this. */
 export const MAX_FPS = 30

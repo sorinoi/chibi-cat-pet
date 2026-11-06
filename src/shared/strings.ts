@@ -92,6 +92,43 @@ const EN = {
     detail: 'Your current cat and all its data will be deleted now. This cannot be undone.',
     cancel: 'Cancel',
     confirm: 'Delete and adopt'
+  },
+  focus: {
+    menu: 'Focus',
+    startFocus: 'Start focus',
+    startBreak: 'Start break',
+    pause: 'Pause',
+    resume: 'Resume',
+    skip: 'Skip',
+    skipBreak: 'Skip break',
+    stop: 'Stop',
+    phases: { focus: 'Focus', shortBreak: 'Short break', longBreak: 'Long break' },
+    running: (phase: string, minutes: number): string => `${phase} · ${minutes} min left`,
+    paused: (phase: string, minutes: number): string => `Paused (${phase}) · ${minutes} min left`,
+    waiting: (phase: string): string => `${phase} is ready`,
+    today: (count: number): string => `Today: ${count} 🍅`,
+    notify: {
+      focusDoneTitle: 'Focus complete 🍅',
+      focusDoneBreak: (phase: string, minutes: number): string =>
+        `Nice work! ${phase}: ${minutes} minutes.`,
+      focusDoneWaiting: (phase: string): string => `Nice work! ${phase} is ready when you are.`,
+      breakOverTitle: 'Break over',
+      breakOverFocus: (minutes: number): string => `Next focus started: ${minutes} minutes.`,
+      breakOverIdle: 'Ready for the next focus?',
+      interruptedTitle: 'Focus interrupted',
+      interrupted: 'The PC was asleep, so this focus was not counted.'
+    },
+    settings: {
+      section: 'Focus timer',
+      focusMinutes: 'Focus (minutes)',
+      shortBreakMinutes: 'Short break (minutes)',
+      longBreakMinutes: 'Long break (minutes)',
+      longBreakEvery: 'Long break every (sessions)',
+      autoStartBreaks: 'Start breaks automatically',
+      autoStartFocus: 'Start the next focus automatically',
+      notifications: 'Show notifications',
+      completedToday: (count: number): string => `Completed today: ${count} 🍅`
+    }
   }
 }
 
@@ -169,6 +206,44 @@ const TH: Strings = {
     detail: 'น้องแมวตัวปัจจุบันและข้อมูลทั้งหมดจะถูกลบทันที และกู้คืนไม่ได้',
     cancel: 'ยกเลิก',
     confirm: 'ลบและรับเลี้ยงใหม่'
+  },
+  focus: {
+    menu: 'โฟกัส',
+    startFocus: 'เริ่มโฟกัส',
+    startBreak: 'เริ่มพัก',
+    pause: 'หยุดชั่วคราว',
+    resume: 'ทำต่อ',
+    skip: 'ข้าม',
+    skipBreak: 'ข้ามการพัก',
+    stop: 'หยุด',
+    phases: { focus: 'โฟกัส', shortBreak: 'พักสั้น', longBreak: 'พักยาว' },
+    running: (phase: string, minutes: number): string => `${phase} · เหลือ ${minutes} นาที`,
+    paused: (phase: string, minutes: number): string =>
+      `หยุดชั่วคราว (${phase}) · เหลือ ${minutes} นาที`,
+    waiting: (phase: string): string => `พร้อม${phase}แล้ว`,
+    today: (count: number): string => `วันนี้: ${count} 🍅`,
+    notify: {
+      focusDoneTitle: 'โฟกัสครบแล้ว 🍅',
+      focusDoneBreak: (phase: string, minutes: number): string =>
+        `เก่งมาก! ${phase} ${minutes} นาที`,
+      focusDoneWaiting: (phase: string): string => `เก่งมาก! พร้อมเมื่อไหร่ก็เริ่ม${phase}ได้เลย`,
+      breakOverTitle: 'หมดเวลาพักแล้ว',
+      breakOverFocus: (minutes: number): string => `เริ่มโฟกัสรอบถัดไปแล้ว ${minutes} นาที`,
+      breakOverIdle: 'พร้อมโฟกัสรอบถัดไปหรือยัง?',
+      interruptedTitle: 'โฟกัสถูกขัดจังหวะ',
+      interrupted: 'คอมพิวเตอร์หลับไป รอบนี้เลยไม่นับ'
+    },
+    settings: {
+      section: 'ตัวจับเวลาโฟกัส',
+      focusMinutes: 'โฟกัส (นาที)',
+      shortBreakMinutes: 'พักสั้น (นาที)',
+      longBreakMinutes: 'พักยาว (นาที)',
+      longBreakEvery: 'พักยาวทุก (รอบ)',
+      autoStartBreaks: 'เริ่มพักอัตโนมัติ',
+      autoStartFocus: 'เริ่มโฟกัสรอบถัดไปอัตโนมัติ',
+      notifications: 'แสดงการแจ้งเตือน',
+      completedToday: (count: number): string => `วันนี้ทำครบแล้ว: ${count} 🍅`
+    }
   }
 }
 

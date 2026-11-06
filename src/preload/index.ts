@@ -7,6 +7,7 @@ import {
   type WalkEnded
 } from '../shared/ipc'
 import type { Language } from '../shared/strings'
+import type { FocusReaction, FocusView } from '../shared/focusText'
 
 /** Subscribes without leaking the IpcRendererEvent (and its sender) to the page. */
 function subscribe<T>(channel: string, listener: (payload: T) => void): () => void {
@@ -28,7 +29,10 @@ const petApi: PetApi = {
   onCareRequest: (listener) => subscribe<CareRequest>(IpcChannel.CareRequest, listener),
   careAct: (act) => ipcRenderer.invoke(IpcChannel.CareAct, act),
   getLanguage: () => ipcRenderer.invoke(IpcChannel.AppGetLanguage),
-  onLanguageChanged: (listener) => subscribe<Language>(IpcChannel.AppLanguageChanged, listener)
+  onLanguageChanged: (listener) => subscribe<Language>(IpcChannel.AppLanguageChanged, listener),
+  getFocus: () => ipcRenderer.invoke(IpcChannel.FocusGet),
+  onFocusState: (listener) => subscribe<FocusView>(IpcChannel.FocusState, listener),
+  onFocusReaction: (listener) => subscribe<FocusReaction>(IpcChannel.FocusReaction, listener)
 }
 
 contextBridge.exposeInMainWorld('petApi', petApi)

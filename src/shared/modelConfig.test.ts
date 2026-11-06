@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { CLIP_NAMES, modelFrame, parseModelConfig, STANDARD_CLIPS } from './modelConfig'
+import {
+  CARE_CLIPS,
+  modelFrame,
+  parseModelConfig,
+  resolveClip,
+  STANDARD_CLIPS
+} from './modelConfig'
 import shipped from '../../assets/models/cat-sprite.json'
 
 const sheet = {
@@ -84,7 +90,7 @@ describe('parseModelConfig', () => {
 
   it('accepts the shipped cat model with every v1 and v2 clip', () => {
     const config = parseModelConfig(shipped)
-    expect(Object.keys(config.clips).sort()).toEqual([...CLIP_NAMES].sort())
+    expect(Object.keys(config.clips).sort()).toEqual([...STANDARD_CLIPS, ...CARE_CLIPS].sort())
     for (const clip of STANDARD_CLIPS) expect(config.clips[clip]?.sheet).toBe('main')
   })
 })
@@ -113,5 +119,26 @@ describe('modelFrame', () => {
   it('applies each sheet scale', () => {
     const frame = modelFrame({ sheets: { main: { ...sheet, scale: 0.5 } } })
     expect(frame).toEqual({ width: 96, height: 96, feetX: 48, feetY: 88.5 })
+  })
+})
+
+describe('resolveClip (requirement-v3.md section 5 fallbacks)', () => {
+  const v2 = { idle: 1, click: 1, happy: 1, eat: 1 }
+  it('plays the clip itself when the model has it', () => {
+    expect(resolveClip('eat', v2)).toBe('eat')
+    expect(resolveClip('focusDone', { ...v2, focusDone: 1 })).toBe('focusDone')
+  })
+
+  it('falls back for focus reactions until their art exists', () => {
+    expect(resolveClip('focusStart', v2)).toBe('click')
+    expect(resolveClip('focusDone', v2)).toBe('happy')
+    expect(resolveClip('breakOver', v2)).toBe('click')
+    expect(resolveClip('longBreak', v2)).toBe('happy')
+    expect(resolveClip('longBreak', { ...v2, focusDone: 1 })).toBe('focusDone')
+  })
+
+  it('a v1-style model without happy uses click; anything else ends at idle', () => {
+    expect(resolveClip('focusDone', { idle: 1, click: 1 })).toBe('click')
+    expect(resolveClip('eat', { idle: 1 })).toBe('idle')
   })
 })

@@ -7,12 +7,15 @@ import { usePetPointer } from './composables/usePetPointer'
 import { usePetStroke } from './composables/usePetStroke'
 import { careSummary } from '../shared/careText'
 import { useLanguage } from './composables/useLanguage'
+import { useFocusView } from './composables/useFocusView'
+import { focusStatus } from '../shared/focusText'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 const scene = usePetScene(canvas)
 const clickThrough = useClickThrough(scene.hitTest)
 const behavior = usePetBehavior(scene)
 const { text } = useLanguage(window.petApi)
+const focus = useFocusView(window.petApi.getFocus, window.petApi.onFocusState)
 
 usePetPointer(canvas, clickThrough, {
   hitTest: scene.hitTest,
@@ -31,10 +34,13 @@ scene.onFrame(clickThrough.recheck)
 
 const overPet = clickThrough.overPet
 
-// FR-27: hovering over the cat shows its name, needs and mood (native tooltip).
-const tooltip = computed(() =>
-  overPet.value && behavior.care.value ? careSummary(behavior.care.value, text.value) : ''
-)
+// FR-27 + FR-36: hovering over the cat shows its status and the focus timer (native tooltip).
+const tooltip = computed(() => {
+  if (!overPet.value || !behavior.care.value) return ''
+  const lines = [careSummary(behavior.care.value, text.value)]
+  if (focus.value) lines.push(focusStatus(focus.value, text.value))
+  return lines.join('\n')
+})
 </script>
 
 <template>

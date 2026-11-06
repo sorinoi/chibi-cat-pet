@@ -31,12 +31,25 @@ export type PetEvent =
   | 'hungryReminder'
   /** Just adopted (FR-23). */
   | 'welcome'
+  // v3 focus timer reactions (requirement-v3.md section 10)
+  | 'cueFocusStart'
+  | 'cueFocusDone'
+  | 'cueBreakOver'
+  | 'cueLongBreak'
 
 /** Reactions that end in idle; a drag can still interrupt them. */
 const careReaction = { clipFinished: 'idle', dragStart: 'drag' } as const
 
 /** Care actions that may start from a resting or moving pet (also wakes it: FR-21). */
 const careActions = { feed: 'eat', refuseFood: 'click', pet: 'pet', welcome: 'welcome' } as const
+
+/** Focus timer reactions: may start from a resting, moving or landing pet (wakes it too). */
+const focusCues = {
+  cueFocusStart: 'focusStart',
+  cueFocusDone: 'focusDone',
+  cueBreakOver: 'breakOver',
+  cueLongBreak: 'longBreak'
+} as const
 
 const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
   idle: {
@@ -46,7 +59,8 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
     wander: 'walk',
     hungryReminder: 'hungry',
     sleep: 'sleep',
-    ...careActions
+    ...careActions,
+    ...focusCues
   },
   walk: {
     click: 'click',
@@ -54,7 +68,8 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
     dragStart: 'drag',
     arrived: 'idle',
     sleep: 'sleep',
-    ...careActions
+    ...careActions,
+    ...focusCues
   },
   click: { clipFinished: 'idle', dragStart: 'drag' },
   drag: { dragEnd: 'land' },
@@ -63,21 +78,28 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
     dragStart: 'drag',
     click: 'click',
     clickHappy: 'happy',
-    welcome: 'welcome'
+    welcome: 'welcome',
+    ...focusCues
   },
   sleep: {
     click: 'click',
     clickHappy: 'happy',
     dragStart: 'drag',
     wake: 'idle',
-    ...careActions
+    ...careActions,
+    ...focusCues
   },
   // A care action during another care animation is ignored.
   eat: careReaction,
   happy: careReaction,
   hungry: careReaction,
   pet: careReaction,
-  welcome: { clipFinished: 'happy', dragStart: 'drag' }
+  welcome: { clipFinished: 'happy', dragStart: 'drag' },
+  // Focus reactions behave like care reactions; another reaction during one waits (queued).
+  focusStart: careReaction,
+  focusDone: careReaction,
+  breakOver: careReaction,
+  longBreak: careReaction
 }
 
 /** Returns the next state, or null when the event does not apply in this state. */

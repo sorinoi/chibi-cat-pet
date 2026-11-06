@@ -181,7 +181,7 @@ The language work comes first because it needs no art and touches every window o
 | --- | --- | --- | --- |
 | V3-M1 | Language: Thai and English tables, language setting, live switch, all existing text moved to the tables | Every window, menu, tooltip, dialog and notification shows correct Thai and English; key-parity test passes; upgrade from v2 keeps settings | Done 2026-11-06, approved |
 | V3-M2 | Timer engine: pure timer logic, focus.json, today's count, midnight reset, sleep gap, config | Unit tests for every rule in section 4; count survives restart; damaged focus.json handled | Done 2026-11-06, approved |
-| V3-M3 | Timer UI: Focus submenus, tooltips, notifications, settings section; reactions with fallback clips | Full focus/break/long-break cycle works from tray and cat menu; notifications appear; settings apply | - |
+| V3-M3 | Timer UI: Focus submenus, tooltips, notifications, settings section; reactions with fallback clips | Full focus/break/long-break cycle works from tray and cat menu; notifications appear; settings apply | Done 2026-11-06, approved |
 | V3-M4 | Art: import cat-focus.png, new clips and reactions (needs the user's sheet) | Each reaction plays at the right moment; feet do not jump between sheets | - |
 | V3-M5 | Polish: NFR-01/16/17 measurement, installer 3.0.0, upgrade from 2.0.0 | Acceptance criteria below pass | - |
 

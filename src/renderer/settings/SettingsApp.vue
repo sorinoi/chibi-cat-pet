@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import PetSection from './PetSection.vue'
+import FocusSection from './FocusSection.vue'
 import { useSettings } from '../composables/useSettings'
 import { SETTINGS_LIMITS } from '../../shared/settings'
 import { computed } from 'vue'
@@ -32,76 +33,83 @@ function checkedFrom(event: Event): boolean {
   <main v-if="settings" class="settings">
     <h1>{{ text.title }}</h1>
 
-    <PetSection :text="strings" />
+    <div class="columns">
+      <div class="column">
+        <PetSection :text="strings" />
 
-    <h2 class="section">{{ text.generalSection }}</h2>
+        <h2 class="section">{{ text.generalSection }}</h2>
 
-    <label class="row">
-      <span class="label">{{ text.language }}</span>
-      <select class="language" :value="settings.language" @change="languageFrom">
-        <option v-for="code in LANGUAGES" :key="code" :value="code">
-          {{ LANGUAGE_NAMES[code] }}
-        </option>
-      </select>
-    </label>
+        <label class="row">
+          <span class="label">{{ text.language }}</span>
+          <select class="language" :value="settings.language" @change="languageFrom">
+            <option v-for="code in LANGUAGES" :key="code" :value="code">
+              {{ LANGUAGE_NAMES[code] }}
+            </option>
+          </select>
+        </label>
 
-    <label class="row">
-      <span class="label">{{ text.petSize }}</span>
-      <input
-        type="range"
-        :min="SETTINGS_LIMITS.petSize.min"
-        :max="SETTINGS_LIMITS.petSize.max"
-        :step="SETTINGS_LIMITS.petSize.step"
-        :value="settings.petSize"
-        @change="set('petSize', numberFrom($event))"
-      />
-      <output>{{ percent(settings.petSize) }}</output>
-    </label>
+        <label class="row">
+          <span class="label">{{ text.petSize }}</span>
+          <input
+            type="range"
+            :min="SETTINGS_LIMITS.petSize.min"
+            :max="SETTINGS_LIMITS.petSize.max"
+            :step="SETTINGS_LIMITS.petSize.step"
+            :value="settings.petSize"
+            @change="set('petSize', numberFrom($event))"
+          />
+          <output>{{ percent(settings.petSize) }}</output>
+        </label>
 
-    <label class="row">
-      <span class="label">{{ text.opacity }}</span>
-      <input
-        type="range"
-        :min="SETTINGS_LIMITS.opacity.min"
-        :max="SETTINGS_LIMITS.opacity.max"
-        :step="SETTINGS_LIMITS.opacity.step"
-        :value="settings.opacity"
-        @input="set('opacity', numberFrom($event))"
-      />
-      <output>{{ percent(settings.opacity) }}</output>
-    </label>
+        <label class="row">
+          <span class="label">{{ text.opacity }}</span>
+          <input
+            type="range"
+            :min="SETTINGS_LIMITS.opacity.min"
+            :max="SETTINGS_LIMITS.opacity.max"
+            :step="SETTINGS_LIMITS.opacity.step"
+            :value="settings.opacity"
+            @input="set('opacity', numberFrom($event))"
+          />
+          <output>{{ percent(settings.opacity) }}</output>
+        </label>
 
-    <label class="row check">
-      <input
-        type="checkbox"
-        :checked="settings.alwaysOnTop"
-        @change="set('alwaysOnTop', checkedFrom($event))"
-      />
-      <span class="label">{{ text.alwaysOnTop }}</span>
-    </label>
+        <label class="row check">
+          <input
+            type="checkbox"
+            :checked="settings.alwaysOnTop"
+            @change="set('alwaysOnTop', checkedFrom($event))"
+          />
+          <span class="label">{{ text.alwaysOnTop }}</span>
+        </label>
 
-    <label class="row check">
-      <input
-        type="checkbox"
-        :checked="settings.startWithWindows"
-        @change="set('startWithWindows', checkedFrom($event))"
-      />
-      <span class="label">{{ text.startWithWindows }}</span>
-    </label>
-    <p v-if="!canStartWithWindows" class="note">{{ text.startWithWindowsDevNote }}</p>
+        <label class="row check">
+          <input
+            type="checkbox"
+            :checked="settings.startWithWindows"
+            @change="set('startWithWindows', checkedFrom($event))"
+          />
+          <span class="label">{{ text.startWithWindows }}</span>
+        </label>
+        <p v-if="!canStartWithWindows" class="note">{{ text.startWithWindowsDevNote }}</p>
 
-    <label class="row">
-      <span class="label">{{ text.sleepAfter }}</span>
-      <input
-        class="minutes"
-        type="number"
-        :min="SETTINGS_LIMITS.sleepAfterMinutes.min"
-        :max="SETTINGS_LIMITS.sleepAfterMinutes.max"
-        :step="SETTINGS_LIMITS.sleepAfterMinutes.step"
-        :value="settings.sleepAfterMinutes"
-        @change="set('sleepAfterMinutes', numberFrom($event))"
-      />
-    </label>
+        <label class="row">
+          <span class="label">{{ text.sleepAfter }}</span>
+          <input
+            class="minutes"
+            type="number"
+            :min="SETTINGS_LIMITS.sleepAfterMinutes.min"
+            :max="SETTINGS_LIMITS.sleepAfterMinutes.max"
+            :step="SETTINGS_LIMITS.sleepAfterMinutes.step"
+            :value="settings.sleepAfterMinutes"
+            @change="set('sleepAfterMinutes', numberFrom($event))"
+          />
+        </label>
+      </div>
+      <div class="column">
+        <FocusSection :text="strings" :settings="settings" :set="set" />
+      </div>
+    </div>
 
     <footer>{{ text.version(appVersion) }}</footer>
   </main>
@@ -120,6 +128,13 @@ body {
 </style>
 
 <style scoped>
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
 .settings {
   padding: 20px 24px;
 }
