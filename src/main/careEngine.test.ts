@@ -219,3 +219,41 @@ describe('care engine: rename', () => {
     expect(e.current()?.name).toBe('Mochi')
   })
 })
+
+describe('care engine: treats (requirement-v4.md FR-51..53)', () => {
+  it('earns up to the stock limit, gives one at a time, and saves the stock', () => {
+    const e = engine()
+    e.load()
+    expect(e.earnTreats(1)).toBeNull() // no cat yet
+    e.adopt('Mochi')
+    expect(e.giveTreat()).toBeNull() // no treat yet
+    for (let i = 0; i < 7; i++) e.earnTreats(1)
+    expect(e.current()?.treats).toBe(5)
+    expect(e.earnTreats(1)).toBe(0)
+    const before = e.current()?.needs
+    expect(e.giveTreat()).toEqual({ full: false })
+    expect(e.current()?.treats).toBe(4)
+    expect(e.current()?.needs.hunger).toBeCloseTo((before?.hunger ?? 0) + 10, 5)
+    vi.advanceTimersByTime(CARE.saveDebounceMs)
+    expect(JSON.parse(readFileSync(file, 'utf8')).treats).toBe(4)
+  })
+
+  it('a full cat still enjoys a treat', () => {
+    const e = engine()
+    e.load()
+    e.adopt('Mochi')
+    e.earnTreats(1)
+    e.feed() // 80 -> 100
+    expect(e.giveTreat()).toEqual({ full: true })
+  })
+
+  it('adopting a new cat starts without treats (FR-53)', () => {
+    const e = engine()
+    e.load()
+    e.adopt('Mochi')
+    e.earnTreats(3)
+    e.wipe()
+    e.adopt('Tama')
+    expect(e.current()?.treats).toBe(0)
+  })
+})

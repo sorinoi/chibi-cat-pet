@@ -39,6 +39,7 @@ function checkedFrom(event: Event): boolean {
           :text="strings"
           :hunger-reminder="settings.hungerReminder"
           :set-hunger-reminder="(on: boolean) => set('hungerReminder', on)"
+          :show-treats="settings.focusTreats"
         />
 
         <h2 class="section">{{ text.generalSection }}</h2>

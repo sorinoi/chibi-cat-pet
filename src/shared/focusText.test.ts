@@ -89,3 +89,20 @@ describe('focusReaction (section 5)', () => {
     expect(focusReaction([{ type: 'breakStarted', phase: 'shortBreak' }])).toBeNull()
   })
 })
+
+describe('treat in the focus notification (requirement-v4.md FR-54)', () => {
+  it('mentions the treat only when one was earned', () => {
+    const inBreak = view({ kind: 'running', phase: 'shortBreak', minutesLeft: 5 })
+    const events = [
+      { type: 'focusCompleted' as const },
+      { type: 'breakStarted' as const, phase: 'shortBreak' as const }
+    ]
+    expect(focusNotice(events, inBreak, S, en, 1)?.body).toBe(
+      'Nice work! Short break: 5 minutes. +1 treat 🍬'
+    )
+    expect(focusNotice(events, inBreak, S, th, 1)?.body).toBe(
+      'เก่งมาก! พักสั้น 5 นาที ได้ขนม +1 🍬'
+    )
+    expect(focusNotice(events, inBreak, S, en, 0)?.body).toBe('Nice work! Short break: 5 minutes.')
+  })
+})

@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { CARE } from './careConfig'
-import { advanceNeeds, click, feed, moodOf, pet, runningMode, type Needs } from './needs'
+import {
+  advanceNeeds,
+  click,
+  earnTreats,
+  feed,
+  moodOf,
+  pet,
+  runningMode,
+  treat,
+  type Needs
+} from './needs'
 
 const HOUR = 3_600_000
 const n = (hunger: number, happiness: number): Needs => ({ hunger, happiness })
@@ -116,5 +126,25 @@ describe('care actions', () => {
 
   it('counts a bonus again if the clock moved backwards past the last one', () => {
     expect(pet(n(50, 50), 500, 1_000).counted).toBe(true)
+  })
+})
+
+describe('treats (requirement-v4.md FR-51, FR-52)', () => {
+  it('a treat adds hunger and happiness, also when full', () => {
+    expect(treat({ hunger: 50, happiness: 50 })).toEqual({
+      needs: { hunger: 60, happiness: 60 },
+      full: false
+    })
+    expect(treat({ hunger: 96, happiness: 95 })).toEqual({
+      needs: { hunger: 100, happiness: 100 },
+      full: true
+    })
+  })
+
+  it('earning is capped at the stock limit', () => {
+    expect(earnTreats(0, 1)).toBe(1)
+    expect(earnTreats(4, 1)).toBe(5)
+    expect(earnTreats(5, 1)).toBe(5)
+    expect(earnTreats(2, 0)).toBe(2)
   })
 })

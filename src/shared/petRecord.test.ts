@@ -26,7 +26,8 @@ describe('createPet', () => {
       adoptedAt: 1_000,
       needs: { hunger: 80, happiness: 80 },
       updatedAt: 1_000,
-      counters: { feeds: 0, pets: 0 }
+      counters: { feeds: 0, pets: 0 },
+      treats: 0
     })
   })
 
@@ -59,5 +60,25 @@ describe('parsePetRecord', () => {
     expect(parsePetRecord({ ...good, species: 'dog' })).toBeNull()
     expect(parsePetRecord({ ...good, updatedAt: 'yesterday' })).toBeNull()
     expect(parsePetRecord({ ...good, needs: { hunger: 50 } })).toBeNull()
+  })
+})
+
+describe('treat stock in pet.json (requirement-v4.md FR-53)', () => {
+  const base = {
+    version: 1,
+    name: 'Mochi',
+    species: 'cat',
+    adoptedAt: 1,
+    needs: { hunger: 50, happiness: 50 },
+    updatedAt: 2
+  }
+  it('older files without treats read as 0; new pets start at 0', () => {
+    expect(parsePetRecord(base)?.treats).toBe(0)
+    expect(createPet('Mochi', 1).treats).toBe(0)
+  })
+  it('keeps a valid stock and caps a bad one', () => {
+    expect(parsePetRecord({ ...base, treats: 3 })?.treats).toBe(3)
+    expect(parsePetRecord({ ...base, treats: 99 })?.treats).toBe(5)
+    expect(parsePetRecord({ ...base, treats: -2 })?.treats).toBe(0)
   })
 })

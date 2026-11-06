@@ -4,8 +4,8 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v4 in progress. V4-M1 done and approved; V4-M2 (focus treats) not started.
-- Next step: when the user says go, start V4-M2 (focus treats FR-51..54: setting off by default, 1 treat per completed focus, stock 5 in pet.json, "Give a treat (N)" menu item, +10/+10, notification text). cat-life.png needed for V4-M3/M4.
+- Current phase: v4 in progress. V4-M1 and V4-M2 done and approved. V4-M3/M4 blocked until the user sends cat-life.png.
+- Next step: V4-M3 when cat-life.png arrives (requirement-v4.md section 9). If the user prefers, run the V4-M5 parts that need no art first (8-hour memory run on an installed build, measurements).
 - Git (check `git status` and `git log` first; this line can lag): main pushed to origin (github.com/sorinoi/chibi-cat-pet) with the v3.0 release commit. Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea, v3.0.0 -> the release 3.0.0 commit. Push and tag only when the user asks.
 - Machine state: Desktop Pet 3.0.0 installed per-user over 2.0.0 and running with the user's cat sOrinOi; data in %APPDATA%\desktop-pet (settings.json without a language yet, so English from Windows until changed; pet.json; focus.json appears after the first completed focus). The user's old dev run (npm run dev, PID 25868) may still be open. dist/ has the 1.0.0, 2.0.0 and 3.0.0 installers.
 - Waiting on the user: nothing.
@@ -59,9 +59,9 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V3-M5 | Polish, measure, release v3.0 | done | gate passed; 3.0.0 installed over 2.0.0; accepted |
 | v4 | Requirements (requirement-v4.md) | done | approved by the user 2026-11-06 |
 | V4-M1 | Hungry notification, focus history | done | 199 tests; settings checked in the app; hungry notification checked by hand |
-| V4-M2 | Focus treats | todo | |
-| V4-M3 | cat-life.png art, sad, morning, night | todo | needs the user's art |
-| V4-M4 | Look at the mouse | todo | needs the user's art |
+| V4-M2 | Focus treats | done | 209 tests; earn and give checked in the app |
+| V4-M3 | cat-life.png art, sad, morning, night | blocked | waiting for the user's cat-life.png |
+| V4-M4 | Look at the mouse | blocked | waiting for the user's cat-life.png |
 | V4-M5 | Polish, 8 h run, release v4.0 | todo | |
 
 ## Phase approvals
@@ -84,6 +84,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V3-M4 | 2026-11-06 | yes, 2026-11-06 |
 | V3-M5 | 2026-11-06 | yes, 2026-11-06 (v3.0 accepted) |
 | V4-M1 | 2026-11-06 | yes, 2026-11-06 (user checked the hungry notification by hand) |
+| V4-M2 | 2026-11-06 | yes, 2026-11-06 |
 
 ## Log
 
@@ -214,3 +215,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: V4-M1 code: careConfig.hungryNotice (below 20, every 4 h); src/shared/hungerNotice.ts shouldShowHungerNotice (setting, cat, interval, waits while away or fullscreen; tests); Settings.hungerReminder (off by default) with a switch in the Pet section; main checks on every care update and shows an Electron Notification ("<name> is hungry", EN/TH). Focus history: focusTimer FocusHistory { days }, addCompleted keeps 30 days, lastDays(7), parseFocusFile reads v2 and upgrades v1, focusFileContent writes v2; focusEngine and FocusView carry week; FocusSection shows 7 bars with weekday names in the UI language and "Last 7 days". Settings window 690 -> 730 px tall. Tests 199.
 - 2026-11-06: App check (production build, isolated --user-data-dir, Thai): v3 focus.json (today 3) loaded, bars show Thai weekdays with 3 on Friday; hungry reminder switch saves hungerReminder: true; page fits (695 = 695). Not checked: the hungry notification itself (needs a hand check, like the focus notifications). Test data removed, port closed. V4-M1 gate passed; waiting for approval.
 - 2026-11-06: User hand check: hungry notification shows. User approved V4-M1. Committed V4-M1.
+- 2026-11-06: User said go: started V4-M2 (focus treats, FR-51..54).
+- 2026-11-06: V4-M2 code: careConfig.treats (1 per focus, stock 5, +10/+10); petRecord.treats (0 in older files, capped); needs.treat (accepted even when full, reports full) and earnTreats; careEngine earnTreats/giveTreat, snapshot treats (tests: cap, give, save, full, wiped with the cat). Settings.focusTreats (off by default) as a switch in the Focus timer section; Pet section shows "Treats: N" while on. Main: completed focus events earn treats when on and a cat exists; focus-done notification adds "+1 treat"; menus show "Give a treat (N)" (tray and cat) only with treats and the setting on; care:request/care:act 'treat'; renderer treatNow (one request in flight, shared with Feed), state machine treat -> eat, treatFull -> happy. Tests 209.
+- 2026-11-06: App check (production build, isolated --user-data-dir, Thai, 1-minute focus, treats on): Start focus from the cat menu; at the end treats 0 -> 1, saved to pet.json, Settings "ขนม: 1 🍬"; cat menu "ให้ขนม (1)" -> eat clip, fed 50 -> 60, happy 50 -> 60, treats 0, saved. Test data removed, port closed. V4-M2 gate passed; waiting for approval.
+- 2026-11-06: User approved V4-M2. Committed V4-M2.

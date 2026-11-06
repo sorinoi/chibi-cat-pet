@@ -12,6 +12,15 @@ import { focusStatus } from '../shared/focusText'
 
 const separator: MenuItemConstructorOptions = { type: 'separator' }
 
+/** FR-52: "Give a treat (N)" only while there are treats and the setting is on. */
+function treatItem(
+  actions: AppActions,
+  label: (count: number) => string
+): MenuItemConstructorOptions[] {
+  const count = actions.treats()
+  return count > 0 ? [{ label: label(count), click: actions.giveTreat }] : []
+}
+
 /**
  * FR-35: the Focus submenu. A status line, then only the actions that apply now.
  */
@@ -74,6 +83,7 @@ export function createTray(actions: AppActions): Tray {
       actions.hasPet()
         ? [
             { label: t.feed, click: actions.feed },
+            ...treatItem(actions, t.giveTreat),
             focusMenu(actions),
             separator,
             actions.isPetVisible()
@@ -101,6 +111,7 @@ export function showPetContextMenu(win: BrowserWindow, actions: AppActions): voi
     ? [
         { label: t.feed, click: actions.feed },
         { label: t.pet, click: actions.pet },
+        ...treatItem(actions, t.giveTreat),
         focusMenu(actions),
         separator
       ]

@@ -54,6 +54,14 @@ export const CARE = {
     minSegment: 6
   },
 
+  /** FR-51..53 (requirement-v4.md): optional treats earned by completed focus sessions. */
+  treats: {
+    perFocus: 1,
+    maxStock: 5,
+    happiness: 10,
+    hunger: 10
+  },
+
   /** FR-46/47 (requirement-v4.md): optional Windows notification when the cat is hungry. */
   hungryNotice: {
     /** Notify when hunger drops below this. */

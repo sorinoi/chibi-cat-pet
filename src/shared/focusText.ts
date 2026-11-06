@@ -45,7 +45,9 @@ export function focusNotice(
   /** The timer after the step (tells which break waits). */
   view: FocusView,
   settings: Pick<FocusSettings, 'focusMinutes' | 'shortBreakMinutes' | 'longBreakMinutes'>,
-  text: Strings
+  text: Strings,
+  /** Treats earned in this step (requirement-v4.md FR-54). */
+  treatsEarned = 0
 ): FocusNotice | null {
   const t = text.focus
   const has = (type: TimerEvent['type']): boolean => events.some((e) => e.type === type)
@@ -56,17 +58,19 @@ export function focusNotice(
     return { title: t.notify.interruptedTitle, body: t.notify.interrupted }
   }
   if (has('focusCompleted')) {
+    const treatNote = treatsEarned > 0 ? t.notify.treatEarned(treatsEarned) : ''
     const started = events.find((e) => e.type === 'breakStarted')
     if (started && started.type === 'breakStarted') {
       return {
         title: t.notify.focusDoneTitle,
-        body: t.notify.focusDoneBreak(t.phases[started.phase], breakMinutes(started.phase))
+        body:
+          t.notify.focusDoneBreak(t.phases[started.phase], breakMinutes(started.phase)) + treatNote
       }
     }
     if (view.kind === 'waiting' && view.phase) {
       return {
         title: t.notify.focusDoneTitle,
-        body: t.notify.focusDoneWaiting(t.phases[view.phase])
+        body: t.notify.focusDoneWaiting(t.phases[view.phase]) + treatNote
       }
     }
     return null

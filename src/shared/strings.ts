@@ -28,6 +28,7 @@ const EN = {
     feed: 'Feed',
     adopt: 'Adopt a cat…',
     petStatus: 'Pet status…',
+    giveTreat: (count: number): string => `Give a treat (${count})`,
     show: 'Show pet',
     hide: 'Hide pet',
     settings: 'Settings…',
@@ -37,6 +38,7 @@ const EN = {
   contextMenu: {
     feed: 'Feed',
     pet: 'Pet',
+    giveTreat: (count: number): string => `Give a treat (${count})`,
     hide: 'Hide',
     settings: 'Settings…',
     quit: 'Quit'
@@ -69,7 +71,8 @@ const EN = {
     adoptNew: 'Adopt a new cat…',
     noPet: 'You have no cat yet.',
     hungerReminder: 'Remind me when the cat is hungry',
-    adopt: 'Adopt a cat…'
+    adopt: 'Adopt a cat…',
+    treats: (count: number): string => `Treats: ${count} 🍬`
   },
   care: {
     fed: 'Fed',
@@ -119,7 +122,8 @@ const EN = {
       breakOverFocus: (minutes: number): string => `Next focus started: ${minutes} minutes.`,
       breakOverIdle: 'Ready for the next focus?',
       interruptedTitle: 'Focus interrupted',
-      interrupted: 'The PC was asleep, so this focus was not counted.'
+      interrupted: 'The PC was asleep, so this focus was not counted.',
+      treatEarned: (count: number): string => ` +${count} treat 🍬`
     },
     settings: {
       section: 'Focus timer',
@@ -130,6 +134,7 @@ const EN = {
       autoStartBreaks: 'Start breaks automatically',
       autoStartFocus: 'Start the next focus automatically',
       notifications: 'Show notifications',
+      treats: 'Earn treats by focusing',
       completedToday: (count: number): string => `Completed today: ${count} 🍅`,
       lastDays: (days: number): string => `Last ${days} days`
     }
@@ -146,6 +151,7 @@ const TH: Strings = {
     feed: 'ให้อาหาร',
     adopt: 'รับเลี้ยงแมว…',
     petStatus: 'สถานะน้องแมว…',
+    giveTreat: (count: number): string => `ให้ขนม (${count})`,
     show: 'แสดงน้องแมว',
     hide: 'ซ่อนน้องแมว',
     settings: 'ตั้งค่า…',
@@ -155,6 +161,7 @@ const TH: Strings = {
   contextMenu: {
     feed: 'ให้อาหาร',
     pet: 'ลูบหัว',
+    giveTreat: (count: number): string => `ให้ขนม (${count})`,
     hide: 'ซ่อน',
     settings: 'ตั้งค่า…',
     quit: 'ออก'
@@ -187,7 +194,8 @@ const TH: Strings = {
     adoptNew: 'รับเลี้ยงแมวตัวใหม่…',
     noPet: 'คุณยังไม่มีน้องแมว',
     hungerReminder: 'แจ้งเตือนเมื่อน้องแมวหิว',
-    adopt: 'รับเลี้ยงแมว…'
+    adopt: 'รับเลี้ยงแมว…',
+    treats: (count: number): string => `ขนม: ${count} 🍬`
   },
   care: {
     fed: 'อิ่ม',
@@ -238,7 +246,8 @@ const TH: Strings = {
       breakOverFocus: (minutes: number): string => `เริ่มโฟกัสรอบถัดไปแล้ว ${minutes} นาที`,
       breakOverIdle: 'พร้อมโฟกัสรอบถัดไปหรือยัง?',
       interruptedTitle: 'โฟกัสถูกขัดจังหวะ',
-      interrupted: 'คอมพิวเตอร์หลับไป รอบนี้เลยไม่นับ'
+      interrupted: 'คอมพิวเตอร์หลับไป รอบนี้เลยไม่นับ',
+      treatEarned: (count: number): string => ` ได้ขนม +${count} 🍬`
     },
     settings: {
       section: 'ตัวจับเวลาโฟกัส',
@@ -249,6 +258,7 @@ const TH: Strings = {
       autoStartBreaks: 'เริ่มพักอัตโนมัติ',
       autoStartFocus: 'เริ่มโฟกัสรอบถัดไปอัตโนมัติ',
       notifications: 'แสดงการแจ้งเตือน',
+      treats: 'ได้ขนมเมื่อโฟกัสครบ',
       completedToday: (count: number): string => `วันนี้ทำครบแล้ว: ${count} 🍅`,
       lastDays: (days: number): string => `${days} วันที่ผ่านมา`
     }

@@ -15,6 +15,8 @@ export interface PetRecord {
   /** Epoch ms of the last needs update. */
   updatedAt: number
   counters: { feeds: number; pets: number }
+  /** Treats in stock (requirement-v4.md FR-53). Belongs to this cat; 0 in older files. */
+  treats: number
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -49,7 +51,8 @@ export function createPet(name: string, now: number, c: CareConfig = CARE): PetR
     adoptedAt: now,
     needs: { ...c.startNeeds },
     updatedAt: now,
-    counters: { feeds: 0, pets: 0 }
+    counters: { feeds: 0, pets: 0 },
+    treats: 0
   }
 }
 
@@ -74,6 +77,7 @@ export function parsePetRecord(raw: unknown, c: CareConfig = CARE): PetRecord | 
     adoptedAt,
     needs: { hunger: clampNeed(needs['hunger']), happiness: clampNeed(needs['happiness']) },
     updatedAt,
-    counters: { feeds: count(counters['feeds']), pets: count(counters['pets']) }
+    counters: { feeds: count(counters['feeds']), pets: count(counters['pets']) },
+    treats: Math.min(c.treats.maxStock, count(raw['treats']))
   }
 }

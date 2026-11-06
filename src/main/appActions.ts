@@ -30,6 +30,9 @@ export interface CareActions {
   openAdopt(): void
   /** FR-28: opens settings, whose first section is the pet. */
   openPetStatus(): void
+  /** Treats the menus may offer: 0 when the setting is off or there is no cat (FR-52). */
+  treats(): number
+  giveTreat(): void
 }
 
 export function resourcePath(relative: string): string {

@@ -113,6 +113,25 @@ export function feed(needs: Needs, c: CareConfig = CARE): FeedResult {
   }
 }
 
+/**
+ * Giving a treat (requirement-v4.md FR-52): always accepted, even when full (the cat then
+ * just enjoys it). Returns the new needs and whether the cat was already full.
+ */
+export function treat(needs: Needs, c: CareConfig = CARE): { needs: Needs; full: boolean } {
+  return {
+    needs: {
+      hunger: clamp(needs.hunger + c.treats.hunger),
+      happiness: clamp(needs.happiness + c.treats.happiness)
+    },
+    full: needs.hunger >= c.fullThreshold
+  }
+}
+
+/** Treat stock after earning `count`, capped (FR-51). */
+export function earnTreats(stock: number, count: number, c: CareConfig = CARE): number {
+  return Math.min(c.treats.maxStock, Math.max(0, stock) + Math.max(0, count))
+}
+
 export interface BonusResult {
   needs: Needs
   /** True when the bonus counted; false inside the cooldown (the animation still plays). */

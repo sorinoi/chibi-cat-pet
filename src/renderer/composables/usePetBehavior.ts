@@ -42,8 +42,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   let userIdle = false
   let mood: CareMood = null
   let lastHungryReminderAt: number | null = null
-  /** The pending care:act request for a Feed from a menu (main decides eat or refuse). */
-  let feedInFlight: ReturnType<typeof api.careAct> | null = null
+  /** The pending care:act request for a Feed or treat from a menu (main decides the reaction). */
+  let careInFlight: ReturnType<typeof api.careAct> | null = null
   /** A focus reaction that arrived during another reaction; plays on the next idle. */
   let queuedCue: PetEvent | null = null
   const unsubscribers: Array<() => void> = []
@@ -161,14 +161,14 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   /** Feeding from a menu: main says whether the pet ate or was too full (FR-17). */
   async function feedNow(): Promise<void> {
     // A second Feed while main is still answering the first must not feed twice.
-    if (feedInFlight || mood === null || !transition(state.value, 'feed')) return
-    feedInFlight = api.careAct('feed')
+    if (careInFlight || mood === null || !transition(state.value, 'feed')) return
+    careInFlight = api.careAct('feed')
     try {
-      const result = await feedInFlight
+      const result = await careInFlight
       // A drag in the meantime interrupts the reaction; the meal still counts (section 6).
       if (result) dispatch(result.refused ? 'refuseFood' : 'feed')
     } finally {
-      feedInFlight = null
+      careInFlight = null
     }
   }
 
@@ -183,8 +183,21 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     else queuedCue = cue
   }
 
+  /** A treat from a menu (FR-52): main gives it and says whether the cat was full. */
+  async function treatNow(): Promise<void> {
+    if (careInFlight || mood === null || !transition(state.value, 'treat')) return
+    careInFlight = api.careAct('treat')
+    try {
+      const result = await careInFlight
+      if (result) dispatch(result.full ? 'treatFull' : 'treat')
+    } finally {
+      careInFlight = null
+    }
+  }
+
   function onCareRequest(request: CareRequest): void {
-    if (request === 'feed') void feedNow()
+    if (request === 'treat') void treatNow()
+    else if (request === 'feed') void feedNow()
     else if (request === 'pet') petNow()
     else dispatch('welcome') // FR-23: just adopted
   }

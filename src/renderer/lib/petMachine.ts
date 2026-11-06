@@ -31,6 +31,9 @@ export type PetEvent =
   | 'hungryReminder'
   /** Just adopted (FR-23). */
   | 'welcome'
+  /** A treat (requirement-v4.md FR-52): eat, or happy when already full. */
+  | 'treat'
+  | 'treatFull'
   // v3 focus timer reactions (requirement-v3.md section 10)
   | 'cueFocusStart'
   | 'cueFocusDone'
@@ -41,7 +44,14 @@ export type PetEvent =
 const careReaction = { clipFinished: 'idle', dragStart: 'drag' } as const
 
 /** Care actions that may start from a resting or moving pet (also wakes it: FR-21). */
-const careActions = { feed: 'eat', refuseFood: 'click', pet: 'pet', welcome: 'welcome' } as const
+const careActions = {
+  feed: 'eat',
+  refuseFood: 'click',
+  pet: 'pet',
+  welcome: 'welcome',
+  treat: 'eat',
+  treatFull: 'happy'
+} as const
 
 /** Focus timer reactions: may start from a resting, moving or landing pet (wakes it too). */
 const focusCues = {

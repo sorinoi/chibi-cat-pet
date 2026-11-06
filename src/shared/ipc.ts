@@ -79,19 +79,23 @@ export interface CareView {
   mood: Mood
   /** Epoch ms. */
   adoptedAt: number
+  /** Treats in stock (requirement-v4.md FR-53). */
+  treats: number
 }
 
 /** A care action asked for from a menu, or the welcome scene right after adoption. */
-export type CareRequest = 'feed' | 'pet' | 'welcome'
+export type CareRequest = 'feed' | 'pet' | 'welcome' | 'treat'
 
 /** Care actions the pet renderer applies: feed, pet (menu or stroke, FR-18) or click (FR-20). */
-export type CareAct = 'feed' | 'pet' | 'click'
+export type CareAct = 'feed' | 'pet' | 'click' | 'treat'
 
 export interface CareActResult {
   /** false inside a cooldown or when refused: the animation may play, nothing changes. */
   counted: boolean
   /** feed only: the pet was too full to eat (it plays the click reaction instead). */
   refused: boolean
+  /** treat only: the cat was already full (it plays happy instead of eat). */
+  full?: boolean
 }
 
 export interface WalkEnded {

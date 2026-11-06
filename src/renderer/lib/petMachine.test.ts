@@ -131,3 +131,18 @@ describe('focus timer reactions (requirement-v3.md section 10)', () => {
     }
   })
 })
+
+describe('treats (requirement-v4.md FR-52)', () => {
+  it('a treat plays eat, or happy when full, from a resting or moving cat', () => {
+    for (const from of ['idle', 'walk', 'sleep'] as const) {
+      expect(transition(from, 'treat')).toBe('eat')
+      expect(transition(from, 'treatFull')).toBe('happy')
+    }
+  })
+
+  it('is ignored during another care animation or a drag', () => {
+    for (const from of ['eat', 'happy', 'pet', 'drag'] as const) {
+      expect(transition(from, 'treat')).toBeNull()
+    }
+  })
+})

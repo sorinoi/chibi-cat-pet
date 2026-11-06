@@ -2,10 +2,12 @@ import { CARE, type CareConfig } from '../shared/careConfig'
 import {
   advanceNeeds,
   click,
+  earnTreats,
   feed,
   moodOf,
   pet,
   runningMode,
+  treat,
   type Mood,
   type Needs
 } from '../shared/needs'
@@ -18,6 +20,8 @@ export interface CareSnapshot {
   mood: Mood
   adoptedAt: number
   counters: PetRecord['counters']
+  /** Treats in stock (requirement-v4.md FR-51..53). */
+  treats: number
 }
 
 export interface CareEngine {
@@ -41,6 +45,10 @@ export interface CareEngine {
   pet(): { counted: boolean } | null
   /** FR-20. */
   click(): { counted: boolean } | null
+  /** FR-51: adds earned treats (capped); null when there is no cat. Returns how many were added. */
+  earnTreats(count: number): number | null
+  /** FR-52: gives one treat; null when there is no cat or no treat. */
+  giveTreat(): { full: boolean } | null
   onChange(listener: (snapshot: CareSnapshot | null) => void): void
   /** Bring needs up to date and write pending changes (call before quitting). */
   flush(): void
@@ -78,7 +86,8 @@ export function createCareEngine({
       needs: { ...record.needs },
       mood: moodOf(record.needs, config),
       adoptedAt: record.adoptedAt,
-      counters: { ...record.counters }
+      counters: { ...record.counters },
+      treats: record.treats
     }
   }
 
@@ -223,6 +232,28 @@ export function createCareEngine({
       }
       emit()
       return { counted: result.counted }
+    },
+
+    earnTreats(count) {
+      if (!record) return null
+      const next = earnTreats(record.treats, count, config)
+      const added = next - record.treats
+      if (added > 0) {
+        record = { ...record, treats: next }
+        saveSoon()
+        emit()
+      }
+      return added
+    },
+
+    giveTreat() {
+      if (!record || record.treats < 1) return null
+      catchUp(now())
+      const result = treat(record.needs, config)
+      record = { ...record, needs: result.needs, treats: record.treats - 1 }
+      saveSoon()
+      emit()
+      return { full: result.full }
     },
 
     onChange(listener) {

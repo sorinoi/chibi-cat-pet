@@ -11,6 +11,8 @@ const props = defineProps<{
   /** FR-47: the hungry reminder switch lives with the cat. */
   hungerReminder: boolean
   setHungerReminder: (on: boolean) => void
+  /** FR-53: show the treat stock while treats are on. */
+  showTreats: boolean
 }>()
 const { pet, rename, adoptNew, openAdopt } = useCare()
 const text = computed(() => props.text.settings)
@@ -63,6 +65,7 @@ async function saveName(): Promise<void> {
       <p class="meta">
         {{ text.mood }}: <strong>{{ moodLabel(pet.mood, props.text) }}</strong> ·
         {{ text.adoptedOn(adoptedOn) }}
+        <template v-if="showTreats"> · {{ text.treats(pet.treats) }}</template>
       </p>
       <label class="reminder">
         <input

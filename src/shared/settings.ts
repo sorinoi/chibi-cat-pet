@@ -23,6 +23,8 @@ export interface Settings extends FocusSettings {
   focusNotifications: boolean
   /** Optional notification when the cat is hungry (requirement-v4.md FR-47). Off by default. */
   hungerReminder: boolean
+  /** Earn treats by completing focus sessions (requirement-v4.md FR-51). Off by default. */
+  focusTreats: boolean
 }
 
 export const SETTINGS_LIMITS = {
@@ -41,7 +43,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   /** Main replaces this with the system language on first run (FR-42). */
   language: 'en',
   ...FOCUS.defaults,
-  hungerReminder: false
+  hungerReminder: false,
+  focusTreats: false
 }
 
 export interface Position {
@@ -110,7 +113,8 @@ export function sanitizeSettings(raw: unknown, base: Settings = DEFAULT_SETTINGS
     autoStartBreaks: bool(r['autoStartBreaks'], base.autoStartBreaks),
     autoStartFocus: bool(r['autoStartFocus'], base.autoStartFocus),
     focusNotifications: bool(r['focusNotifications'], base.focusNotifications),
-    hungerReminder: bool(r['hungerReminder'], base.hungerReminder)
+    hungerReminder: bool(r['hungerReminder'], base.hungerReminder),
+    focusTreats: bool(r['focusTreats'], base.focusTreats)
   }
 }
 

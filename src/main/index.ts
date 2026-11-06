@@ -19,6 +19,7 @@ import { careSummary } from '../shared/careText'
 import { focusNotice, focusReaction, focusStatus } from '../shared/focusText'
 import type { TimerEvent } from '../shared/focusTimer'
 import { shouldShowHungerNotice } from '../shared/hungerNotice'
+import { CARE } from '../shared/careConfig'
 import { DEFAULT_SETTINGS } from '../shared/settings'
 import { languageForLocales, stringsFor, type Strings } from '../shared/strings'
 
@@ -36,7 +37,7 @@ const SETTINGS_FLAG = '--settings'
 let onSecondInstance: (argv: readonly string[]) => void = () => {}
 
 const toView = (s: CareSnapshot | null): CareView | null =>
-  s && { name: s.name, needs: s.needs, mood: s.mood, adoptedAt: s.adoptedAt }
+  s && { name: s.name, needs: s.needs, mood: s.mood, adoptedAt: s.adoptedAt, treats: s.treats }
 
 function start(): void {
   // FR-42/45: without a saved language, follow the Windows display language.
@@ -111,7 +112,13 @@ function start(): void {
     const reaction = focusReaction(events)
     if (reaction && hasPet()) sendToPet(IpcChannel.FocusReaction, reaction)
     // FR-37: Windows notification, unless turned off.
-    const notice = focusNotice(events, view, store.settings, text())
+    // FR-51: completed focus sessions earn treats when the setting is on and there is a cat.
+    const completed = events.filter((e) => e.type === 'focusCompleted').length
+    const earned =
+      completed > 0 && store.settings.focusTreats
+        ? (care.earnTreats(completed * CARE.treats.perFocus) ?? 0)
+        : 0
+    const notice = focusNotice(events, view, store.settings, text(), earned)
     if (notice && store.settings.focusNotifications && Notification.isSupported()) {
       new Notification({
         title: notice.title,
@@ -186,7 +193,9 @@ function start(): void {
       feed: () => request('feed'),
       pet: () => request('pet'),
       openAdopt: careUi.openAdopt,
-      openPetStatus: () => settingsWindow.open()
+      openPetStatus: () => settingsWindow.open(),
+      treats: () => (store.settings.focusTreats ? (care.current()?.treats ?? 0) : 0),
+      giveTreat: () => request('treat')
     },
     text,
     focus

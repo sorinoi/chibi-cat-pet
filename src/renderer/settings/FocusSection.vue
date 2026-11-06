@@ -5,7 +5,7 @@ import { SETTINGS_LIMITS, type Settings } from '../../shared/settings'
 import type { Strings } from '../../shared/strings'
 
 type MinuteKey = 'focusMinutes' | 'shortBreakMinutes' | 'longBreakMinutes' | 'longBreakEvery'
-type ToggleKey = 'autoStartBreaks' | 'autoStartFocus' | 'focusNotifications'
+type ToggleKey = 'autoStartBreaks' | 'autoStartFocus' | 'focusNotifications' | 'focusTreats'
 
 const props = defineProps<{
   text: Strings
@@ -26,7 +26,8 @@ const numbers = computed<Array<{ key: MinuteKey; label: string }>>(() => [
 const toggles = computed<Array<{ key: ToggleKey; label: string }>>(() => [
   { key: 'autoStartBreaks', label: t.value.autoStartBreaks },
   { key: 'autoStartFocus', label: t.value.autoStartFocus },
-  { key: 'focusNotifications', label: t.value.notifications }
+  { key: 'focusNotifications', label: t.value.notifications },
+  { key: 'focusTreats', label: t.value.treats }
 ])
 
 /** FR-49 (requirement-v4.md): bars for the last days, scaled to the busiest day. */

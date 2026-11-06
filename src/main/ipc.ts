@@ -19,7 +19,7 @@ import { toFocusView, type FocusEngine } from './focusEngine'
 import { canStartWithWindows } from './applySettings'
 
 const isCareAct = (value: unknown): value is CareAct =>
-  value === 'feed' || value === 'pet' || value === 'click'
+  value === 'feed' || value === 'pet' || value === 'click' || value === 'treat'
 
 function isWalkRequest(value: unknown): value is WalkRequest {
   if (typeof value !== 'object' || value === null) return false
@@ -87,6 +87,10 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
     if (act === 'feed') {
       const fed = care.feed()
       return fed && { counted: !fed.refused, refused: fed.refused }
+    }
+    if (act === 'treat') {
+      const given = care.giveTreat()
+      return given && { counted: true, refused: false, full: given.full }
     }
     const bonus = act === 'pet' ? care.pet() : care.click()
     return bonus && { counted: bonus.counted, refused: false }
