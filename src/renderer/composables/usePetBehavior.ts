@@ -33,6 +33,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   let userIdle = false
   let mood: CareMood = null
   let lastHungryReminderAt: number | null = null
+  /** The pending care:act request for a Feed from a menu (main decides eat or refuse). */
+  let feedInFlight: ReturnType<typeof api.careAct> | null = null
   const unsubscribers: Array<() => void> = []
 
   function clearWander(): void {
@@ -141,9 +143,16 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
 
   /** Feeding from a menu: main says whether the pet ate or was too full (FR-17). */
   async function feedNow(): Promise<void> {
-    if (mood === null || !transition(state.value, 'feed')) return
-    const result = await api.careAct('feed')
-    if (result) dispatch(result.refused ? 'refuseFood' : 'feed')
+    // A second Feed while main is still answering the first must not feed twice.
+    if (feedInFlight || mood === null || !transition(state.value, 'feed')) return
+    feedInFlight = api.careAct('feed')
+    try {
+      const result = await feedInFlight
+      // A drag in the meantime interrupts the reaction; the meal still counts (section 6).
+      if (result) dispatch(result.refused ? 'refuseFood' : 'feed')
+    } finally {
+      feedInFlight = null
+    }
   }
 
   function onCareRequest(request: CareRequest): void {
