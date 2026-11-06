@@ -4,10 +4,10 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v2 in progress. V2-M4 done (gate passed; tray menu/tooltip still needs the user's hand check), waiting for approval to start V2-M5. v1.0 is complete (M5 gate passed except NFR-05, deferred by the user).
-- Next step: when the user says go, start V2-M5 per requirement-v2.md sections 13-14: tuning pass, NFR-01/NFR-11 measurement with a pet, acceptance criteria (section 14), version 2.0.0, installer, install over v1.0.0 to check the upgrade path. Each V2 phase waits for approval, like v1.
-- Git (check `git status` and `git log` first; this line can lag): at handoff main was 87cde4e (V2-M4) plus a docs-only handoff update. Commits: 87cde4e V2-M4, 7770fe1 V2-M3, d196771 V2-M2, 0d5e63c handoff docs, f706658 V2-M1, 171ec84 (user's "initial commit": sprite cat + M5), 42360ca (full 3D version, restore point). Remote: origin = github.com/sorinoi/chibi-cat-pet; origin/main is at 171ec84 (the user pushed that), local main is 5+ commits ahead. Push and tag (v1.0.0) only when the user asks.
-- Machine state: Desktop Pet 1.0.0 (v1, no v2 code) is installed per-user and running; its data is %APPDATA%\desktop-pet (settings.json only). Dev runs use %APPDATA%\desktop-pet-dev (settings.json only, no pet). package.json version is still 1.0.0; dist/ has only the 1.0.0 installer. v2 code has never been installed.
+- Current phase: v2.0 done. V2-M5 gate passed (2026-11-06), waiting for the user to accept the v2.0 release. Tray menu/tooltip still needs the user's hand check.
+- Next step: user reviews v2.0 (adopts a cat in the installed 2.0.0, hand checks the tray). Then on request: commit the V2-M5 changes, tag, push. Nothing planned after v2.0 yet (see requirement-v2.md section 15).
+- Git (check `git status` and `git log` first; this line can lag): at handoff main was 87cde4e (V2-M4) plus a docs-only handoff update. Commits: 87cde4e V2-M4, 7770fe1 V2-M3, d196771 V2-M2, 0d5e63c handoff docs, f706658 V2-M1, 171ec84 (user's "initial commit": sprite cat + M5), 42360ca (full 3D version, restore point). Remote: origin = github.com/sorinoi/chibi-cat-pet; pushed up to 8d65ddc on 2026-11-06 at the user's request. Push and tag (v1.0.0) only when the user asks.
+- Machine state: Desktop Pet 2.0.0 is installed per-user (over 1.0.0) and running, showing the adoption window; %APPDATA%desktop-pet has settings.json only until the user adopts. Dev data %APPDATA%desktop-pet-dev has settings.json only. dist/ has the 1.0.0 and 2.0.0 installers.
 - Waiting on the user: approval to start V2-M5; hand check of the v2 tray menu and tray tooltip (run `npm run dev`, adopt a cat, right/left click the tray).
 - Open items: real 8 h NFR-05 test (requirement.md section 13); Windows 10 and multi-monitor checks need hardware; v2 open questions (requirement-v2.md section 15) use the written defaults until decided.
 - Testing rule (user, 2026-11-06): do not inject keyboard or move the real mouse system-wide. Use CDP events into the app's own pages and messages posted to the app's own windows; leave real-input checks (tray, real clicks, fullscreen) to the user.
@@ -50,7 +50,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V2-M2 | Needs engine, pet.json, offline decay, moods | done | 103 tests; restart and offline gap checked in the app |
 | V2-M3 | Feed, pet (stroke + menu), click bonus, hungry reminder | done | 118 tests; every action checked in the app |
 | V2-M4 | Adoption, settings Pet section, tooltip, tray | done | 125 tests; adopt, rename, re-adopt, no-pet start checked in the app; tray by hand pending |
-| V2-M5 | Polish, measure, installer, release v2.0 | todo | waiting for approval |
+| V2-M5 | Polish, measure, installer, release v2.0 | done | gate passed; 2.0.0 installed over 1.0.0; tray hand check pending |
 
 ## Phase approvals
 
@@ -64,7 +64,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V2-M1 | 2026-11-06 | yes, 2026-11-06 |
 | V2-M2 | 2026-11-06 | yes, 2026-11-06 |
 | V2-M3 | 2026-11-06 | yes, 2026-11-06 |
-| V2-M4 | 2026-11-06 | waiting |
+| V2-M4 | 2026-11-06 | yes, 2026-11-06 (tray hand check still pending) |
+| V2-M5 | 2026-11-06 | waiting |
 
 ## Log
 
@@ -154,3 +155,9 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: App check (dev, CDP into the app's pages, BM_CLICK to the app's own message box buttons): no pet -> only the adoption window, pet page hidden, settings.json kept (= upgrade from v1 path); adopt "มะลิ" -> pet.json 80/80, window closed, pet visible, welcome -> happy -> idle; tooltip shows the summary over the cat and nothing off it; rename "   " rejected with a message, "ส้มจี๊ด" saved and the tooltip follows; Adopt a new cat -> Cancel keeps everything, Delete and adopt removes pet.json, hides the pet, opens adoption, settings shows "no cat"; closing adoption keeps the app running; second launch reopens adoption. Not checked: tray menu and tray tooltip (needs a hand check). Tests 125. V2-M4 gate passed; waiting for approval to start V2-M5.
 - 2026-11-06: Handoff check: fixed stale notes (remote origin exists and origin\/main is at 171ec84, not "nothing pushed"), added machine state, pending user items and v2 test know-how to WORK-LOG; CLAUDE.md now covers the v2 states, care clips, care sheet, multi-sheet window sizing, three pages\/preloads and pet.json.
 - 2026-11-06: User asked for AGENTS.md with the same content as CLAUDE.md. Created it (same body; header names AGENTS.md and says to keep both identical). When CLAUDE.md changes, update AGENTS.md too.
+- 2026-11-06: User asked to push. Pushed main to origin (171ec84..8d65ddc).
+- 2026-11-06: User approved V2-M5. Started V2-M5 (tuning, NFR-01/11, acceptance criteria, 2.0.0 installer). Baseline: typecheck, lint, 125 tests pass.
+- 2026-11-06: Review of care code: fixed a double feed when Feed is sent twice before main answers (usePetBehavior feedInFlight). Tuning defaults kept (open question for the user). package.json description no longer says 3D.
+- 2026-11-06: Version 2.0.0 (package.json, package-lock). Production build with a test pet: CPU 0.12 % of machine, private RAM 184 MB (NFR-01/11 pass). Damaged pet.json in the real app -> pet.json.bad + adoption window (FR-33 pass). Test pet files removed. Results in requirement-v2.md section 16.
+- 2026-11-06: npm run dist -> dist/desktop-pet-setup-2.0.0.exe (114.9 MB). Not installed yet: waiting for the user to OK installing over the running v1.0.0 (upgrade path, NFR-15).
+- 2026-11-06: Stopped v1.0.0, ran desktop-pet-setup-2.0.0.exe /S (exit 0, Uninstall entry 2.0.0). Launched: adoption window, settings.json byte-identical to the v1 backup, Run key kept (NFR-15 pass). Ticked all section 14 acceptance criteria. V2-M5 gate passed; waiting for approval. Changes not committed yet.

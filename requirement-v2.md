@@ -180,19 +180,19 @@ Same rule as v1: each phase must pass its gate, then wait for the user's approva
 | V2-M1 | Assets: import the care sheet (alpha fix, license), multi-sheet model config, clips eat/happy/hungry/pet | All four clips play correctly next to the v1 clips; feet do not jump between sheets | Done 2026-11-06 |
 | V2-M2 | Needs engine: pure needs math, pet.json store, offline decay, moods | Unit tests for every rule in section 4; values survive restart; offline gap math checked | Done 2026-11-06 |
 | V2-M3 | Interactions: feed, pet (stroke + menu), click bonus, hungry reminder, mood behavior | Each action changes the needs as specified and plays the right clip; stroke detection does not trigger on normal mouse moves | Done 2026-11-06 |
-| V2-M4 | Adoption and status: adoption window, settings Pet section, rename, re-adopt wipe, tooltip, tray | Adopt, rename, re-adopt (data gone), upgrade from v1 all work | Done 2026-11-06, waiting for approval (tray needs a hand check) |
-| V2-M5 | Polish: tuning pass, NFR-01/11 measurement, installer, release v2.0 | Acceptance criteria below pass | - |
+| V2-M4 | Adoption and status: adoption window, settings Pet section, rename, re-adopt wipe, tooltip, tray | Adopt, rename, re-adopt (data gone), upgrade from v1 all work | Done 2026-11-06, approved (tray needs a hand check) |
+| V2-M5 | Polish: tuning pass, NFR-01/11 measurement, installer, release v2.0 | Acceptance criteria below pass | Done 2026-11-06, waiting for approval (tray hand check pending) |
 
 ## 14. Acceptance criteria (v2)
 
-- [ ] Fresh install and v1 upgrade both show adoption; v1 settings survive the upgrade.
-- [ ] Feeding raises hunger and plays eat; feeding when full is refused.
-- [ ] Petting by stroking and from the menu raises happiness and plays pet; the cooldown works.
-- [ ] Needs drop while running, drop slowly while closed, and never go below the floor offline.
-- [ ] Hungry mood shows the hungry animation now and then; happy mood shows happy on click.
-- [ ] Re-adopting deletes the old pet immediately and asks for confirmation first.
-- [ ] Pet data survives restart; a damaged pet.json does not crash the app.
-- [ ] Idle CPU and RAM still meet NFR-01.
+- [x] Fresh install and v1 upgrade both show adoption; v1 settings survive the upgrade. (2.0.0 installer over 1.0.0: settings.json byte-identical, adoption window shown, Run key kept. Fresh install = same no-pet path, checked in dev in V2-M4; not run on a clean machine.)
+- [x] Feeding raises hunger and plays eat; feeding when full is refused. (V2-M3 app check)
+- [x] Petting by stroking and from the menu raises happiness and plays pet; the cooldown works. (V2-M3 app check, unit tests)
+- [x] Needs drop while running, drop slowly while closed, and never go below the floor offline. (V2-M2 app check and unit tests; V2-M5 run)
+- [x] Hungry mood shows the hungry animation now and then; happy mood shows happy on click. (V2-M3 app check)
+- [x] Re-adopting deletes the old pet immediately and asks for confirmation first. (V2-M4 app check)
+- [x] Pet data survives restart; a damaged pet.json does not crash the app. (V2-M2 app check; V2-M5 production build)
+- [x] Idle CPU and RAM still meet NFR-01. (section 16)
 
 ## 15. Open questions
 
@@ -202,3 +202,16 @@ Same rule as v1: each phase must pass its gate, then wait for the user's approva
 - Should the pet react to being fed by dragging food onto it (needs a food item graphic), or is the menu enough?
 - Coins and a shop: which version, and what would they buy (food types, toys, decorations)?
 - Other species later? The adoption window would then need a species picker.
+
+## 16. v2.0 measurements (2026-11-06, target machine)
+
+Windows 11 Pro, 16 logical CPUs, one 2560 x 1600 display at 125 % scaling. Production build 2.0.0 (unpacked) with an adopted cat (hunger and happiness 60, content mood).
+
+| ID | Target | Measured | Result |
+| --- | --- | --- | --- |
+| NFR-01 / NFR-11 | CPU <= 5 %, RAM <= 300 MB idle; needs add no per-second work | CPU 0.12 % of the machine (1.9 % of one core, 2 min); private RAM 184 MB (v1: 0.05 %, 170 MB). Needs decayed and pet.json was saved by the 60 s tick | Pass |
+| NFR-15 | Upgrade from v1.0 keeps settings, shows adoption | 2.0.0 installed silently over 1.0.0: settings.json unchanged, Run key kept, adoption window on first launch | Pass |
+| FR-33 | Damaged pet.json does not crash | Truncated pet.json -> moved to pet.json.bad, adoption window opened | Pass |
+| NFR-09 | Installer <= 200 MB | 114.9 MB | Pass |
+
+Tuning (section 4): defaults kept; the user decides after a few days of use (section 15).

@@ -1,7 +1,7 @@
 {
   "name": "desktop-pet",
-  "version": "1.0.0",
-  "description": "A 3D cat that lives on the Windows desktop",
+  "version": "2.0.0",
+  "description": "A sprite cat that lives on the Windows desktop",
   "private": true,
   "main": "./out/main/index.js",
   "author": "sorinoi",
