@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PetSection from './PetSection.vue'
 import { useSettings } from '../composables/useSettings'
 import { SETTINGS_LIMITS } from '../../shared/settings'
 import { STRINGS } from '../../shared/strings'
@@ -18,6 +19,10 @@ function checkedFrom(event: Event): boolean {
 <template>
   <main v-if="settings" class="settings">
     <h1>{{ text.title }}</h1>
+
+    <PetSection />
+
+    <h2 class="section">{{ text.generalSection }}</h2>
 
     <label class="row">
       <span class="label">{{ text.petSize }}</span>
@@ -102,6 +107,12 @@ h1 {
   font-size: 18px;
   font-weight: 600;
   margin: 0 0 18px;
+}
+
+.section {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 12px;
 }
 
 .row {

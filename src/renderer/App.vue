@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { usePetScene } from './composables/usePetScene'
 import { useClickThrough } from './composables/useClickThrough'
 import { usePetBehavior } from './composables/usePetBehavior'
 import { usePetPointer } from './composables/usePetPointer'
 import { usePetStroke } from './composables/usePetStroke'
+import { careSummary } from '../shared/careText'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 const scene = usePetScene(canvas)
@@ -27,10 +28,15 @@ usePetStroke(scene.hitTest, () => behavior.stroke())
 scene.onFrame(clickThrough.recheck)
 
 const overPet = clickThrough.overPet
+
+// FR-27: hovering over the cat shows its name, needs and mood (native tooltip).
+const tooltip = computed(() =>
+  overPet.value && behavior.care.value ? careSummary(behavior.care.value) : ''
+)
 </script>
 
 <template>
-  <canvas ref="canvas" class="pet-canvas" :class="{ 'is-over-pet': overPet }" />
+  <canvas ref="canvas" class="pet-canvas" :class="{ 'is-over-pet': overPet }" :title="tooltip" />
 </template>
 
 <style scoped>

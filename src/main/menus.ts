@@ -9,51 +9,60 @@ import { RESOURCES } from './config'
 import { resourcePath, type AppActions } from './appActions'
 import { STRINGS } from '../shared/strings'
 
-/** Feed (and Pet) at the top of a menu, only once a pet is adopted. */
-function careItems(
-  actions: AppActions,
-  feedLabel: string,
-  petLabel: string | null
-): MenuItemConstructorOptions[] {
-  if (!actions.hasPet()) return []
-  const items: MenuItemConstructorOptions[] = [{ label: feedLabel, click: actions.feed }]
-  if (petLabel) items.push({ label: petLabel, click: actions.pet })
-  items.push({ type: 'separator' })
-  return items
-}
+const separator: MenuItemConstructorOptions = { type: 'separator' }
 
-/** FR-09: tray icon with show/hide, settings, about, quit. Left click toggles the pet. */
+/**
+ * FR-09 / FR-28: tray icon. With a pet: Feed, show/hide, pet status, settings, about, quit.
+ * Before adoption: Adopt, settings, about, quit. Left click toggles the pet (or adopts).
+ */
 export function createTray(actions: AppActions): Tray {
   const tray = new Tray(nativeImage.createFromPath(resourcePath(RESOURCES.trayIcon)))
   tray.setToolTip(STRINGS.tray.tooltip)
 
-  const buildMenu = (): Menu =>
-    Menu.buildFromTemplate([
-      ...careItems(actions, STRINGS.tray.feed, null),
-      actions.isPetVisible()
-        ? { label: STRINGS.tray.hide, click: actions.hidePet }
-        : { label: STRINGS.tray.show, click: actions.showPet },
-      { label: STRINGS.tray.settings, click: actions.openSettings },
-      { label: STRINGS.tray.about, click: actions.showAbout },
-      { type: 'separator' },
-      { label: STRINGS.tray.quit, click: actions.quit }
-    ])
+  const common: MenuItemConstructorOptions[] = [
+    { label: STRINGS.tray.settings, click: actions.openSettings },
+    { label: STRINGS.tray.about, click: actions.showAbout },
+    separator,
+    { label: STRINGS.tray.quit, click: actions.quit }
+  ]
 
-  // Rebuild on open so the show/hide label is always current.
+  const buildMenu = (): Menu =>
+    Menu.buildFromTemplate(
+      actions.hasPet()
+        ? [
+            { label: STRINGS.tray.feed, click: actions.feed },
+            separator,
+            actions.isPetVisible()
+              ? { label: STRINGS.tray.hide, click: actions.hidePet }
+              : { label: STRINGS.tray.show, click: actions.showPet },
+            { label: STRINGS.tray.petStatus, click: actions.openPetStatus },
+            ...common
+          ]
+        : [{ label: STRINGS.tray.adopt, click: actions.openAdopt }, separator, ...common]
+    )
+
+  // Rebuild on open so labels always match the current state.
   tray.on('right-click', () => tray.popUpContextMenu(buildMenu()))
   tray.on('click', () => (actions.isPetVisible() ? actions.hidePet() : actions.showPet()))
   return tray
 }
 
-/** FR-10: right-click menu on the pet itself. */
+/** FR-10: right-click menu on the pet itself (only reachable once a pet is adopted). */
 export function showPetContextMenu(win: BrowserWindow, actions: AppActions): void {
   // Windows only keeps a popup menu open while its owner is the foreground window.
   win.focus()
+  const care: MenuItemConstructorOptions[] = actions.hasPet()
+    ? [
+        { label: STRINGS.contextMenu.feed, click: actions.feed },
+        { label: STRINGS.contextMenu.pet, click: actions.pet },
+        separator
+      ]
+    : []
   Menu.buildFromTemplate([
-    ...careItems(actions, STRINGS.contextMenu.feed, STRINGS.contextMenu.pet),
+    ...care,
     { label: STRINGS.contextMenu.hide, click: actions.hidePet },
     { label: STRINGS.contextMenu.settings, click: actions.openSettings },
-    { type: 'separator' },
+    separator,
     { label: STRINGS.contextMenu.quit, click: actions.quit }
   ]).popup({ window: win })
 }

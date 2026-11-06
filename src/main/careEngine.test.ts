@@ -199,3 +199,23 @@ describe('care engine: damaged data and wiping', () => {
     expect(again.load()).toBe('missing')
   })
 })
+
+describe('care engine: rename', () => {
+  it('renames and saves, keeping the needs', () => {
+    const e = engine()
+    e.load()
+    e.adopt('Mochi')
+    expect(e.rename('  ส้มจี๊ด  ')?.name).toBe('ส้มจี๊ด')
+    expect(JSON.parse(readFileSync(file, 'utf8')).name).toBe('ส้มจี๊ด')
+    expect(e.current()?.needs).toEqual({ hunger: 80, happiness: 80 })
+  })
+
+  it('rejects a bad name and does nothing without a pet', () => {
+    const e = engine()
+    e.load()
+    expect(e.rename('Mochi')).toBeNull()
+    e.adopt('Mochi')
+    expect(e.rename('   ')).toBeNull()
+    expect(e.current()?.name).toBe('Mochi')
+  })
+})

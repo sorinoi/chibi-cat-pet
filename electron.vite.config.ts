@@ -11,7 +11,8 @@ export default defineConfig({
       rolldownOptions: {
         input: {
           index: resolve(__dirname, 'src/preload/index.ts'),
-          settings: resolve(__dirname, 'src/preload/settings.ts')
+          settings: resolve(__dirname, 'src/preload/settings.ts'),
+          adopt: resolve(__dirname, 'src/preload/adopt.ts')
         }
       }
     }
@@ -22,7 +23,8 @@ export default defineConfig({
       rolldownOptions: {
         input: {
           index: resolve(__dirname, 'src/renderer/index.html'),
-          settings: resolve(__dirname, 'src/renderer/settings.html')
+          settings: resolve(__dirname, 'src/renderer/settings.html'),
+          adopt: resolve(__dirname, 'src/renderer/adopt.html')
         }
       }
     },

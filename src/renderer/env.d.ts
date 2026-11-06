@@ -1,4 +1,4 @@
-import type { PetApi, SettingsApi } from '../shared/ipc'
+import type { AdoptApi, PetApi, SettingsApi } from '../shared/ipc'
 import type { PetEvent, PetState } from './lib/petMachine'
 import type { ClipName } from '../shared/modelConfig'
 
@@ -19,6 +19,8 @@ declare global {
     petApi: PetApi
     /** Settings window only (src/preload/settings.ts). */
     settingsApi: SettingsApi
+    /** Adoption window only (src/preload/adopt.ts). */
+    adoptApi: AdoptApi
     __petDebug?: PetDebug
   }
 }

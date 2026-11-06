@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { transition, type PetEvent, type PetState } from './petMachine'
+import { clipFor, transition, type PetEvent, type PetState } from './petMachine'
 
 function run(start: PetState, events: PetEvent[]): PetState {
   return events.reduce<PetState>((state, event) => transition(state, event) ?? state, start)
@@ -80,5 +80,22 @@ describe('pet state machine: v2 care', () => {
   it('does not feed or pet while dragged or landing', () => {
     expect(transition('drag', 'feed')).toBeNull()
     expect(transition('land', 'pet')).toBeNull()
+  })
+})
+
+describe('pet state machine: adoption welcome', () => {
+  it('plays the pet clip, then happy, then idle', () => {
+    expect(clipFor('welcome')).toBe('pet')
+    expect(transition('idle', 'welcome')).toBe('welcome')
+    expect(transition('welcome', 'clipFinished')).toBe('happy')
+    expect(transition('happy', 'clipFinished')).toBe('idle')
+  })
+
+  it('can start from any resting state, and a drag still wins', () => {
+    for (const state of ['idle', 'walk', 'sleep', 'land'] as const) {
+      expect(transition(state, 'welcome')).toBe('welcome')
+    }
+    expect(transition('welcome', 'dragStart')).toBe('drag')
+    expect(transition('welcome', 'feed')).toBeNull()
   })
 })

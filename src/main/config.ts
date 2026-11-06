@@ -53,8 +53,13 @@ export const STORE = {
 } as const
 
 export const SETTINGS_WINDOW = {
-  width: 420,
-  height: 470
+  width: 440,
+  height: 620
+} as const
+
+export const ADOPT_WINDOW = {
+  width: 380,
+  height: 440
 } as const
 
 /** Registry value name for the Run key. build/installer.nsh deletes the same name on uninstall. */

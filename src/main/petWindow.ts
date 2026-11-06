@@ -4,7 +4,14 @@ import { initialPosition, petWindowSize } from './petMotion'
 import { loadRenderer } from './renderer'
 import type { PersistedState } from '../shared/settings'
 
-export function createPetWindow({ settings, position }: PersistedState): BrowserWindow {
+/**
+ * The pet window. `showWhenReady` is false until a pet is adopted (FR-22: no cat on the
+ * desktop before adoption); main shows it after adopting.
+ */
+export function createPetWindow(
+  { settings, position }: PersistedState,
+  showWhenReady: boolean
+): BrowserWindow {
   const size = petWindowSize(settings.petSize)
   const { x, y } = initialPosition(settings.petSize, position)
 
@@ -37,7 +44,11 @@ export function createPetWindow({ settings, position }: PersistedState): Browser
   win.setOpacity(settings.opacity)
   // Start fully click-through; the renderer turns mouse input on only over the model.
   win.setIgnoreMouseEvents(true, { forward: true })
-  win.once('ready-to-show', () => win.showInactive())
+  win.once('ready-to-show', () => {
+    // hide() even though it was never shown, so the page reports itself hidden and pauses.
+    if (showWhenReady) win.showInactive()
+    else win.hide()
+  })
 
   loadRenderer(win, 'index.html')
   return win

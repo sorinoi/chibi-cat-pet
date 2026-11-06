@@ -1,29 +1,40 @@
 import { BrowserWindow, nativeImage } from 'electron'
 import { join } from 'node:path'
-import { RESOURCES, SETTINGS_WINDOW } from './config'
+import { ADOPT_WINDOW, RESOURCES, SETTINGS_WINDOW } from './config'
 import { resourcePath } from './appActions'
-import { loadRenderer } from './renderer'
+import { loadRenderer, type RendererPage } from './renderer'
 import { STRINGS } from '../shared/strings'
 
-export interface SettingsWindowManager {
+export interface ToolWindowManager {
   open(): void
+  close(): void
   get(): BrowserWindow | null
 }
 
-/** One settings window at a time; opening again focuses it. */
-export function createSettingsWindowManager(): SettingsWindowManager {
+interface ToolWindowOptions {
+  page: RendererPage
+  /** Preload file name in out/preload (each window gets only the API it needs). */
+  preload: string
+  title: string
+  size: { width: number; height: number }
+}
+
+/** One window of this kind at a time; opening it again focuses the existing one. */
+function createToolWindowManager(options: ToolWindowOptions): ToolWindowManager {
   let win: BrowserWindow | null = null
+  const alive = (): BrowserWindow | null => (win && !win.isDestroyed() ? win : null)
 
   return {
     open() {
-      if (win && !win.isDestroyed()) {
-        if (win.isMinimized()) win.restore()
-        win.focus()
+      const existing = alive()
+      if (existing) {
+        if (existing.isMinimized()) existing.restore()
+        existing.focus()
         return
       }
-      win = new BrowserWindow({
-        ...SETTINGS_WINDOW,
-        title: STRINGS.settings.title,
+      const created = new BrowserWindow({
+        ...options.size,
+        title: options.title,
         icon: nativeImage.createFromPath(resourcePath(RESOURCES.appIcon)),
         resizable: false,
         maximizable: false,
@@ -31,7 +42,7 @@ export function createSettingsWindowManager(): SettingsWindowManager {
         autoHideMenuBar: true,
         show: false,
         webPreferences: {
-          preload: join(__dirname, '../preload/settings.js'),
+          preload: join(__dirname, '../preload', options.preload),
           contextIsolation: true,
           nodeIntegration: false,
           sandbox: true,
@@ -39,15 +50,36 @@ export function createSettingsWindowManager(): SettingsWindowManager {
           spellcheck: false
         }
       })
-      win.setMenu(null)
-      win.once('ready-to-show', () => win?.show())
-      win.on('closed', () => {
-        win = null
+      win = created
+      created.setMenu(null)
+      created.once('ready-to-show', () => created.show())
+      created.on('closed', () => {
+        if (win === created) win = null
       })
-      loadRenderer(win, 'settings.html')
+      loadRenderer(created, options.page)
     },
-    get() {
-      return win && !win.isDestroyed() ? win : null
-    }
+    close() {
+      alive()?.close()
+    },
+    get: alive
   }
+}
+
+export function createSettingsWindowManager(): ToolWindowManager {
+  return createToolWindowManager({
+    page: 'settings.html',
+    preload: 'settings.js',
+    title: STRINGS.settings.title,
+    size: SETTINGS_WINDOW
+  })
+}
+
+/** FR-22: the adoption window. */
+export function createAdoptWindowManager(): ToolWindowManager {
+  return createToolWindowManager({
+    page: 'adopt.html',
+    preload: 'adopt.js',
+    title: STRINGS.adopt.title,
+    size: ADOPT_WINDOW
+  })
 }

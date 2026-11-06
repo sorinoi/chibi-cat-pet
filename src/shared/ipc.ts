@@ -2,7 +2,7 @@
  * Single source of truth for IPC channels and the preload API shape.
  * Channel names follow the `domain:action` convention.
  */
-import type { Mood } from './needs'
+import type { Mood, Needs } from './needs'
 import type { Settings } from './settings'
 
 export const IpcChannel = {
@@ -36,7 +36,19 @@ export const IpcChannel = {
    */
   CareRequest: 'care:request',
   /** pet renderer -> main (invoke): CareAct -> CareActResult | null (no pet). */
-  CareAct: 'care:act'
+  CareAct: 'care:act',
+  /** adoption window -> main (invoke): name -> boolean (adopted). */
+  CareAdopt: 'care:adopt',
+  /** settings -> main (invoke): -> CareView | null. */
+  CareGet: 'care:get',
+  /** main -> settings: CareView | null, after every change. */
+  CareChanged: 'care:changed',
+  /** settings -> main (invoke): name -> CareView | null (null = name not usable). */
+  CareRename: 'care:rename',
+  /** settings -> main (invoke): confirm, wipe, open adoption -> boolean (wiped). */
+  CareAdoptNew: 'care:adopt-new',
+  /** settings -> main (send): open the adoption window (no pet yet). */
+  CareOpenAdopt: 'care:open-adopt'
 } as const
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
@@ -48,13 +60,17 @@ export interface WalkRequest {
   speed: number
 }
 
-/** What the pet renderer needs to know about care (section 5). */
+/** Care status sent to the pet (mood, tooltip) and settings windows (FR-24, FR-27). */
 export interface CareView {
+  name: string
+  needs: Needs
   mood: Mood
+  /** Epoch ms. */
+  adoptedAt: number
 }
 
-/** A care action asked for from a menu. */
-export type CareRequest = 'feed' | 'pet'
+/** A care action asked for from a menu, or the welcome scene right after adoption. */
+export type CareRequest = 'feed' | 'pet' | 'welcome'
 
 /** Care actions the pet renderer applies: feed, pet (menu or stroke, FR-18) or click (FR-20). */
 export type CareAct = 'feed' | 'pet' | 'click'
@@ -107,4 +123,18 @@ export interface SettingsApi {
   update(patch: Partial<Settings>): Promise<Settings>
   /** Returns an unsubscribe function. */
   onChanged(listener: (settings: Settings) => void): () => void
+  getCare(): Promise<CareView | null>
+  /** Returns an unsubscribe function. */
+  onCareChanged(listener: (view: CareView | null) => void): () => void
+  /** Resolves null when the name is not usable. */
+  renamePet(name: string): Promise<CareView | null>
+  /** Asks for confirmation; on yes deletes the pet and opens adoption. Resolves true if wiped. */
+  adoptNew(): Promise<boolean>
+  openAdopt(): void
+}
+
+/** API exposed to the adoption window as `window.adoptApi`. */
+export interface AdoptApi {
+  /** Resolves false when the name is not usable. */
+  adopt(name: string): Promise<boolean>
 }

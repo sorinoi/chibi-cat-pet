@@ -9,7 +9,7 @@ import {
   type Mood,
   type Needs
 } from '../shared/needs'
-import { createPet, type PetRecord } from '../shared/petRecord'
+import { createPet, sanitizeName, type PetRecord } from '../shared/petRecord'
 import { deletePetFile, readPetFile, writePetFile, type PetFileResult } from './petStore'
 
 export interface CareSnapshot {
@@ -31,6 +31,8 @@ export interface CareEngine {
   setAsleep(asleep: boolean): void
   /** FR-22/23. Replaces nothing: call wipe() first to re-adopt. */
   adopt(name: string): CareSnapshot
+  /** FR-24: returns the new snapshot, or null when the name is not usable or there is no pet. */
+  rename(name: string): CareSnapshot | null
   /** FR-25/32: deletes the pet and its file now. */
   wipe(): void
   /** FR-17. */
@@ -156,6 +158,15 @@ export function createCareEngine({
       const s = snapshot()
       if (!s) throw new Error('Adoption failed')
       return s
+    },
+
+    rename(name) {
+      const clean = sanitizeName(name, config)
+      if (!record || !clean) return null
+      record = { ...record, name: clean }
+      save()
+      emit()
+      return snapshot()
     },
 
     wipe() {

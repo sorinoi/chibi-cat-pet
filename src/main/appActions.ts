@@ -4,25 +4,27 @@ import { RESOURCES } from './config'
 import { STRINGS } from '../shared/strings'
 
 /** Actions shared by the tray menu and the pet's right-click menu. */
-export interface AppActions {
+export interface AppActions extends CareActions {
   isPetVisible(): boolean
+  /** Shows the pet, or opens adoption when there is none yet (FR-22). */
   showPet(): void
   hidePet(): void
   openSettings(): void
   showAbout(): void
   quit(): void
-  /** v2 care: false until a pet is adopted, so the menus hide Feed and Pet. */
+}
+
+export interface CareActions {
+  /** v2 care: false until a pet is adopted, so the menus offer Adopt instead of care. */
   hasPet(): boolean
   /** FR-17. */
   feed(): void
   /** FR-19. */
   pet(): void
-}
-
-export interface CareActions {
-  hasPet(): boolean
-  feed(): void
-  pet(): void
+  /** FR-22. */
+  openAdopt(): void
+  /** FR-28: opens settings, whose first section is the pet. */
+  openPetStatus(): void
 }
 
 export function resourcePath(relative: string): string {
@@ -41,6 +43,10 @@ export function createAppActions(
       return getPetWindow()?.isVisible() ?? false
     },
     showPet() {
+      if (!care.hasPet()) {
+        care.openAdopt()
+        return
+      }
       getPetWindow()?.showInactive()
     },
     hidePet() {

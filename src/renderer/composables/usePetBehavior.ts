@@ -1,13 +1,15 @@
 import { onBeforeUnmount, onMounted, readonly, ref, type Ref } from 'vue'
 import { BEHAVIOR } from '../config'
 import { clickReaction, idleAction, wanderDelayMs, type CareMood } from '../lib/careBehavior'
-import { transition, type PetEvent, type PetState } from '../lib/petMachine'
+import { clipFor, transition, type PetEvent, type PetState } from '../lib/petMachine'
 import type { PetScene } from './usePetScene'
 import type { ClipName } from '../../shared/modelConfig'
-import type { CareRequest } from '../../shared/ipc'
+import type { CareRequest, CareView } from '../../shared/ipc'
 
 export interface PetBehavior {
   state: Readonly<Ref<PetState>>
+  /** Care status from main (null = no pet yet), for the tooltip (FR-27). */
+  care: Readonly<Ref<CareView | null>>
   dispatch(event: PetEvent): void
   /** A click on the cat (FR-03, FR-20): reaction depends on the mood; counts the bonus. */
   click(): void
@@ -26,6 +28,7 @@ const randomBetween = (min: number, max: number): number => min + Math.random() 
 export function usePetBehavior(scene: PetScene): PetBehavior {
   const api = window.petApi
   const state = ref<PetState>('idle')
+  const careView = ref<CareView | null>(null)
   let wanderTimer: ReturnType<typeof setTimeout> | null = null
   let userIdle = false
   let mood: CareMood = null
@@ -84,7 +87,7 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
 
   function enter(to: PetState): void {
     // The hungry reminder is a looping clip; play it once (intro + one loop).
-    scene.play(to, to === 'hungry' ? { once: true } : undefined)
+    scene.play(clipFor(to), to === 'hungry' ? { once: true } : undefined)
 
     switch (to) {
       case 'idle':
@@ -116,9 +119,9 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   }
 
   scene.onClipFinished((clip) => {
-    if (clip === state.value) dispatch('clipFinished')
+    if (clip === clipFor(state.value)) dispatch('clipFinished')
     // A one-off clip outside the state machine (dev preview): go back to the state's clip.
-    else scene.play(state.value)
+    else scene.play(clipFor(state.value))
   })
 
   function click(): void {
@@ -145,7 +148,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
 
   function onCareRequest(request: CareRequest): void {
     if (request === 'feed') void feedNow()
-    else petNow()
+    else if (request === 'pet') petNow()
+    else dispatch('welcome') // FR-23: just adopted
   }
 
   onMounted(() => {
@@ -158,6 +162,7 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
         dispatch(idle ? 'sleep' : 'wake')
       }),
       api.onCareState((view) => {
+        careView.value = view
         mood = view ? view.mood : null
       }),
       api.onCareRequest(onCareRequest)
@@ -193,5 +198,5 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     if (import.meta.env.DEV) delete window.__petDebug
   })
 
-  return { state: readonly(state), dispatch, click, stroke: petNow }
+  return { state: readonly(state), care: readonly(careView), dispatch, click, stroke: petNow }
 }

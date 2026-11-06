@@ -4,9 +4,9 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v2 in progress. V2-M3 done (gate passed), waiting for the user's approval to start V2-M4. v1.0 is complete (M5 gate passed except NFR-05, deferred by the user).
-- Next step: when the user says go, start V2-M4 per requirement-v2.md sections 7-8 and 13: adoption window (name, Thai allowed; no cat until adopted), settings Pet section (rename, bars, adopted date, "Adopt a new cat..." with confirm and wipe), hover tooltip and tray tooltip with name, needs and mood, tray "Adopt..." before adoption. The care engine already has adopt/wipe. Each V2 phase waits for approval, like v1.
-- Git: main is clean; the latest commit is V2-M3 (care interactions). Earlier: d196771 (V2-M2), 0d5e63c (handoff docs), f706658 (V2-M1), 171ec84 (user's "initial commit": sprite cat + M5), 42360ca (full 3D version, restore point). Nothing pushed. Tag v1.0.0 not created (do it only when the user asks).
+- Current phase: v2 in progress. V2-M4 done (gate passed; tray menu/tooltip still needs the user's hand check), waiting for approval to start V2-M5. v1.0 is complete (M5 gate passed except NFR-05, deferred by the user).
+- Next step: when the user says go, start V2-M5 per requirement-v2.md sections 13-14: tuning pass, NFR-01/NFR-11 measurement with a pet, acceptance criteria (section 14), version 2.0.0, installer, install over v1.0.0 to check the upgrade path. Each V2 phase waits for approval, like v1.
+- Git: main is clean; the latest commit is V2-M4 (adoption and status). Earlier: 7770fe1 (V2-M3), d196771 (V2-M2), 0d5e63c (handoff docs), f706658 (V2-M1), 171ec84 (user's "initial commit": sprite cat + M5), 42360ca (full 3D version, restore point). Nothing pushed. Tag v1.0.0 not created (do it only when the user asks).
 - Machine state: Desktop Pet 1.0.0 (v1, no v2 code) is installed per-user and running; its data is %APPDATA%\desktop-pet. Dev runs use %APPDATA%\desktop-pet-dev.
 - Open items: real 8 h NFR-05 test (requirement.md section 13); Windows 10 and multi-monitor checks need hardware; v2 open questions (requirement-v2.md section 15) use the written defaults until decided.
 - Testing rule (user, 2026-11-06): do not inject keyboard or move the real mouse system-wide. Use CDP events into the app's own pages and messages posted to the app's own windows; leave real-input checks (tray, real clicks, fullscreen) to the user.
@@ -44,8 +44,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V2-M1 | Care sheet, multi-sheet model, eat/happy/hungry/pet clips | done | feet aligned across sheets; sprite:prepare tool |
 | V2-M2 | Needs engine, pet.json, offline decay, moods | done | 103 tests; restart and offline gap checked in the app |
 | V2-M3 | Feed, pet (stroke + menu), click bonus, hungry reminder | done | 118 tests; every action checked in the app |
-| V2-M4 | Adoption, settings Pet section, tooltip, tray | todo | waiting for approval |
-| V2-M5 | Polish, measure, installer, release v2.0 | todo | |
+| V2-M4 | Adoption, settings Pet section, tooltip, tray | done | 125 tests; adopt, rename, re-adopt, no-pet start checked in the app; tray by hand pending |
+| V2-M5 | Polish, measure, installer, release v2.0 | todo | waiting for approval |
 
 ## Phase approvals
 
@@ -58,7 +58,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | M5 | 2026-11-06 | v1 complete; user then approved requirement-v2.md and V2-M1 |
 | V2-M1 | 2026-11-06 | yes, 2026-11-06 |
 | V2-M2 | 2026-11-06 | yes, 2026-11-06 |
-| V2-M3 | 2026-11-06 | waiting |
+| V2-M3 | 2026-11-06 | yes, 2026-11-06 |
+| V2-M4 | 2026-11-06 | waiting |
 
 ## Log
 
@@ -140,3 +141,9 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: IPC: care:state (main -> pet, mood or null), care:request (menu Feed/Pet -> pet), care:act (pet -> main: feed/pet/click -> {counted, refused}). Design: the renderer gates every care action on the state machine, then main applies it, so a care action during another care animation changes nothing (first version applied menu feeds in main first; fixed). Click bonus only counts when the click reaction plays.
 - 2026-11-06: Menus: Feed (+ Pet in the right-click menu) at the top only when a pet exists; tray gets Feed. Feeding from the tray shows a hidden pet. Scene: play(clip, { once }) plays the looping hungry clip a single time. App: usePetStroke on window mousemove (forwarded while click-through is on). About text no longer says 3D.
 - 2026-11-06: Tests: 118 pass. App check (dev, hand-written pet.json, CDP + posting keys to the app's own menu window only): click +2; Feed 50 -> 90 / +5 with eat; Feed to 100; Feed when full -> click clip, needs unchanged; 2nd Feed during eat ignored (20 -> 60 once); menu Pet +15; fast stroke from idle -> pet +15; straight sweep -> nothing; hungry pet: wander timer plays hungry once then idle, next timer walks; happy pet: 8 clicks gave 4 happy / 4 click; no pet: menu has no Feed/Pet, clicks work as v1. Test pet files removed. Sad wander x2 is unit tested only. V2-M3 gate passed; waiting for approval to start V2-M4.
+- 2026-11-06: User approved V2-M4. Started V2-M4. FR-29 (hungry notification, Could) left out: still an open question.
+- 2026-11-06: V2-M4 code: engine.rename (tested); shared/careText.ts careSummary "Name · Fed 72% · Happy 85% · Content" (tested); petMachine state `welcome` (plays the pet clip, then happy; clipFor maps state -> clip; tested). New page adopt.html + preload adopt.ts (adoptApi.adopt only); settings preload gains getCare/onCareChanged/renamePet/adoptNew/openAdopt; CareView (name, needs, mood, adoptedAt) goes to the pet and settings windows. settingsWindow.ts now has one tool-window factory for settings and adoption.
+- 2026-11-06: Main: no pet -> pet window stays hidden (hide() on ready-to-show so the page reports hidden and pauses) and the adoption window opens (also on a second launch); adopt -> window closes, pet shows and plays the welcome scene; "Adopt a new cat..." -> native confirm (Cancel is the default) -> wipe pet.json, hide the pet, open adoption. Tray: with a pet Feed / show-hide / Pet status... / Settings / About / Quit, before adoption Adopt a cat... / Settings / About / Quit; tray tooltip shows the care summary. Pet canvas title = care summary while hovering the cat (FR-27).
+- 2026-11-06: Settings: "Your cat" section on top (name + Save name with validation, Fed/Happy meters, mood, adopted date, Adopt a new cat...; or "You have no cat yet." + Adopt). Settings window 440 x 620.
+- 2026-11-06: Pitfall: the installed v1.0.0 app also has a window titled "Desktop Pet"; window checks by title must filter by process (the scratchpad helper now does).
+- 2026-11-06: App check (dev, CDP into the app's pages, BM_CLICK to the app's own message box buttons): no pet -> only the adoption window, pet page hidden, settings.json kept (= upgrade from v1 path); adopt "มะลิ" -> pet.json 80/80, window closed, pet visible, welcome -> happy -> idle; tooltip shows the summary over the cat and nothing off it; rename "   " rejected with a message, "ส้มจี๊ด" saved and the tooltip follows; Adopt a new cat -> Cancel keeps everything, Delete and adopt removes pet.json, hides the pet, opens adoption, settings shows "no cat"; closing adoption keeps the app running; second launch reopens adoption. Not checked: tray menu and tray tooltip (needs a hand check). Tests 125. V2-M4 gate passed; waiting for approval to start V2-M5.

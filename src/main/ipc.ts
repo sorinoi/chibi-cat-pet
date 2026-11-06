@@ -5,7 +5,13 @@ import {
   type IpcMainEvent,
   type IpcMainInvokeEvent
 } from 'electron'
-import { IpcChannel, type CareAct, type SettingsSnapshot, type WalkRequest } from '../shared/ipc'
+import {
+  IpcChannel,
+  type CareAct,
+  type CareView,
+  type SettingsSnapshot,
+  type WalkRequest
+} from '../shared/ipc'
 import type { CareEngine } from './careEngine'
 import type { PetMotion } from './petMotion'
 import type { SettingsStore } from './settingsStore'
@@ -27,6 +33,19 @@ export interface IpcContext {
   store: SettingsStore
   care: CareEngine
   showContextMenu(): void
+  getAdoptWindow(): BrowserWindow | null
+  /** Adoption, rename and re-adoption flows (they touch several windows, so main wires them). */
+  careUi: CareUi
+}
+
+export interface CareUi {
+  view(): CareView | null
+  /** FR-22/23: false when the name is not usable or a pet already exists. */
+  adopt(name: string): boolean
+  rename(name: string): CareView | null
+  /** FR-25: confirm, wipe, open adoption. */
+  adoptNew(): Promise<boolean>
+  openAdopt(): void
 }
 
 /** Registers all IPC handlers. Each channel accepts only the window it belongs to. */
@@ -34,8 +53,11 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
   const { petWindow: win, motion, store, care } = ctx
   const fromPet = (event: IpcMainEvent | IpcMainInvokeEvent): boolean =>
     !win.isDestroyed() && event.sender === win.webContents
-  const fromSettings = (event: IpcMainInvokeEvent): boolean =>
+  const fromSettings = (event: IpcMainEvent | IpcMainInvokeEvent): boolean =>
     event.sender === ctx.getSettingsWindow()?.webContents
+  const fromAdopt = (event: IpcMainInvokeEvent): boolean =>
+    event.sender === ctx.getAdoptWindow()?.webContents
+  const { careUi } = ctx
 
   ipcMain.on(IpcChannel.WindowSetIgnoreMouse, (event, ignore: unknown) => {
     if (!fromPet(event) || typeof ignore !== 'boolean') return
@@ -68,6 +90,22 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
     return bonus && { counted: bonus.counted, refused: false }
   })
 
+  ipcMain.handle(IpcChannel.CareAdopt, (event, name: unknown) => {
+    if (!fromAdopt(event) || typeof name !== 'string') return false
+    return careUi.adopt(name)
+  })
+  ipcMain.handle(IpcChannel.CareGet, (event) => (fromSettings(event) ? careUi.view() : null))
+  ipcMain.handle(IpcChannel.CareRename, (event, name: unknown) => {
+    if (!fromSettings(event) || typeof name !== 'string') return null
+    return careUi.rename(name)
+  })
+  ipcMain.handle(IpcChannel.CareAdoptNew, (event) =>
+    fromSettings(event) ? careUi.adoptNew() : false
+  )
+  ipcMain.on(IpcChannel.CareOpenAdopt, (event) => {
+    if (fromSettings(event)) careUi.openAdopt()
+  })
+
   ipcMain.handle(IpcChannel.SettingsGet, (event): SettingsSnapshot | null => {
     if (!fromSettings(event)) return null
     return {
@@ -87,13 +125,18 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
       IpcChannel.PetDragStart,
       IpcChannel.PetDragEnd,
       IpcChannel.PetWalkStop,
-      IpcChannel.PetShowContextMenu
+      IpcChannel.PetShowContextMenu,
+      IpcChannel.CareOpenAdopt
     ]) {
       ipcMain.removeAllListeners(channel)
     }
     for (const channel of [
       IpcChannel.PetWalkStart,
       IpcChannel.CareAct,
+      IpcChannel.CareAdopt,
+      IpcChannel.CareGet,
+      IpcChannel.CareRename,
+      IpcChannel.CareAdoptNew,
       IpcChannel.SettingsGet,
       IpcChannel.SettingsUpdate
     ]) {
