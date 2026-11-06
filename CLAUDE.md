@@ -19,7 +19,7 @@ Communicate with the user in Thai, casual and friendly, no rude or vulgar langua
 - Electron (main + preload + renderer)
 - Graphics: Canvas 2D drawing a PNG sprite sheet (no WebGL, no Three.js). The 3D .glb cat was replaced on 2026-11-06 (user decision); it lives in git commit 42360ca.
 - Model format: PNG sprite sheet + JSON config (grid, anchor, clips with fps/frameMs, loop, loopFrom)
-- State: Vue composables (no Pinia). Persistence: own small JSON store in main (src/main/settingsStore.ts, file in the user's app data folder). Decided in M4 to keep deps minimal.
+- State: Vue composables (no Pinia). Persistence: own small JSON files in the user's app data folder: settings.json (src/main/settingsStore.ts) and, for v2, pet.json (src/main/careEngine.ts + petStore.ts). Decided in M4 to keep deps minimal.
 - Native calls: koffi 2.x (FFI, prebuilt binary in the package, its install script is not run). Used only in src/main/fullscreenWatcher.ts for FR-16. electron-builder.yml ships only its win32_x64 binary, unpacked from asar.
 - Packaging: electron-builder (NSIS, Windows x64)
 - Tests: Vitest. Lint/format: ESLint + Prettier
@@ -41,18 +41,19 @@ npm run sprite:prepare -- <in.png> <out.png> [cols] [rows]   # clean a sprite sh
 
 `scripts/` holds the icon generator and the sprite prep tool (`.mts`, run by Node's built-in type stripping). `scripts/lib/png.mts` is a tiny dependency-free PNG codec. New art from the user goes into `assets/sprites-inbox/`, then through `sprite:prepare` into `assets/models/`.
 
-Installer notes: config in `electron-builder.yml`, extra uninstall steps in `build/installer.nsh` (Run key, updater cache). The installed app keeps data in `%APPDATA%\desktop-pet`; uninstall deletes it. `"Desktop Pet.exe" --settings` opens the settings window, also when the app is already running.
+Installer notes: config in `electron-builder.yml`, extra uninstall steps in `build/installer.nsh` (Run key, updater cache). The installed app keeps data in `%APPDATA%\desktop-pet` (settings.json, pet.json); uninstall deletes it. `"Desktop Pet.exe" --settings` opens the settings window, also when the app is already running.
 
 Update this section whenever scripts change. Run `typecheck`, `lint` and `test` before declaring a task done.
 
 ## Project layout
 
 ```
-src/main/        Electron main process: window, tray, settings store, auto-start, single instance, IPC handlers
-src/preload/     contextBridge API exposed to the renderer (keep it tiny and typed)
-src/renderer/    Vue app: sprite scene, behavior state machine, settings UI
-src/shared/      types and pure logic used by main and renderer (IPC, settings, model config, active model)
-assets/models/   sprite sheet .png + JSON config + license note per model
+src/main/        Electron main process: windows, tray, settings store, care engine, auto-start, single instance, IPC handlers
+src/preload/     one contextBridge API per window, each tiny and typed: index (pet), settings, adopt
+src/renderer/    Vue pages: index.html (pet: sprite scene, behavior state machine), settings.html, adopt.html
+src/shared/      types and pure logic used by main and renderer (IPC, settings, model config, needs math, care text)
+assets/models/   sprite sheets .png + one JSON model config + license note
+assets/sprites-inbox/  the user's original art, before `sprite:prepare`
 ```
 
 ## Hard rules
@@ -77,19 +78,23 @@ Performance (NFR-01 to NFR-05)
 
 - TypeScript strict, no `any` without a comment explaining why.
 - Vue: Composition API + `<script setup lang="ts">`. Logic that is not UI goes into composables under `src/renderer/composables/`.
-- Pet behavior is an explicit state machine (idle, walk, click, drag, land, sleep). No ad-hoc boolean flags.
+- Pet behavior is an explicit state machine (src/renderer/lib/petMachine.ts): v1 idle, walk, click, drag, land, sleep; v2 eat, happy, hungry, pet, welcome. No ad-hoc boolean flags.
+- v2 care actions go through the renderer first (it checks the state machine), then main applies them via `care:act`; menus only send `care:request`.
 - No magic numbers for timings, sizes or fps. Put them in a config module or the settings store.
-- Models and animation clip names come from config, not hardcoded in components. Standard clip names: `idle`, `walk`, `click`, `drag`, `land`, `sleep`.
+- Models and animation clip names come from config, not hardcoded in components. Standard clip names: `idle`, `walk`, `click`, `drag`, `land`, `sleep`; optional v2 care clips: `eat`, `happy`, `hungry`, `pet`.
+- Pet-care tuning (rates, floors, cooldowns, stroke detection) lives only in src/shared/careConfig.ts.
 - IPC channels are named `domain:action` (for example `window:set-ignore-mouse`) and typed in one shared file.
 - Small, focused commits. Conventional Commit style (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`).
 - Keep dependencies minimal. Ask before adding a new runtime dependency.
 
 ## Cat sprite
 
-- Art: assets/models/cat-sprite.png (8 x 6 cells, 192 px), generated by the user with Claude (claude.ai). License note in cat-sprite.LICENSE.txt. Claude does not hand-draw sprites; new art comes from the user.
-- Sheet rules (requirement.md section 9): real alpha, regular grid, one clip per row from column 0, feet at the same height (anchor), walk frames face one way (`walkFacing`).
+- Art, generated by the user with Claude (claude.ai); license note in assets/models/cat-sprite.LICENSE.txt. Claude does not hand-draw sprites; new art comes from the user.
+  - `cat-sprite.png` (sheet `main`): 8 x 6 cells of 192 px, feet at y = 177; v1 clips.
+  - `cat-care.png` (sheet `care`): 8 x 4 cells of 224 px, feet at y = 210; v2 clips eat, happy, hungry, pet. Made from the inbox original with `sprite:prepare`.
+- Sheet rules (requirement.md section 9): real alpha, regular grid, one clip per row from column 0, feet at the same height (anchor), walk frames face one way (`walkFacing`). One model can use several sheets; each clip names its sheet.
 - Required clips: `idle` (loop), `walk` (loop), `click` (once), `drag` (loop, intro via `loopFrom`), `land` (once), `sleep` (loop, intro via `loopFrom`).
-- The active model is set in src/shared/activeModel.ts; main sizes the window from it (cell size x displayScale x pet size).
+- The active model is set in src/shared/activeModel.ts. `modelFrame()` fits every sheet with all feet anchors on one point; main sizes the pet window from that frame x displayScale x pet size, rounded up to a 4 DIP grid (fractional pixel sizes made Windows grow the window).
 - Any third-party art must have a clear license; keep the license note next to the file.
 
 ## Milestones
