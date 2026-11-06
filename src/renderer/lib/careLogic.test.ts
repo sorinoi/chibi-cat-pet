@@ -80,3 +80,25 @@ describe('clickReaction', () => {
     expect(clickReaction(null, 0)).toBe('click')
   })
 })
+
+describe('idleAction v4 extras (requirement-v4.md FR-55, FR-59)', () => {
+  const cooldown = CARE.behavior.sadReminderCooldownMs
+
+  it('a sad cat shows the sad animation only when the model has it', () => {
+    expect(idleAction('sad', 0, null, CARE, { canSad: true })).toBe('sad')
+    expect(idleAction('sad', 0, null, CARE, {})).toBe('wander')
+  })
+
+  it('the sad reminder waits 10 minutes like the hungry one', () => {
+    expect(idleAction('sad', cooldown - 1, 0, CARE, { canSad: true })).toBe('wander')
+    expect(idleAction('sad', cooldown, 0, CARE, { canSad: true })).toBe('sad')
+  })
+
+  it('yawns now and then at night', () => {
+    expect(idleAction('content', 0, null, CARE, { nightYawn: true, random: 0.1 })).toBe('yawn')
+    expect(idleAction('content', 0, null, CARE, { nightYawn: true, random: 0.9 })).toBe('wander')
+    expect(idleAction('content', 0, null, CARE, { random: 0.1 })).toBe('wander')
+    // A due mood reminder comes first.
+    expect(idleAction('hungry', 0, null, CARE, { nightYawn: true, random: 0.1 })).toBe('hungry')
+  })
+})

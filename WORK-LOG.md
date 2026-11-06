@@ -4,8 +4,8 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v4 in progress. V4-M1 and V4-M2 done and approved. V4-M3/M4 blocked until the user sends cat-life.png.
-- Next step: V4-M3 when cat-life.png arrives (requirement-v4.md section 9). If the user prefers, run the V4-M5 parts that need no art first (8-hour memory run on an installed build, measurements).
+- Current phase: v4 in progress. V4-M1..M3 done and approved; V4-M4 (look at the mouse) not started.
+- Next step: when approved, V4-M4: `look` clip from cat-life.png row 2 (hold the looking frames while the cursor is near), cursor polling in main at most 4 Hz only while idle and visible, mirror for the left side. V4-M3 committed.
 - Git (check `git status` and `git log` first; this line can lag): main pushed to origin (github.com/sorinoi/chibi-cat-pet) with the v3.0 release commit. Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea, v3.0.0 -> the release 3.0.0 commit. Push and tag only when the user asks.
 - Machine state: Desktop Pet 3.0.0 installed per-user over 2.0.0 and running with the user's cat sOrinOi; data in %APPDATA%\desktop-pet (settings.json without a language yet, so English from Windows until changed; pet.json; focus.json appears after the first completed focus). The user's old dev run (npm run dev, PID 25868) may still be open. dist/ has the 1.0.0, 2.0.0 and 3.0.0 installers.
 - Waiting on the user: nothing.
@@ -60,8 +60,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | v4 | Requirements (requirement-v4.md) | done | approved by the user 2026-11-06 |
 | V4-M1 | Hungry notification, focus history | done | 199 tests; settings checked in the app; hungry notification checked by hand |
 | V4-M2 | Focus treats | done | 209 tests; earn and give checked in the app |
-| V4-M3 | cat-life.png art, sad, morning, night | blocked | waiting for the user's cat-life.png |
-| V4-M4 | Look at the mouse | blocked | waiting for the user's cat-life.png |
+| V4-M3 | cat-life.png art, sad, morning, night | done | 218 tests; sad, yawn, stretch checked in the app |
+| V4-M4 | Look at the mouse | todo | art is in (row 2 of cat-life.png) |
 | V4-M5 | Polish, 8 h run, release v4.0 | todo | |
 
 ## Phase approvals
@@ -85,6 +85,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V3-M5 | 2026-11-06 | yes, 2026-11-06 (v3.0 accepted) |
 | V4-M1 | 2026-11-06 | yes, 2026-11-06 (user checked the hungry notification by hand) |
 | V4-M2 | 2026-11-06 | yes, 2026-11-06 |
+| V4-M3 | 2026-11-06 | yes, 2026-11-06 |
 
 ## Log
 
@@ -219,3 +220,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: V4-M2 code: careConfig.treats (1 per focus, stock 5, +10/+10); petRecord.treats (0 in older files, capped); needs.treat (accepted even when full, reports full) and earnTreats; careEngine earnTreats/giveTreat, snapshot treats (tests: cap, give, save, full, wiped with the cat). Settings.focusTreats (off by default) as a switch in the Focus timer section; Pet section shows "Treats: N" while on. Main: completed focus events earn treats when on and a cat exists; focus-done notification adds "+1 treat"; menus show "Give a treat (N)" (tray and cat) only with treats and the setting on; care:request/care:act 'treat'; renderer treatNow (one request in flight, shared with Feed), state machine treat -> eat, treatFull -> happy. Tests 209.
 - 2026-11-06: App check (production build, isolated --user-data-dir, Thai, 1-minute focus, treats on): Start focus from the cat menu; at the end treats 0 -> 1, saved to pet.json, Settings "ขนม: 1 🍬"; cat menu "ให้ขนม (1)" -> eat clip, fed 50 -> 60, happy 50 -> 60, treats 0, saved. Test data removed, port closed. V4-M2 gate passed; waiting for approval.
 - 2026-11-06: User approved V4-M2. Committed V4-M2.
+- 2026-11-06: User said go: started V4-M3 (cat-life.png, sad reminder, morning stretch, night sleepiness; FR-55, FR-58, FR-59).
+- 2026-11-06: User added assets/sprites-inbox/cat-life.png (rows sad, look, stretch, yawn). Checked: real transparency, no art crossing cells, but 2172 x 724 (271.5 px cells), cat alpha ~251, faint shadows; trial sprite:regrid at 0.8 made the cat ~25 % bigger than the others, 0.72 matches (~11,300 px vs ~11,100).
+- 2026-11-06: V4-M3 code: assets/models/cat-life.png (sprite:regrid 0.72, nothing clipped), sheet life + clips sad/stretch/yawn (look waits for V4-M4); LIFE_CLIPS, fallback stretch -> happy; careConfig.behavior.sadReminderCooldownMs, careConfig.day (morning 5-11, night 23-5, night sleep x0.5, yawn chance 0.3); src/shared/timeOfDay.ts (windows across midnight, morningStretchDue, sleepAfterSeconds; tests); idleAction extras (sad reminder only with the clip, shared 10 min cooldown; night yawn; tests); state machine sadReminder/morningStretch/nightYawn from idle (tests); usePetBehavior: wander timer picks hungry/sad/yawn/wander, morning stretch on the first wake or first care state of a morning (once per day per run); main idle threshold uses sleepAfterSeconds (half at night). License note and CLAUDE.md/AGENTS.md updated. Tests 218.
+- 2026-11-06: App check (electron-vite dev with --user-data-dir in the scratchpad, because the user's own dev run PID 34732 holds the normal dev lock; CDP + __petDebug): sad cat (happiness 20) -> wanderNow plays sad then idle; second wanderNow inside the cooldown walks; at 23:xx wanderNow gave yawn on the first try; dispatch morningStretch plays the stretch clip; screenshots of sad, stretch, yawn look right. Not checked live: the real morning trigger and the shorter night sleep (time rules unit tested; needs a morning / real idle time). Test copy stopped by PID, data removed, port closed. V4-M3 gate passed; waiting for approval.
+- 2026-11-06: User approved V4-M3. Committed V4-M3 (cat-life.png original kept in the inbox).

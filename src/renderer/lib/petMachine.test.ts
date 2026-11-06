@@ -146,3 +146,21 @@ describe('treats (requirement-v4.md FR-52)', () => {
     }
   })
 })
+
+describe('v4 life reactions (requirement-v4.md section 10)', () => {
+  it('sad reminder, morning stretch and night yawn start from idle', () => {
+    expect(transition('idle', 'sadReminder')).toBe('sad')
+    expect(transition('idle', 'morningStretch')).toBe('stretch')
+    expect(transition('idle', 'nightYawn')).toBe('yawn')
+    expect(transition('walk', 'sadReminder')).toBeNull()
+    expect(transition('sleep', 'nightYawn')).toBeNull()
+  })
+
+  it('return to idle when the clip ends; a drag can interrupt', () => {
+    for (const state of ['sad', 'stretch', 'yawn'] as const) {
+      expect(transition(state, 'clipFinished')).toBe('idle')
+      expect(transition(state, 'dragStart')).toBe('drag')
+      expect(transition(state, 'feed')).toBeNull()
+    }
+  })
+})

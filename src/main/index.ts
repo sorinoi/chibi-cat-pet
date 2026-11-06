@@ -20,10 +20,9 @@ import { focusNotice, focusReaction, focusStatus } from '../shared/focusText'
 import type { TimerEvent } from '../shared/focusTimer'
 import { shouldShowHungerNotice } from '../shared/hungerNotice'
 import { CARE } from '../shared/careConfig'
+import { sleepAfterSeconds } from '../shared/timeOfDay'
 import { DEFAULT_SETTINGS } from '../shared/settings'
 import { languageForLocales, stringsFor, type Strings } from '../shared/strings'
-
-const SECONDS_PER_MINUTE = 60
 
 // Dev runs get their own data folder so they never touch the installed app's settings.
 // Must run before the single-instance lock, which lives in userData.
@@ -214,7 +213,8 @@ function start(): void {
   })
 
   const userIdle = watchUserIdle(
-    () => store.settings.sleepAfterMinutes * SECONDS_PER_MINUTE,
+    // FR-59 (requirement-v4.md): sleepier at night.
+    () => sleepAfterSeconds(store.settings.sleepAfterMinutes, Date.now()),
     (idle) => {
       care.setAsleep(idle)
       sendToPet(IpcChannel.SystemUserIdle, idle)

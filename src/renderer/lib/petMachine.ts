@@ -39,6 +39,13 @@ export type PetEvent =
   | 'cueFocusDone'
   | 'cueBreakOver'
   | 'cueLongBreak'
+  // v4 life (requirement-v4.md section 10)
+  /** The wander timer chose the sad animation (FR-55). */
+  | 'sadReminder'
+  /** First wake of the morning (FR-58). */
+  | 'morningStretch'
+  /** A yawn at night instead of a wander (FR-59). */
+  | 'nightYawn'
 
 /** Reactions that end in idle; a drag can still interrupt them. */
 const careReaction = { clipFinished: 'idle', dragStart: 'drag' } as const
@@ -68,6 +75,9 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
     dragStart: 'drag',
     wander: 'walk',
     hungryReminder: 'hungry',
+    sadReminder: 'sad',
+    morningStretch: 'stretch',
+    nightYawn: 'yawn',
     sleep: 'sleep',
     ...careActions,
     ...focusCues
@@ -109,7 +119,12 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
   focusStart: careReaction,
   focusDone: careReaction,
   breakOver: careReaction,
-  longBreak: careReaction
+  longBreak: careReaction,
+  // v4 life reactions (requirement-v4.md section 10); `look` gets its own rules in V4-M4.
+  sad: careReaction,
+  stretch: careReaction,
+  yawn: careReaction,
+  look: careReaction
 }
 
 /** Returns the next state, or null when the event does not apply in this state. */

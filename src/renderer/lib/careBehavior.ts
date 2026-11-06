@@ -5,19 +5,36 @@ import type { Mood } from '../../shared/needs'
 /** null when there is no adopted pet: v1 behavior. */
 export type CareMood = Mood | null
 
-/** What the wander timer does when it fires. */
+/** What the model can play and the time of day, for the v4 idle choices (FR-55, FR-59). */
+export interface IdleExtras {
+  /** The model has a `sad` clip (without it the sad mood only wanders less). */
+  canSad?: boolean
+  /** It is night and the model has a `yawn` clip. */
+  nightYawn?: boolean
+  /** 0..1, for the yawn chance. */
+  random?: number
+}
+
+export type IdleAction = 'hungry' | 'sad' | 'yawn' | 'wander'
+
+/**
+ * What the wander timer does when it fires: a mood reminder (hungry, or sad when the art
+ * exists) at most every 10 minutes, a yawn now and then at night, otherwise a wander.
+ * `lastReminderAt` is the last hungry or sad reminder.
+ */
 export function idleAction(
   mood: CareMood,
   now: number,
-  lastHungryReminderAt: number | null,
-  c: CareConfig = CARE
-): 'hungry' | 'wander' {
-  if (mood !== 'hungry') return 'wander'
-  const due =
-    lastHungryReminderAt === null ||
-    now < lastHungryReminderAt ||
-    now - lastHungryReminderAt >= c.behavior.hungryReminderCooldownMs
-  return due ? 'hungry' : 'wander'
+  lastReminderAt: number | null,
+  c: CareConfig = CARE,
+  extras: IdleExtras = {}
+): IdleAction {
+  const due = (cooldownMs: number): boolean =>
+    lastReminderAt === null || now < lastReminderAt || now - lastReminderAt >= cooldownMs
+  if (mood === 'hungry' && due(c.behavior.hungryReminderCooldownMs)) return 'hungry'
+  if (mood === 'sad' && extras.canSad && due(c.behavior.sadReminderCooldownMs)) return 'sad'
+  if (extras.nightYawn && (extras.random ?? 1) < c.day.nightYawnChance) return 'yawn'
+  return 'wander'
 }
 
 /** Delay before the next wander, in ms. A sad pet wanders less often. */

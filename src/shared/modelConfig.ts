@@ -10,7 +10,11 @@ export type CareClip = (typeof CARE_CLIPS)[number]
 export const FOCUS_CLIPS = ['focusStart', 'focusDone', 'breakOver', 'longBreak'] as const
 export type FocusClip = (typeof FOCUS_CLIPS)[number]
 
-export const CLIP_NAMES = [...STANDARD_CLIPS, ...CARE_CLIPS, ...FOCUS_CLIPS] as const
+/** Optional v4 life clips (requirement-v4.md section 9). */
+export const LIFE_CLIPS = ['sad', 'look', 'stretch', 'yawn'] as const
+export type LifeClip = (typeof LIFE_CLIPS)[number]
+
+export const CLIP_NAMES = [...STANDARD_CLIPS, ...CARE_CLIPS, ...FOCUS_CLIPS, ...LIFE_CLIPS] as const
 export type ClipName = (typeof CLIP_NAMES)[number]
 
 /** What to play instead when a model lacks a clip (section 5 fallbacks). */
@@ -19,7 +23,9 @@ const CLIP_FALLBACK: Partial<Record<ClipName, ClipName>> = {
   focusDone: 'happy',
   happy: 'click',
   breakOver: 'click',
-  longBreak: 'focusDone'
+  longBreak: 'focusDone',
+  // FR-58: the morning stretch falls back to happy.
+  stretch: 'happy'
 }
 
 /** The clip the model can actually play for `name`, following fallbacks; idle as a last resort. */

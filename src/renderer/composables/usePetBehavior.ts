@@ -6,6 +6,9 @@ import type { PetScene } from './usePetScene'
 import type { ClipName } from '../../shared/modelConfig'
 import type { CareRequest, CareView } from '../../shared/ipc'
 import type { FocusReaction } from '../../shared/focusText'
+import { ACTIVE_MODEL } from '../../shared/activeModel'
+import { localDate } from '../../shared/focusTimer'
+import { isNight, morningStretchDue } from '../../shared/timeOfDay'
 
 export interface PetBehavior {
   state: Readonly<Ref<PetState>>
@@ -26,6 +29,9 @@ const FOCUS_CUE: Record<FocusReaction, PetEvent> = {
   longBreak: 'cueLongBreak'
 }
 
+/** Optional clips play only when the model has them (no fallback for sad and yawn). */
+const hasClip = (clip: ClipName): boolean => ACTIVE_MODEL.clips[clip] !== undefined
+
 const randomBetween = (min: number, max: number): number => min + Math.random() * (max - min)
 
 /**
@@ -41,7 +47,10 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   let wanderTimer: ReturnType<typeof setTimeout> | null = null
   let userIdle = false
   let mood: CareMood = null
-  let lastHungryReminderAt: number | null = null
+  /** Last hungry or sad reminder (section 5, requirement-v4.md FR-55). */
+  let lastMoodReminderAt: number | null = null
+  /** Date of the last morning stretch, YYYY-MM-DD (FR-58). */
+  let lastStretchDate: string | null = null
   /** The pending care:act request for a Feed or treat from a menu (main decides the reaction). */
   let careInFlight: ReturnType<typeof api.careAct> | null = null
   /** A focus reaction that arrived during another reaction; plays on the next idle. */
@@ -61,12 +70,16 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
       return
     }
     const now = Date.now()
-    if (idleAction(mood, now, lastHungryReminderAt) === 'hungry') {
-      lastHungryReminderAt = now
-      dispatch('hungryReminder')
-    } else {
-      dispatch('wander')
-    }
+    const action = idleAction(mood, now, lastMoodReminderAt, undefined, {
+      canSad: hasClip('sad'),
+      nightYawn: isNight(now) && hasClip('yawn'),
+      random: Math.random()
+    })
+    if (action === 'hungry' || action === 'sad') lastMoodReminderAt = now
+    if (action === 'hungry') dispatch('hungryReminder')
+    else if (action === 'sad') dispatch('sadReminder')
+    else if (action === 'yawn') dispatch('nightYawn')
+    else dispatch('wander')
   }
 
   function scheduleWander(): void {
@@ -195,6 +208,15 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     }
   }
 
+  /** FR-58: the first wake of a morning (app start or the user is back) plays a stretch. */
+  function maybeMorningStretch(): void {
+    const now = Date.now()
+    if (mood === null || userIdle || document.hidden || state.value !== 'idle') return
+    if (!morningStretchDue(now, lastStretchDate)) return
+    lastStretchDate = localDate(now)
+    dispatch('morningStretch')
+  }
+
   function onCareRequest(request: CareRequest): void {
     if (request === 'treat') void treatNow()
     else if (request === 'feed') void feedNow()
@@ -210,10 +232,14 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
       api.onUserIdleChanged((idle) => {
         userIdle = idle
         dispatch(idle ? 'sleep' : 'wake')
+        if (!idle) maybeMorningStretch()
       }),
       api.onCareState((view) => {
+        const first = mood === null && view !== null
         careView.value = view
         mood = view ? view.mood : null
+        // The app just started with a cat (or one was adopted): maybe a morning stretch.
+        if (first) maybeMorningStretch()
       }),
       api.onCareRequest(onCareRequest),
       api.onFocusReaction(onFocusReaction)

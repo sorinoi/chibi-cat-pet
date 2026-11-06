@@ -43,7 +43,23 @@ export const CARE = {
     /** A sad pet waits this many times longer between wanders. */
     sadWanderDelayMultiplier: 2,
     /** Chance that a click on a happy pet plays `happy` instead of `click`. */
-    happyClickChance: 0.5
+    happyClickChance: 0.5,
+    /** requirement-v4.md FR-55: the sad animation replaces a wander at most this often. */
+    sadReminderCooldownMs: 10 * 60_000
+  },
+
+  /** Time-of-day touches (requirement-v4.md FR-58, FR-59). Hours are local, 0-23. */
+  day: {
+    /** The first wake in this window plays the morning stretch. */
+    morningFromHour: 5,
+    morningToHour: 11,
+    /** In this window (it crosses midnight) the cat gets sleepy sooner and sometimes yawns. */
+    nightFromHour: 23,
+    nightToHour: 5,
+    /** At night the cat sleeps after this share of the usual idle time (FR-07 setting). */
+    nightSleepFactor: 0.5,
+    /** At night, chance that a wander becomes a yawn instead. */
+    nightYawnChance: 0.3
   },
 
   /** FR-18 stroke detection: back-and-forth over the cat without pressing. */

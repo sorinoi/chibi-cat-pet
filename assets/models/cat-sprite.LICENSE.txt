@@ -19,3 +19,9 @@ Made from the user's "Kawaii Cat Focus and Break Sprite Sheet.png" (also generat
 claude.ai) with `npm run sprite:regrid -- <in> <out> 0.8`: hazy semi-transparent background removed
 (alpha ramp 205..240), each frame cut out by its own art, scaled to 0.8 to match the care sheet's
 cat, head-anchored and placed with the feet on one line. Pixels are only moved and resampled.
+
+cat-life.png (v4): 8 x 4 grid of 224 x 224 px cells, feet at y = 210.
+Rows: 1 sad, 2 look, 3 stretch, 4 yawn.
+Made from the user's cat-life.png (generated with Claude, claude.ai) with
+`npm run sprite:regrid -- <in> <out> 0.72` (271.5 px cells, near-opaque cat, faint shadow;
+scale 0.72 matches the other sheets). Pixels are only moved and resampled.
