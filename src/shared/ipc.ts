@@ -59,6 +59,10 @@ export const IpcChannel = {
   FocusGet: 'focus:get',
   /** main -> pet and settings: FocusView, after every change and once a minute while running. */
   FocusState: 'focus:state',
+  /** pet -> main (send): boolean, start or stop cursor updates (requirement-v4.md FR-57). */
+  PetLookWatch: 'pet:look-watch',
+  /** main -> pet: CursorNear, while watching and only when the cursor moved. */
+  PetCursor: 'pet:cursor',
   /** main -> pet: FocusReaction to play at a phase change (FR-38). */
   FocusReaction: 'focus:reaction'
 } as const
@@ -96,6 +100,14 @@ export interface CareActResult {
   refused: boolean
   /** treat only: the cat was already full (it plays happy instead of eat). */
   full?: boolean
+}
+
+/** Cursor position relative to the pet window, plus the window size, in DIP (FR-56). */
+export interface CursorNear {
+  x: number
+  y: number
+  width: number
+  height: number
 }
 
 export interface WalkEnded {
@@ -136,6 +148,10 @@ export interface PetApi extends LanguageApi {
   onFocusState(listener: (view: FocusView) => void): () => void
   /** Returns an unsubscribe function. */
   onFocusReaction(listener: (reaction: FocusReaction) => void): () => void
+  /** FR-57: ask main to send cursor positions (only while the cat could look). */
+  setLookWatch(on: boolean): void
+  /** Returns an unsubscribe function. */
+  onCursor(listener: (position: CursorNear) => void): () => void
 }
 
 export interface SettingsSnapshot {

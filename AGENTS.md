@@ -11,7 +11,7 @@ Communicate with the user in Thai, casual and friendly, no rude or vulgar langua
 
 - v1: one sprite cat on a transparent, frameless, always-on-top window. Click, drag, drop, idle/walk/sleep behaviors, system tray menu, settings, NSIS installer.
 - v2.0 (done and accepted 2026-11-06): pet-care system, see `requirement-v2.md`. Only ONE pet at a time. Adopting a different pet means starting over and wiping the old pet's data immediately.
-- v4 (approved 2026-11-06, not started): hungry notification, focus history, optional focus treats, sad/look/stretch/yawn clips (art: cat-life.png from the user), 8-hour memory run; see `requirement-v4.md`.
+- v4 (in progress; V4-M1..M4 approved, V4-M5 left): hungry notification, focus history, optional focus treats, sad/look/stretch/yawn clips (art: cat-life.png from the user), 8-hour memory run; see `requirement-v4.md`.
 - v3.0 (done and accepted 2026-11-06): Pomodoro focus timer + Thai/English UI, see `requirement-v3.md`. The timer is not linked to pet care; the cat keeps living as usual and only reacts at phase changes.
 - Out of scope: macOS/Linux, multiple pets at once, cloud sync/accounts, shop/marketplace/plugins.
 - Requirement IDs (FR-xx, NFR-xx) come from the requirement doc. Reference them in commits and PRs when relevant.
@@ -54,12 +54,13 @@ Update this section whenever scripts change. Run `typecheck`, `lint` and `test` 
 ## Project layout
 
 ```
-src/main/        Electron main process: windows, tray, settings store, care engine, auto-start, single instance, IPC handlers
+src/main/        Electron main process: windows, tray, settings store, care and focus engines, cursor watcher, auto-start, single instance, IPC handlers
 src/preload/     one contextBridge API per window, each tiny and typed: index (pet), settings, adopt
 src/renderer/    Vue pages: index.html (pet: sprite scene, behavior state machine), settings.html, adopt.html
-src/shared/      types and pure logic used by main and renderer (IPC, settings, model config, needs math, care text)
+src/shared/      types and pure logic used by main and renderer (IPC, settings, model config, needs math, care text, focus timer, strings EN/TH, time of day, hunger notice)
 assets/models/   sprite sheets .png + one JSON model config + license note
-assets/sprites-inbox/  the user's original art, before `sprite:prepare`
+assets/sprites-inbox/  the user's original art, before `sprite:prepare` or `sprite:regrid`
+scripts/         icon generator, sprite prep and regrid tools, README image renderer (docs/images)
 ```
 
 ## Hard rules
@@ -84,8 +85,9 @@ Performance (NFR-01 to NFR-05)
 
 - TypeScript strict, no `any` without a comment explaining why.
 - Vue: Composition API + `<script setup lang="ts">`. Logic that is not UI goes into composables under `src/renderer/composables/`.
-- Pet behavior is an explicit state machine (src/renderer/lib/petMachine.ts): v1 idle, walk, click, drag, land, sleep; v2 eat, happy, hungry, pet, welcome. No ad-hoc boolean flags.
+- Pet behavior is an explicit state machine (src/renderer/lib/petMachine.ts): v1 idle, walk, click, drag, land, sleep; v2 eat, happy, hungry, pet, welcome; v3 focusStart, focusDone, breakOver, longBreak; v4 sad, stretch, yawn, look. No ad-hoc boolean flags.
 - v3 focus timer: main owns it (focusEngine); menus call it directly (FR-35). Main pushes focus:state to the pet and settings windows and focus:reaction to the pet; the pet renderer decides whether the cat can react (skips while hidden, dragged or without a pet; queues one during another reaction). Missing focus clips fall back via resolveClip() in modelConfig.ts.
+- v4 look at the mouse: the pet asks main for cursor updates (`pet:look-watch`) only while it is idle or looking, visible, adopted and the model has `look`; main (cursorWatcher.ts) polls at most every CARE.look.pollMs and sends `pet:cursor` only when the position changed.
 - v2 care actions go through the renderer first (it checks the state machine), then main applies them via `care:act`; menus only send `care:request`.
 - No magic numbers for timings, sizes or fps. Put them in a config module or the settings store.
 - Models and animation clip names come from config, not hardcoded in components. Standard clip names: `idle`, `walk`, `click`, `drag`, `land`, `sleep`; optional v2 care clips: `eat`, `happy`, `hungry`, `pet`; optional v3 focus clips: `focusStart`, `focusDone`, `breakOver`, `longBreak` (fall back to click/happy until their art exists); optional v4 life clips: `sad`, `look`, `stretch` (falls back to happy), `yawn` (sad and yawn are skipped without art).
@@ -101,7 +103,7 @@ Performance (NFR-01 to NFR-05)
   - `cat-sprite.png` (sheet `main`): 8 x 6 cells of 192 px, feet at y = 177; v1 clips.
   - `cat-care.png` (sheet `care`): 8 x 4 cells of 224 px, feet at y = 210; v2 clips eat, happy, hungry, pet. Made from the inbox original with `sprite:prepare`.
   - `cat-focus.png` (sheet `focus`): 8 x 4 cells of 224 px, feet at y = 210; v3 clips focusStart, focusDone, longBreak, breakOver. The inbox original was off-spec (hazy background, 271.5 px cells, frames crossing cells), so it went through `sprite:regrid` (scale 0.8) instead.
-  - `cat-life.png` (sheet `life`): 8 x 4 cells of 224 px, feet at y = 210; v4 clips sad, look (row 2, wired in V4-M4), stretch, yawn. Made with `sprite:regrid` at scale 0.72.
+  - `cat-life.png` (sheet `life`): 8 x 4 cells of 224 px, feet at y = 210; v4 clips sad, look (frames 0-5, holds 4-5), stretch, yawn. Made with `sprite:regrid` at scale 0.72.
 - Sheet rules (requirement.md section 9): real alpha, regular grid, one clip per row from column 0, feet at the same height (anchor), walk frames face one way (`walkFacing`). One model can use several sheets; each clip names its sheet.
 - Required clips: `idle` (loop), `walk` (loop), `click` (once), `drag` (loop, intro via `loopFrom`), `land` (once), `sleep` (loop, intro via `loopFrom`).
 - The active model is set in src/shared/activeModel.ts. `modelFrame()` fits every sheet with all feet anchors on one point; main sizes the pet window from that frame x displayScale x pet size, rounded up to a 4 DIP grid (fractional pixel sizes made Windows grow the window).

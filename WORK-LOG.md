@@ -4,12 +4,12 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v4 in progress. V4-M1..M3 done and approved; V4-M4 (look at the mouse) not started.
-- Next step: when approved, V4-M4: `look` clip from cat-life.png row 2 (hold the looking frames while the cursor is near), cursor polling in main at most 4 Hz only while idle and visible, mirror for the left side. V4-M3 committed.
-- Git (check `git status` and `git log` first; this line can lag): main pushed to origin (github.com/sorinoi/chibi-cat-pet) with the v3.0 release commit. Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea, v3.0.0 -> the release 3.0.0 commit. Push and tag only when the user asks.
-- Machine state: Desktop Pet 3.0.0 installed per-user over 2.0.0 and running with the user's cat sOrinOi; data in %APPDATA%\desktop-pet (settings.json without a language yet, so English from Windows until changed; pet.json; focus.json appears after the first completed focus). The user's old dev run (npm run dev, PID 25868) may still be open. dist/ has the 1.0.0, 2.0.0 and 3.0.0 installers.
-- Waiting on the user: nothing.
-- Open items: real 8 h NFR-05 test (requirement.md section 13); Windows 10 and multi-monitor checks need hardware; v2 open questions (requirement-v2.md section 15) use the written defaults until decided.
+- Current phase: v4 in progress. V4-M1..M4 done and approved; V4-M5 (release 4.0) not started.
+- Next step: when the user says go, V4-M5: README for v4 (+ readme:art for the new clips), NFR-01/21 measurement, version 4.0.0, installer over 3.0.0, the real 8-hour memory run on the installed app (NFR-22), acceptance criteria in requirement-v4.md section 12.
+- Git (check `git status` and `git log` first; this line can lag): local main is 5 commits ahead of origin (v4 docs, V4-M1..M4; not pushed). origin/main = 3f00e6b (release 3.0.0). Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea, v3.0.0 -> 3f00e6b. Remote: github.com/sorinoi/chibi-cat-pet. Push and tag only when the user asks.
+- Machine state: Desktop Pet 3.0.0 is installed per-user (data in %APPDATA%\desktop-pet: settings.json, pet.json with the user's cat sOrinOi, focus.json); it was not running at the last check. The user's own `npm run dev` run (electron.exe, PID 34732 at the last check) holds the dev lock and uses %APPDATA%\desktop-pet-dev (the user's dev cat in pet.json, plus focus.json and settings.json): do not kill it or overwrite that data; test with an isolated --user-data-dir instead (see How to test). dist/ has the 1.0.0, 2.0.0 and 3.0.0 installers.
+- Waiting on the user: go for V4-M5.
+- Open items: the real 8 h memory run (NFR-05, now NFR-22) is planned for V4-M5; the morning stretch and the shorter night sleep were only unit tested (need a real morning / real idle time); Windows 10 and multi-monitor checks need hardware; open questions in requirement-v2.md section 15, requirement-v3.md section 13 and requirement-v4.md section 13 use the written defaults.
 - Testing rule (user, 2026-11-06): do not inject keyboard or move the real mouse system-wide. Use CDP events into the app's own pages and messages posted to the app's own windows; leave real-input checks (tray, real clicks, fullscreen) to the user.
 
 ## How to test (for a new session)
@@ -26,6 +26,12 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - Care test data: the engine reads pet.json only at startup, so write a test pet.json into %APPDATA%\desktop-pet-dev before launching ({version 1, name, species "cat", adoptedAt, needs {hunger, happiness}, updatedAt, counters}); move updatedAt back to simulate time closed. Delete it afterwards.
 - Strokes: send the mouse moves from one CDP connection about 25 ms apart; one process per move is too slow to count as a stroke.
 - Startup timing: performance mark `pet:first-frame` vs the process StartTime.
+- Isolated test runs (do not disturb the user's own dev run or data): the app appends `-dev` to userData when unpacked, so `--user-data-dir=<scratch>/ud` makes it use `<scratch>/ud-dev` and its own single-instance lock. Production build: `node_modules/electron/dist/electron.exe . --user-data-dir=<scratch>/ud --remote-debugging-port=9224 [--settings]`. Dev build with the debug hook: `npx electron-vite dev --remoteDebuggingPort 9223 -- --user-data-dir=<scratch>/ud`. Write pet.json/settings.json into `<scratch>/ud-dev` first. Stop it by its own PID tree only (match the command line; it may use forward slashes), then delete the folder.
+- Dev hook additions: `__petDebug.cursor({x, y, width, height})` feeds a cursor position as if main sent it (looking without moving the real mouse); `lookWatching()` says whether main is polling.
+- pet.json now also has `treats` (0..5); focus.json is version 2 `{ version: 2, days: { "YYYY-MM-DD": count } }` (version 1 is upgraded). Settings keys added in v3/v4: language, focusMinutes, shortBreakMinutes, longBreakMinutes, longBreakEvery, autoStartBreaks, autoStartFocus, focusNotifications, hungerReminder, focusTreats.
+- Cat right-click menu order (for keys posted to the app's own menu window): Feed, Pet, [Give a treat (N) when on and stocked], Focus > (status line, then the actions that apply: Start focus / Pause, Skip, Stop / Resume, Skip, Stop / Start break, Skip break, Stop), Hide, Settings, Quit. Down skips the disabled status line.
+- Windows notifications cannot be seen from here: leave them to a hand check. Time-of-day behavior uses the real clock: test the rules in timeOfDay.test.ts, and the reactions with `__petDebug.dispatch('morningStretch' | 'nightYawn')`.
+- Settings window is two columns, 820 x 730 DIP; check `document.documentElement.scrollHeight === window.innerHeight` after adding rows.
 
 ## Task status
 
@@ -61,7 +67,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V4-M1 | Hungry notification, focus history | done | 199 tests; settings checked in the app; hungry notification checked by hand |
 | V4-M2 | Focus treats | done | 209 tests; earn and give checked in the app |
 | V4-M3 | cat-life.png art, sad, morning, night | done | 218 tests; sad, yawn, stretch checked in the app |
-| V4-M4 | Look at the mouse | todo | art is in (row 2 of cat-life.png) |
+| V4-M4 | Look at the mouse | done | 224 tests; fake cursor in the app; real mouse checked by the user |
 | V4-M5 | Polish, 8 h run, release v4.0 | todo | |
 
 ## Phase approvals
@@ -86,6 +92,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V4-M1 | 2026-11-06 | yes, 2026-11-06 (user checked the hungry notification by hand) |
 | V4-M2 | 2026-11-06 | yes, 2026-11-06 |
 | V4-M3 | 2026-11-06 | yes, 2026-11-06 |
+| V4-M4 | 2026-11-06 | yes, 2026-11-06 (user checked with the real mouse) |
 
 ## Log
 
@@ -225,3 +232,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: V4-M3 code: assets/models/cat-life.png (sprite:regrid 0.72, nothing clipped), sheet life + clips sad/stretch/yawn (look waits for V4-M4); LIFE_CLIPS, fallback stretch -> happy; careConfig.behavior.sadReminderCooldownMs, careConfig.day (morning 5-11, night 23-5, night sleep x0.5, yawn chance 0.3); src/shared/timeOfDay.ts (windows across midnight, morningStretchDue, sleepAfterSeconds; tests); idleAction extras (sad reminder only with the clip, shared 10 min cooldown; night yawn; tests); state machine sadReminder/morningStretch/nightYawn from idle (tests); usePetBehavior: wander timer picks hungry/sad/yawn/wander, morning stretch on the first wake or first care state of a morning (once per day per run); main idle threshold uses sleepAfterSeconds (half at night). License note and CLAUDE.md/AGENTS.md updated. Tests 218.
 - 2026-11-06: App check (electron-vite dev with --user-data-dir in the scratchpad, because the user's own dev run PID 34732 holds the normal dev lock; CDP + __petDebug): sad cat (happiness 20) -> wanderNow plays sad then idle; second wanderNow inside the cooldown walks; at 23:xx wanderNow gave yawn on the first try; dispatch morningStretch plays the stretch clip; screenshots of sad, stretch, yawn look right. Not checked live: the real morning trigger and the shorter night sleep (time rules unit tested; needs a morning / real idle time). Test copy stopped by PID, data removed, port closed. V4-M3 gate passed; waiting for approval.
 - 2026-11-06: User approved V4-M3. Committed V4-M3 (cat-life.png original kept in the inbox).
+- 2026-11-06: User said go: started V4-M4 (look at the mouse, FR-56/57, NFR-21).
+- 2026-11-06: V4-M4 code: careConfig.look (radius 200 DIP, poll 250 ms); look clip (cat-life row 2, frames 0-5, loop from 4 so the steady look holds); src/renderer/lib/lookLogic.ts lookSide (distance to the window box, side by the window centre, none over the cat; tests); state machine cursorNear (idle -> look), cursorAway (look -> idle); a looking cat still reacts to click, drag, sleep, care and focus cues; no wander while looking (tests); src/main/cursorWatcher.ts polls screen.getCursorScreenPoint() only while the pet asked and the window is visible, sends pet:cursor only on change; pet asks via pet:look-watch only while idle/look, adopted, visible and the model has look. Dev-only hooks __petDebug.cursor() and lookWatching(). Tests 224.
+- 2026-11-06: App check (electron-vite dev, --user-data-dir in the scratchpad; the user's own dev run PID 34732 left alone; fake cursor positions through the dev hook, the real mouse was not moved): idle and watching; cursor 150 px right -> look, facing right, holds frame 4; cursor left -> facing left; 400 px away -> idle; over the cat -> no look; asleep -> watching off; awake -> on. Real polling: 0 updates while asleep, 1 right after waking (then only on movement). Test copy stopped by PID, data removed, port closed. Not checked: the real mouse (needs a hand check). V4-M4 gate passed; waiting for approval.
+- 2026-11-06: Handoff check (user asked): corrected Git (4 local commits not pushed + uncommitted V4-M4), machine state (dev run PID 34732, isolated test runs), waiting items and open items; added test know-how for isolated runs, new dev hooks, data formats, menu order, notifications, time-of-day and settings size. CLAUDE.md/AGENTS.md: v4 status, layout and state list brought up to date.
+- 2026-11-06: User checked looking with the real mouse and approved V4-M4. Committed V4-M4 and the handoff doc fixes.

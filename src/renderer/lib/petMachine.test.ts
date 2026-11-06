@@ -164,3 +164,27 @@ describe('v4 life reactions (requirement-v4.md section 10)', () => {
     }
   })
 })
+
+describe('look at the mouse (requirement-v4.md FR-56)', () => {
+  it('starts only from idle and ends when the cursor goes away', () => {
+    expect(transition('idle', 'cursorNear')).toBe('look')
+    expect(transition('walk', 'cursorNear')).toBeNull()
+    expect(transition('sleep', 'cursorNear')).toBeNull()
+    expect(transition('eat', 'cursorNear')).toBeNull()
+    expect(transition('look', 'cursorAway')).toBe('idle')
+  })
+
+  it('a looking cat still reacts like a resting one', () => {
+    expect(transition('look', 'click')).toBe('click')
+    expect(transition('look', 'dragStart')).toBe('drag')
+    expect(transition('look', 'feed')).toBe('eat')
+    expect(transition('look', 'pet')).toBe('pet')
+    expect(transition('look', 'cueFocusDone')).toBe('focusDone')
+    expect(transition('look', 'sleep')).toBe('sleep')
+  })
+
+  it('the look clip loops, so it never finishes by itself', () => {
+    expect(transition('look', 'clipFinished')).toBeNull()
+    expect(transition('look', 'wander')).toBeNull()
+  })
+})

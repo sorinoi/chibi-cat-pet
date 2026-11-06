@@ -1,4 +1,4 @@
-import type { AdoptApi, PetApi, SettingsApi } from '../shared/ipc'
+import type { AdoptApi, CursorNear, PetApi, SettingsApi } from '../shared/ipc'
 import type { PetEvent, PetState } from './lib/petMachine'
 import type { ClipName } from '../shared/modelConfig'
 
@@ -11,6 +11,10 @@ interface PetDebug {
   mood(): string | null
   wanderNow(): void
   setUserIdle(idle: boolean): void
+  /** Feed a cursor position as if main sent it (look at the mouse). */
+  cursor(position: CursorNear): void
+  /** Whether the pet asked main for cursor updates. */
+  lookWatching(): boolean
 }
 
 declare global {

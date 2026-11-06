@@ -9,6 +9,8 @@ import type { FocusReaction } from '../../shared/focusText'
 import { ACTIVE_MODEL } from '../../shared/activeModel'
 import { localDate } from '../../shared/focusTimer'
 import { isNight, morningStretchDue } from '../../shared/timeOfDay'
+import { lookSide } from '../lib/lookLogic'
+import type { CursorNear } from '../../shared/ipc'
 
 export interface PetBehavior {
   state: Readonly<Ref<PetState>>
@@ -51,6 +53,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   let lastMoodReminderAt: number | null = null
   /** Date of the last morning stretch, YYYY-MM-DD (FR-58). */
   let lastStretchDate: string | null = null
+  /** Whether main is sending cursor updates (FR-57). */
+  let lookWatching = false
   /** The pending care:act request for a Feed or treat from a menu (main decides the reaction). */
   let careInFlight: ReturnType<typeof api.careAct> | null = null
   /** A focus reaction that arrived during another reaction; plays on the next idle. */
@@ -148,6 +152,37 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     state.value = to
     exit(from, to)
     enter(to)
+    syncLookWatch()
+  }
+
+  /**
+   * FR-57 / NFR-21: cursor updates only while the cat could look: a cat exists, the
+   * model has the `look` clip, the window is visible and the cat is idle or looking.
+   */
+  function syncLookWatch(): void {
+    const want =
+      hasClip('look') &&
+      mood !== null &&
+      !document.hidden &&
+      (state.value === 'idle' || state.value === 'look')
+    if (want === lookWatching) return
+    lookWatching = want
+    api.setLookWatch(want)
+  }
+
+  /** FR-56: look toward a nearby cursor, mirrored for the left side; stop when it leaves. */
+  function onCursor(position: CursorNear): void {
+    if (state.value !== 'idle' && state.value !== 'look') return
+    const side = lookSide({ ...position, overPet: scene.hitTest(position.x, position.y) })
+    if (state.value === 'idle') {
+      if (!side) return
+      scene.setFacing(side)
+      dispatch('cursorNear')
+    } else if (!side) {
+      dispatch('cursorAway')
+    } else {
+      scene.setFacing(side)
+    }
   }
 
   scene.onClipFinished((clip) => {
@@ -240,10 +275,15 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
         mood = view ? view.mood : null
         // The app just started with a cat (or one was adopted): maybe a morning stretch.
         if (first) maybeMorningStretch()
+        syncLookWatch()
       }),
       api.onCareRequest(onCareRequest),
-      api.onFocusReaction(onFocusReaction)
+      api.onFocusReaction(onFocusReaction),
+      api.onCursor(onCursor)
     )
+    // Hidden from the tray or by a fullscreen app: stop cursor updates (NFR-21).
+    document.addEventListener('visibilitychange', syncLookWatch)
+    unsubscribers.push(() => document.removeEventListener('visibilitychange', syncLookWatch))
     enter(state.value)
 
     if (import.meta.env.DEV) {
@@ -262,7 +302,10 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
         // Fire the wander timer now (walk or hungry reminder, as the mood decides).
         wanderNow: () => {
           if (state.value === 'idle') onWanderTimer()
-        }
+        },
+        // Look at the mouse without moving the real cursor.
+        cursor: onCursor,
+        lookWatching: () => lookWatching
       }
     }
   })
@@ -272,6 +315,7 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     unsubscribers.forEach((fn) => fn())
     if (state.value === 'walk') api.stopWalk()
     if (state.value === 'drag') api.endDrag()
+    if (lookWatching) api.setLookWatch(false)
     if (import.meta.env.DEV) delete window.__petDebug
   })
 

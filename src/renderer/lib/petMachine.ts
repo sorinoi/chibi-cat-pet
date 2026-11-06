@@ -46,6 +46,10 @@ export type PetEvent =
   | 'morningStretch'
   /** A yawn at night instead of a wander (FR-59). */
   | 'nightYawn'
+  /** The cursor came near the cat (FR-56). */
+  | 'cursorNear'
+  /** The cursor left the area around the cat. */
+  | 'cursorAway'
 
 /** Reactions that end in idle; a drag can still interrupt them. */
 const careReaction = { clipFinished: 'idle', dragStart: 'drag' } as const
@@ -78,6 +82,7 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
     sadReminder: 'sad',
     morningStretch: 'stretch',
     nightYawn: 'yawn',
+    cursorNear: 'look',
     sleep: 'sleep',
     ...careActions,
     ...focusCues
@@ -124,7 +129,17 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
   sad: careReaction,
   stretch: careReaction,
   yawn: careReaction,
-  look: careReaction
+  // FR-56: looking is a calm idle. Everything a resting cat reacts to still works; the
+  // wander timer does not run, so the cat keeps looking until the cursor goes away.
+  look: {
+    cursorAway: 'idle',
+    click: 'click',
+    clickHappy: 'happy',
+    dragStart: 'drag',
+    sleep: 'sleep',
+    ...careActions,
+    ...focusCues
+  }
 }
 
 /** Returns the next state, or null when the event does not apply in this state. */

@@ -35,6 +35,8 @@ export interface IpcContext {
   care: CareEngine
   focus: FocusEngine
   showContextMenu(): void
+  /** FR-57: start or stop cursor updates for the pet. */
+  setLookWatch(on: boolean): void
   getAdoptWindow(): BrowserWindow | null
   /** Adoption, rename and re-adoption flows (they touch several windows, so main wires them). */
   careUi: CareUi
@@ -73,6 +75,9 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
   })
   ipcMain.on(IpcChannel.PetWalkStop, (event) => {
     if (fromPet(event)) motion.stopWalk()
+  })
+  ipcMain.on(IpcChannel.PetLookWatch, (event, on: unknown) => {
+    if (fromPet(event) && typeof on === 'boolean') ctx.setLookWatch(on)
   })
   ipcMain.on(IpcChannel.PetShowContextMenu, (event) => {
     if (fromPet(event)) ctx.showContextMenu()
@@ -141,6 +146,7 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
       IpcChannel.PetDragEnd,
       IpcChannel.PetWalkStop,
       IpcChannel.PetShowContextMenu,
+      IpcChannel.PetLookWatch,
       IpcChannel.CareOpenAdopt
     ]) {
       ipcMain.removeAllListeners(channel)

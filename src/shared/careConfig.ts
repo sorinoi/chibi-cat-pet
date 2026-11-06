@@ -48,6 +48,14 @@ export const CARE = {
     sadReminderCooldownMs: 10 * 60_000
   },
 
+  /** Look at the mouse (requirement-v4.md FR-56, FR-57, NFR-21). */
+  look: {
+    /** The cat looks when the cursor is this close to its window (DIP), but not over it. */
+    radius: 200,
+    /** Cursor polling interval while the cat is idle and visible (4 Hz). */
+    pollMs: 250
+  },
+
   /** Time-of-day touches (requirement-v4.md FR-58, FR-59). Hours are local, 0-23. */
   day: {
     /** The first wake in this window plays the morning stretch. */

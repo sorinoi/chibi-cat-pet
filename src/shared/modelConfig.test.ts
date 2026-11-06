@@ -90,8 +90,7 @@ describe('parseModelConfig', () => {
 
   it('accepts the shipped cat model with every v1, v2 and v3 clip', () => {
     const config = parseModelConfig(shipped)
-    // `look` arrives with V4-M4.
-    expect(Object.keys(config.clips).sort()).toEqual(CLIP_NAMES.filter((c) => c !== 'look').sort())
+    expect(Object.keys(config.clips).sort()).toEqual([...CLIP_NAMES].sort())
     for (const clip of ['focusStart', 'focusDone', 'breakOver', 'longBreak'] as const) {
       expect(config.clips[clip]?.sheet).toBe('focus')
     }

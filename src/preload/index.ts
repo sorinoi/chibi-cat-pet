@@ -3,6 +3,7 @@ import {
   IpcChannel,
   type CareRequest,
   type CareView,
+  type CursorNear,
   type PetApi,
   type WalkEnded
 } from '../shared/ipc'
@@ -32,7 +33,9 @@ const petApi: PetApi = {
   onLanguageChanged: (listener) => subscribe<Language>(IpcChannel.AppLanguageChanged, listener),
   getFocus: () => ipcRenderer.invoke(IpcChannel.FocusGet),
   onFocusState: (listener) => subscribe<FocusView>(IpcChannel.FocusState, listener),
-  onFocusReaction: (listener) => subscribe<FocusReaction>(IpcChannel.FocusReaction, listener)
+  onFocusReaction: (listener) => subscribe<FocusReaction>(IpcChannel.FocusReaction, listener),
+  setLookWatch: (on) => ipcRenderer.send(IpcChannel.PetLookWatch, on),
+  onCursor: (listener) => subscribe<CursorNear>(IpcChannel.PetCursor, listener)
 }
 
 contextBridge.exposeInMainWorld('petApi', petApi)

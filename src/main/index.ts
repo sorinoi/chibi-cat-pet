@@ -5,6 +5,7 @@ import { createCareEngine, type CareSnapshot } from './careEngine'
 import { applySettings } from './applySettings'
 import { APP_USER_MODEL_ID, FOCUS_FILE, PET_FILE, RESOURCES, STORE } from './config'
 import { createFocusEngine, toFocusView } from './focusEngine'
+import { createCursorWatcher } from './cursorWatcher'
 import { registerIpcHandlers, type CareUi } from './ipc'
 import { createTray, showPetContextMenu } from './menus'
 import { createPetMotion } from './petMotion'
@@ -200,6 +201,13 @@ function start(): void {
     focus
   )
 
+  // FR-56/57: cursor updates for looking, only while the pet asks and is visible.
+  const cursor = createCursorWatcher(
+    win,
+    (position) => sendToPet(IpcChannel.PetCursor, position),
+    CARE.look.pollMs
+  )
+
   const unregister = registerIpcHandlers({
     petWindow: win,
     getSettingsWindow: settingsWindow.get,
@@ -209,7 +217,8 @@ function start(): void {
     care,
     careUi,
     focus,
-    showContextMenu: () => showPetContextMenu(win, actions)
+    showContextMenu: () => showPetContextMenu(win, actions),
+    setLookWatch: (on) => cursor.setWatching(on)
   })
 
   const userIdle = watchUserIdle(
@@ -297,6 +306,7 @@ function start(): void {
     care.dispose()
     powerMonitor.off('resume', onResume)
     focus.dispose()
+    cursor.dispose()
     unregister()
   })
 }
