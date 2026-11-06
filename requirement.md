@@ -14,7 +14,8 @@ Goals:
 
 Decisions made:
 - The pet is a cat. Personal use only, not distributed. Claude (via Claude Code) is the sole developer.
-- v2: pet-care system. Only one pet at a time. Adopting a different pet means starting over and wiping the previous pet's data immediately. Requirements: requirement-v2.md (approved 2026-11-06).
+- v2: pet-care system. Only one pet at a time. Adopting a different pet means starting over and wiping the previous pet's data immediately. Requirements: requirement-v2.md (approved 2026-11-06, released as 2.0.0).
+- v3: focus timer (Pomodoro) and Thai/English UI. Requirements: requirement-v3.md (approved 2026-11-06).
 
 ## 2. Scope
 

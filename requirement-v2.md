@@ -197,7 +197,7 @@ Same rule as v1: each phase must pass its gate, then wait for the user's approva
 ## 15. Open questions
 
 - Tuning: are 10 h (hunger) and 12 h (happiness) the right pace? To decide after a few days of use.
-- Text language for the adoption window, tooltip and notifications: English (like v1) or Thai?
+- Text language for the adoption window, tooltip and notifications: English (like v1) or Thai? Decided for v3 (2026-11-06): the user picks Thai or English (requirement-v3.md section 7).
 - Hungry notification (FR-29): build it in v2.0 or leave for later?
 - Should the pet react to being fed by dragging food onto it (needs a food item graphic), or is the menu enough?
 - Coins and a shop: which version, and what would they buy (food types, toys, decorations)?
