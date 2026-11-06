@@ -4,9 +4,14 @@ import { spriteSheetUrl } from '../models/registry'
 import { ACTIVE_MODEL } from '../../shared/activeModel'
 import { CARE } from '../../shared/careConfig'
 import { nameLength, sanitizeName } from '../../shared/petRecord'
-import { STRINGS } from '../../shared/strings'
+import { useDocumentLanguage, useLanguage } from '../composables/useLanguage'
 
-const text = STRINGS.adopt
+const { language, text: strings } = useLanguage(window.adoptApi)
+const text = computed(() => strings.value.adopt)
+useDocumentLanguage(
+  () => language.value,
+  () => text.value.title
+)
 const name = ref('')
 const busy = ref(false)
 const failed = ref(false)

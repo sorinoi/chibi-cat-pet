@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { ADOPT_WINDOW, RESOURCES, SETTINGS_WINDOW } from './config'
 import { resourcePath } from './appActions'
 import { loadRenderer, type RendererPage } from './renderer'
-import { STRINGS } from '../shared/strings'
+import type { Strings } from '../shared/strings'
 
 export interface ToolWindowManager {
   open(): void
@@ -15,7 +15,8 @@ interface ToolWindowOptions {
   page: RendererPage
   /** Preload file name in out/preload (each window gets only the API it needs). */
   preload: string
-  title: string
+  /** Read when the window opens; the page keeps it in its language afterwards. */
+  title: () => string
   size: { width: number; height: number }
 }
 
@@ -34,7 +35,7 @@ function createToolWindowManager(options: ToolWindowOptions): ToolWindowManager 
       }
       const created = new BrowserWindow({
         ...options.size,
-        title: options.title,
+        title: options.title(),
         icon: nativeImage.createFromPath(resourcePath(RESOURCES.appIcon)),
         resizable: false,
         maximizable: false,
@@ -65,21 +66,21 @@ function createToolWindowManager(options: ToolWindowOptions): ToolWindowManager 
   }
 }
 
-export function createSettingsWindowManager(): ToolWindowManager {
+export function createSettingsWindowManager(text: () => Strings): ToolWindowManager {
   return createToolWindowManager({
     page: 'settings.html',
     preload: 'settings.js',
-    title: STRINGS.settings.title,
+    title: () => text().settings.title,
     size: SETTINGS_WINDOW
   })
 }
 
 /** FR-22: the adoption window. */
-export function createAdoptWindowManager(): ToolWindowManager {
+export function createAdoptWindowManager(text: () => Strings): ToolWindowManager {
   return createToolWindowManager({
     page: 'adopt.html',
     preload: 'adopt.js',
-    title: STRINGS.adopt.title,
+    title: () => text().adopt.title,
     size: ADOPT_WINDOW
   })
 }

@@ -106,6 +106,11 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
     if (fromSettings(event)) careUi.openAdopt()
   })
 
+  // FR-43: the pet and adoption windows ask for the UI language (settings reads it itself).
+  ipcMain.handle(IpcChannel.AppGetLanguage, (event) =>
+    fromPet(event) || fromAdopt(event) ? store.settings.language : 'en'
+  )
+
   ipcMain.handle(IpcChannel.SettingsGet, (event): SettingsSnapshot | null => {
     if (!fromSettings(event)) return null
     return {
@@ -138,7 +143,8 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
       IpcChannel.CareRename,
       IpcChannel.CareAdoptNew,
       IpcChannel.SettingsGet,
-      IpcChannel.SettingsUpdate
+      IpcChannel.SettingsUpdate,
+      IpcChannel.AppGetLanguage
     ]) {
       ipcMain.removeHandler(channel)
     }

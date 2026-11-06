@@ -1,5 +1,6 @@
 import { readJson, writeJsonAtomic } from './lib/jsonFile'
 import {
+  DEFAULT_SETTINGS,
   parsePersistedState,
   sanitizePosition,
   sanitizeSettings,
@@ -23,8 +24,12 @@ export interface SettingsStore {
  * FR-14: settings and the last position in one JSON file. No Electron imports, so it is
  * unit tested with a temp directory. Writes are debounced.
  */
-export function createSettingsStore(filePath: string, debounceMs: number): SettingsStore {
-  let state: PersistedState = parsePersistedState(readJson(filePath))
+export function createSettingsStore(
+  filePath: string,
+  debounceMs: number,
+  defaults: Settings = DEFAULT_SETTINGS
+): SettingsStore {
+  let state: PersistedState = parsePersistedState(readJson(filePath), defaults)
   let timer: ReturnType<typeof setTimeout> | null = null
   let dirty = false
   const listeners: Array<(settings: Settings, previous: Settings) => void> = []

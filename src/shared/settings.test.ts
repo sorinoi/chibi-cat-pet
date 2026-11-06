@@ -53,3 +53,31 @@ describe('parsePersistedState', () => {
     })
   })
 })
+
+describe('language setting (FR-42, FR-45)', () => {
+  it('accepts only supported languages', () => {
+    expect(sanitizeSettings({ language: 'th' }).language).toBe('th')
+    expect(sanitizeSettings({ language: 'fr' }).language).toBe(DEFAULT_SETTINGS.language)
+    expect(
+      sanitizeSettings({ language: 7 }, { ...DEFAULT_SETTINGS, language: 'th' }).language
+    ).toBe('th')
+  })
+
+  it('a v2 file without a language gets the first-run default and keeps everything else', () => {
+    const v2 = { version: 1, settings: { petSize: 0.7, startWithWindows: true }, position: null }
+    const state = parsePersistedState(v2, { ...DEFAULT_SETTINGS, language: 'th' })
+    expect(state.settings).toEqual({
+      ...DEFAULT_SETTINGS,
+      petSize: 0.7,
+      startWithWindows: true,
+      language: 'th'
+    })
+  })
+
+  it('a saved language wins over the first-run default', () => {
+    const saved = { settings: { language: 'en' } }
+    expect(
+      parsePersistedState(saved, { ...DEFAULT_SETTINGS, language: 'th' }).settings.language
+    ).toBe('en')
+  })
+})

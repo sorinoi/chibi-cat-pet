@@ -6,6 +6,7 @@ import {
   type PetApi,
   type WalkEnded
 } from '../shared/ipc'
+import type { Language } from '../shared/strings'
 
 /** Subscribes without leaking the IpcRendererEvent (and its sender) to the page. */
 function subscribe<T>(channel: string, listener: (payload: T) => void): () => void {
@@ -25,7 +26,9 @@ const petApi: PetApi = {
   showContextMenu: () => ipcRenderer.send(IpcChannel.PetShowContextMenu),
   onCareState: (listener) => subscribe<CareView | null>(IpcChannel.CareState, listener),
   onCareRequest: (listener) => subscribe<CareRequest>(IpcChannel.CareRequest, listener),
-  careAct: (act) => ipcRenderer.invoke(IpcChannel.CareAct, act)
+  careAct: (act) => ipcRenderer.invoke(IpcChannel.CareAct, act),
+  getLanguage: () => ipcRenderer.invoke(IpcChannel.AppGetLanguage),
+  onLanguageChanged: (listener) => subscribe<Language>(IpcChannel.AppLanguageChanged, listener)
 }
 
 contextBridge.exposeInMainWorld('petApi', petApi)

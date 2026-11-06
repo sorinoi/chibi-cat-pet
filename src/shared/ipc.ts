@@ -4,6 +4,7 @@
  */
 import type { Mood, Needs } from './needs'
 import type { Settings } from './settings'
+import type { Language } from './strings'
 
 export const IpcChannel = {
   /** renderer -> main (send): boolean, true = mouse passes through the window. */
@@ -48,7 +49,11 @@ export const IpcChannel = {
   /** settings -> main (invoke): confirm, wipe, open adoption -> boolean (wiped). */
   CareAdoptNew: 'care:adopt-new',
   /** settings -> main (send): open the adoption window (no pet yet). */
-  CareOpenAdopt: 'care:open-adopt'
+  CareOpenAdopt: 'care:open-adopt',
+  /** pet or adoption window -> main (invoke): -> Language (FR-43). */
+  AppGetLanguage: 'app:get-language',
+  /** main -> pet and adoption windows: Language, after it changes (FR-44). */
+  AppLanguageChanged: 'app:language-changed'
 } as const
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
@@ -87,8 +92,15 @@ export interface WalkEnded {
   completed: boolean
 }
 
+/** UI language for windows that do not read the settings (FR-43, FR-44). */
+export interface LanguageApi {
+  getLanguage(): Promise<Language>
+  /** Returns an unsubscribe function. */
+  onLanguageChanged(listener: (language: Language) => void): () => void
+}
+
 /** API exposed to the renderer as `window.petApi` via contextBridge. */
-export interface PetApi {
+export interface PetApi extends LanguageApi {
   /** true: mouse passes through the window. false: the window receives mouse input. */
   setIgnoreMouseEvents(ignore: boolean): void
   startDrag(): void
@@ -134,7 +146,7 @@ export interface SettingsApi {
 }
 
 /** API exposed to the adoption window as `window.adoptApi`. */
-export interface AdoptApi {
+export interface AdoptApi extends LanguageApi {
   /** Resolves false when the name is not usable. */
   adopt(name: string): Promise<boolean>
 }

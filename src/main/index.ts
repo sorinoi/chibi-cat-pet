@@ -15,7 +15,8 @@ import { watchFullscreen } from './fullscreenWatcher'
 import { watchUserIdle } from './userIdle'
 import { IpcChannel, type CareRequest, type CareView } from '../shared/ipc'
 import { careSummary } from '../shared/careText'
-import { STRINGS } from '../shared/strings'
+import { DEFAULT_SETTINGS } from '../shared/settings'
+import { languageForLocales, stringsFor, type Strings } from '../shared/strings'
 
 const SECONDS_PER_MINUTE = 60
 
@@ -34,12 +35,15 @@ const toView = (s: CareSnapshot | null): CareView | null =>
   s && { name: s.name, needs: s.needs, mood: s.mood, adoptedAt: s.adoptedAt }
 
 function start(): void {
+  // FR-42/45: without a saved language, follow the Windows display language.
   const store = createSettingsStore(
     join(app.getPath('userData'), STORE.fileName),
-    STORE.saveDebounceMs
+    STORE.saveDebounceMs,
+    { ...DEFAULT_SETTINGS, language: languageForLocales(app.getPreferredSystemLanguages()) }
   )
-  const settingsWindow = createSettingsWindowManager()
-  const adoptWindow = createAdoptWindowManager()
+  const text = (): Strings => stringsFor(store.settings.language)
+  const settingsWindow = createSettingsWindowManager(text)
+  const adoptWindow = createAdoptWindowManager(text)
 
   // v2 pet care (requirement-v2.md sections 4 and 11). Inactive until a pet is adopted.
   const care = createCareEngine({ filePath: join(app.getPath('userData'), PET_FILE) })
@@ -66,7 +70,7 @@ function start(): void {
     const view = toView(care.current())
     sendToPet(IpcChannel.CareState, view)
     settingsWindow.get()?.webContents.send(IpcChannel.CareChanged, view)
-    tray?.setToolTip(`${STRINGS.tray.tooltip}\n${careSummary(view)}`)
+    tray?.setToolTip(`${text().tray.tooltip}\n${careSummary(view, text())}`)
   }
   care.onChange(publishCare)
   win.webContents.on('did-finish-load', publishCare)
@@ -99,10 +103,10 @@ function start(): void {
     rename: (name) => toView(care.rename(name)),
     async adoptNew() {
       const parent = settingsWindow.get()
-      const t = STRINGS.readopt
+      const t = text().readopt
       const options = {
         type: 'warning' as const,
-        title: STRINGS.appName,
+        title: text().appName,
         message: t.message,
         detail: t.detail,
         buttons: [t.cancel, t.confirm],
@@ -135,7 +139,8 @@ function start(): void {
       pet: () => request('pet'),
       openAdopt: careUi.openAdopt,
       openPetStatus: () => settingsWindow.open()
-    }
+    },
+    text
   )
 
   const unregister = registerIpcHandlers({
@@ -181,6 +186,12 @@ function start(): void {
   store.onChange((next, previous) => {
     applySettings(win, motion, next, previous)
     settingsWindow.get()?.webContents.send(IpcChannel.SettingsChanged, next)
+    if (next.language !== previous.language) {
+      // FR-44: open windows switch at once; menus and dialogs read the language when shown.
+      sendToPet(IpcChannel.AppLanguageChanged, next.language)
+      adoptWindow.get()?.webContents.send(IpcChannel.AppLanguageChanged, next.language)
+      publishCare()
+    }
   })
 
   tray = createTray(actions)

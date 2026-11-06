@@ -11,6 +11,7 @@ Communicate with the user in Thai, casual and friendly, no rude or vulgar langua
 
 - v1: one sprite cat on a transparent, frameless, always-on-top window. Click, drag, drop, idle/walk/sleep behaviors, system tray menu, settings, NSIS installer.
 - v2.0 (done and accepted 2026-11-06): pet-care system, see `requirement-v2.md`. Only ONE pet at a time. Adopting a different pet means starting over and wiping the old pet's data immediately.
+- v3 (approved 2026-11-06, not started): Pomodoro focus timer + Thai/English UI, see `requirement-v3.md`. The timer is not linked to pet care; the cat keeps living as usual and only reacts at phase changes.
 - Out of scope: macOS/Linux, multiple pets at once, cloud sync/accounts, shop/marketplace/plugins.
 - Requirement IDs (FR-xx, NFR-xx) come from the requirement doc. Reference them in commits and PRs when relevant.
 
@@ -86,6 +87,7 @@ Performance (NFR-01 to NFR-05)
 - No magic numbers for timings, sizes or fps. Put them in a config module or the settings store.
 - Models and animation clip names come from config, not hardcoded in components. Standard clip names: `idle`, `walk`, `click`, `drag`, `land`, `sleep`; optional v2 care clips: `eat`, `happy`, `hungry`, `pet`.
 - Pet-care tuning (rates, floors, cooldowns, stroke detection) lives only in src/shared/careConfig.ts.
+- User-facing text lives only in src/shared/strings.ts: one table per language (English defines the shape, Thai must match; strings.test.ts checks it). Main reads `stringsFor(store.settings.language)` when it builds a menu, tooltip or dialog; the settings window derives the language from its settings, the pet and adoption windows use `useLanguage()` (app:get-language / app:language-changed).
 - IPC channels are named `domain:action` (for example `window:set-ignore-mouse`) and typed in one shared file.
 - Small, focused commits. Conventional Commit style (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`).
 - Keep dependencies minimal. Ask before adding a new runtime dependency.
@@ -113,6 +115,8 @@ Each phase must pass its gate before starting the next one.
 5. M5 Polish: measure against NFRs, fix bugs, release v1.0.
 
 v2 (pet-care system) requirements are in `requirement-v2.md` (hunger + happiness, gentle, one pet; V2-M1..M5). Approved by the user on 2026-11-06. V2 phases follow the same phase approval rule as v1: finish one, report, wait for approval before the next.
+
+v3 (focus timer + Thai/English UI) requirements are in `requirement-v3.md` (V3-M1..M5, language first). Approved by the user on 2026-11-06. Same phase approval rule.
 
 ## Source of truth: requirement.md
 

@@ -1,5 +1,27 @@
-/** All user-facing text in one place, so the UI language is easy to change later. */
-export const STRINGS = {
+/**
+ * All user-facing text, one table per language (requirement-v3.md section 7, NFR-20).
+ * English defines the shape; Thai must have exactly the same keys (checked by the compiler
+ * and by strings.test.ts).
+ */
+
+export const LANGUAGES = ['en', 'th'] as const
+export type Language = (typeof LANGUAGES)[number]
+
+/** Shown in the language picker in their own language, never translated. */
+export const LANGUAGE_NAMES: Record<Language, string> = { th: 'ไทย', en: 'English' }
+
+export const isLanguage = (value: unknown): value is Language =>
+  (LANGUAGES as readonly unknown[]).includes(value)
+
+/** Thai if the system prefers Thai, otherwise English (FR-42). */
+export function languageForLocales(locales: readonly string[]): Language {
+  const first = locales[0]?.toLowerCase() ?? ''
+  return first === 'th' || first.startsWith('th-') ? 'th' : 'en'
+}
+
+const EN = {
+  /** BCP 47 locale for dates. */
+  locale: 'en-US',
   appName: 'Desktop Pet',
   tray: {
     tooltip: 'Desktop Pet',
@@ -21,11 +43,13 @@ export const STRINGS = {
   },
   about: {
     title: 'About Desktop Pet',
+    ok: 'OK',
     detail: (version: string): string =>
       `Version ${version}\nA cat for your desktop. Runs fully offline.`
   },
   settings: {
     title: 'Desktop Pet Settings',
+    language: 'Language',
     petSize: 'Pet size',
     opacity: 'Opacity',
     alwaysOnTop: 'Always on top',
@@ -69,4 +93,87 @@ export const STRINGS = {
     cancel: 'Cancel',
     confirm: 'Delete and adopt'
   }
-} as const
+}
+
+export type Strings = typeof EN
+
+const TH: Strings = {
+  locale: 'th-TH',
+  appName: 'Desktop Pet',
+  tray: {
+    tooltip: 'Desktop Pet',
+    feed: 'ให้อาหาร',
+    adopt: 'รับเลี้ยงแมว…',
+    petStatus: 'สถานะน้องแมว…',
+    show: 'แสดงน้องแมว',
+    hide: 'ซ่อนน้องแมว',
+    settings: 'ตั้งค่า…',
+    about: 'เกี่ยวกับ',
+    quit: 'ออก'
+  },
+  contextMenu: {
+    feed: 'ให้อาหาร',
+    pet: 'ลูบหัว',
+    hide: 'ซ่อน',
+    settings: 'ตั้งค่า…',
+    quit: 'ออก'
+  },
+  about: {
+    title: 'เกี่ยวกับ Desktop Pet',
+    ok: 'ตกลง',
+    detail: (version: string): string =>
+      `เวอร์ชัน ${version}\nแมวน้อยบนเดสก์ท็อปของคุณ ทำงานได้โดยไม่ต้องต่ออินเทอร์เน็ต`
+  },
+  settings: {
+    title: 'ตั้งค่า Desktop Pet',
+    language: 'ภาษา',
+    petSize: 'ขนาดน้องแมว',
+    opacity: 'ความทึบ',
+    alwaysOnTop: 'อยู่บนสุดเสมอ',
+    startWithWindows: 'เปิดพร้อม Windows',
+    startWithWindowsDevNote: 'บันทึกแล้ว แต่จะมีผลเฉพาะแอปที่ติดตั้งแล้วเท่านั้น',
+    sleepAfter: 'หลับเมื่อไม่ได้ใช้เครื่อง (นาที)',
+    version: (version: string): string => `เวอร์ชัน ${version}`,
+    petSection: 'น้องแมวของคุณ',
+    generalSection: 'ทั่วไป',
+    name: 'ชื่อ',
+    rename: 'บันทึกชื่อ',
+    nameInvalid: (max: number): string => `ใช้ 1 ถึง ${max} ตัวอักษร`,
+    fed: 'อิ่ม',
+    happy: 'สุข',
+    mood: 'อารมณ์',
+    adoptedOn: (date: string): string => `รับเลี้ยงเมื่อ ${date}`,
+    adoptNew: 'รับเลี้ยงแมวตัวใหม่…',
+    noPet: 'คุณยังไม่มีน้องแมว',
+    adopt: 'รับเลี้ยงแมว…'
+  },
+  care: {
+    fed: 'อิ่ม',
+    happy: 'สุข',
+    separator: ' · ',
+    noPet: 'ยังไม่มีน้องแมว',
+    moods: { hungry: 'หิว', sad: 'เศร้า', happy: 'มีความสุข', content: 'สบายดี' }
+  },
+  adopt: {
+    title: 'รับเลี้ยงแมว',
+    heading: 'มีน้องแมวกำลังหาบ้านอยู่',
+    intro: 'ตั้งชื่อให้น้องแมวตัวใหม่ เปลี่ยนชื่อทีหลังได้ในหน้าตั้งค่า',
+    nameLabel: 'ชื่อ',
+    placeholder: 'เช่น มะลิ',
+    button: 'รับเลี้ยง',
+    count: (n: number, max: number): string => `${n} / ${max}`,
+    failed: 'รับเลี้ยงไม่สำเร็จ ลองตรวจชื่อแล้วลองใหม่อีกครั้ง'
+  },
+  readopt: {
+    message: 'รับเลี้ยงแมวตัวใหม่ไหม?',
+    detail: 'น้องแมวตัวปัจจุบันและข้อมูลทั้งหมดจะถูกลบทันที และกู้คืนไม่ได้',
+    cancel: 'ยกเลิก',
+    confirm: 'ลบและรับเลี้ยงใหม่'
+  }
+}
+
+const TABLES: Record<Language, Strings> = { en: EN, th: TH }
+
+export function stringsFor(language: Language): Strings {
+  return TABLES[language]
+}

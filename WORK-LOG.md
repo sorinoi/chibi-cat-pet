@@ -4,8 +4,8 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v2.0 complete and accepted by the user (2026-11-06). No next phase planned yet.
-- Next step: none planned. Ask the user what comes next (options: tuning after a few days of use, open questions in requirement-v2.md section 15, NFR-05 8 h soak).
+- Current phase: v3 in progress. V3-M1 (Thai/English) done and approved 2026-11-06. V3-M2 not started.
+- Next step: when the user says go, start V3-M2 (timer engine: pure timer logic, focus.json, today's count, midnight reset, sleep gap, config) per requirement-v3.md sections 4 and 11. V3-M1 changes are not committed yet (last commit c0a85e3).
 - Git (check `git status` and `git log` first; this line can lag): main and origin/main at b506a6a (pushed 2026-11-06). Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea. Older: 87cde4e V2-M4, 7770fe1 V2-M3, d196771 V2-M2, f706658 V2-M1, 42360ca (3D restore point). Remote: origin = github.com/sorinoi/chibi-cat-pet. Push and tag only when the user asks.
 - Machine state: Desktop Pet 2.0.0 is installed per-user (over 1.0.0) and running with the user's adopted cat; data in %APPDATA%desktop-pet (settings.json, pet.json). Dev data %APPDATA%desktop-pet-dev has settings.json only. dist/ has the 1.0.0 and 2.0.0 installers.
 - Waiting on the user: nothing.
@@ -51,6 +51,12 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V2-M3 | Feed, pet (stroke + menu), click bonus, hungry reminder | done | 118 tests; every action checked in the app |
 | V2-M4 | Adoption, settings Pet section, tooltip, tray | done | 125 tests; adopt, rename, re-adopt, no-pet start checked in the app; tray checked by hand |
 | V2-M5 | Polish, measure, installer, release v2.0 | done | gate passed; 2.0.0 installed over 1.0.0; accepted by the user |
+| v3 | Requirements (requirement-v3.md) | done | approved by the user 2026-11-06 |
+| V3-M1 | Language: Thai/English | done | 134 tests; all windows checked in the app; tray/menus/About checked by hand |
+| V3-M2 | Timer engine | todo | |
+| V3-M3 | Timer UI, notifications, reactions (fallback clips) | todo | |
+| V3-M4 | Focus sprite sheet and clips | todo | needs the user's art |
+| V3-M5 | Polish, measure, release v3.0 | todo | |
 
 ## Phase approvals
 
@@ -66,6 +72,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V2-M3 | 2026-11-06 | yes, 2026-11-06 |
 | V2-M4 | 2026-11-06 | yes, 2026-11-06 |
 | V2-M5 | 2026-11-06 | yes, 2026-11-06 (v2.0 accepted) |
+| V3-M1 | 2026-11-06 | yes, 2026-11-06 (user checked Thai tray/menus/About by hand) |
 
 ## Log
 
@@ -168,3 +175,10 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: User asked for a README. Wrote README.md (features v1/v2, install, data folder, dev commands, stack, layout, docs, art note). Not committed yet.
 - 2026-11-06: Pushed main (b506a6a..241ddf7) at the user's request.
 - 2026-11-06: User asked for a Thai README with preview images. Added scripts/build-readme-art.mts (`npm run readme:art`): renders APNG previews of every clip plus a hero scene from the real sheets and frame timings into docs/images (3.2 MB total, hero 2.1 MB; checked it animates in a browser). png.mts gained encodeApng. README.md redesigned: icon, badges, hero, clip gallery, English + Thai sections. CLAUDE.md/AGENTS.md commands updated. Not committed yet.
+- 2026-11-06: Pushed main (241ddf7..c0a85e3): bilingual README with previews.
+- 2026-11-06: User asked about a v3 with Pomodoro. Decisions (user): cat stays lively as usual, no link to pet care, durations set by the user, only today's count, new art from the user later, Thai/English language choice. Drafted requirement-v3.md (FR-35..45, NFR-16..20, V3-M1..M5, art list in section 9); linked from requirement.md. Not approved.
+- 2026-11-06: User approved requirement-v3.md. Status updated in requirement-v3.md, requirement.md, CLAUDE.md, AGENTS.md. V3-M1 waits for the user's go.
+- 2026-11-06: User said go: started V3-M1 (language, FR-42..45, NFR-20).
+- 2026-11-06: V3-M1 code: src/shared/strings.ts now has EN + TH tables (Strings = typeof EN, so the compiler checks Thai), stringsFor(), LANGUAGES, languageForLocales(); strings.test.ts (key/kind parity, no empty texts, locale pick). Settings.language (sanitized; first-run default from app.getPreferredSystemLanguages(), FR-42/45; tests). careText takes the table. Main: menus, tray tooltip, About and re-adopt dialogs, window titles read the current table; language change pushes app:language-changed to pet and adoption windows and refreshes the tray tooltip. Renderer: useLanguage()/useDocumentLanguage() composables; settings has a ภาษา/Language select; dates use the table locale (th-TH shows the Buddhist year). Settings window 620 -> 680 px tall (new row made it scroll).
+- 2026-11-06: App check (production build, dev data, CDP into the app pages, BM_CLICK on the app dialog only): first run en (Windows en-US); switching to ไทย changed settings, adoption window and pet live, saved in settings.json; adopted "ทดสอบ" from the Thai page; Thai pet section and date; Thai tooltip over the cat; re-adopt dialog buttons Thai, Cancel kept the pet; restart kept Thai; switching back to English updated the tooltip at once. Not checked: tray menu, tray tooltip, cat menu, About (native, needs a hand check). Test files removed, dev settings restored. Tests 134. V3-M1 gate passed; waiting for approval.
+- 2026-11-06: User hand check: Thai tray menu, tray tooltip, cat menu and About all correct. User approved V3-M1.

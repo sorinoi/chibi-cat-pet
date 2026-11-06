@@ -1,10 +1,12 @@
 import { app, dialog, nativeImage, type BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { RESOURCES } from './config'
-import { STRINGS } from '../shared/strings'
+import type { Strings } from '../shared/strings'
 
 /** Actions shared by the tray menu and the pet's right-click menu. */
 export interface AppActions extends CareActions {
+  /** UI text in the current language (FR-43). */
+  text(): Strings
   isPetVisible(): boolean
   /** Shows the pet, or opens adoption when there is none yet (FR-22). */
   showPet(): void
@@ -35,10 +37,12 @@ export function createAppActions(
   getPetWindow: () => BrowserWindow | null,
   openSettings: () => void,
   onPetHidden: () => void,
-  care: CareActions
+  care: CareActions,
+  text: () => Strings
 ): AppActions {
   return {
     ...care,
+    text,
     isPetVisible() {
       return getPetWindow()?.isVisible() ?? false
     },
@@ -55,13 +59,14 @@ export function createAppActions(
     },
     openSettings,
     showAbout() {
+      const t = text()
       void dialog.showMessageBox({
         type: 'info',
-        title: STRINGS.about.title,
-        message: STRINGS.appName,
-        detail: STRINGS.about.detail(app.getVersion()),
+        title: t.about.title,
+        message: t.appName,
+        detail: t.about.detail(app.getVersion()),
         icon: nativeImage.createFromPath(resourcePath(RESOURCES.appIcon)),
-        buttons: ['OK']
+        buttons: [t.about.ok]
       })
     },
     quit() {

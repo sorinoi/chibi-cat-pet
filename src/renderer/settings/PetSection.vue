@@ -4,10 +4,11 @@ import { useCare } from '../composables/useCare'
 import { CARE } from '../../shared/careConfig'
 import { moodLabel, percent } from '../../shared/careText'
 import { sanitizeName } from '../../shared/petRecord'
-import { STRINGS } from '../../shared/strings'
+import type { Strings } from '../../shared/strings'
 
+const props = defineProps<{ text: Strings }>()
 const { pet, rename, adoptNew, openAdopt } = useCare()
-const text = STRINGS.settings
+const text = computed(() => props.text.settings)
 
 const draft = ref('')
 const invalid = ref(false)
@@ -23,7 +24,7 @@ watch(
 const changed = computed(() => pet.value && draft.value.trim() !== pet.value.name)
 const adoptedOn = computed(() =>
   pet.value
-    ? new Date(pet.value.adoptedAt).toLocaleDateString(undefined, { dateStyle: 'long' })
+    ? new Date(pet.value.adoptedAt).toLocaleDateString(props.text.locale, { dateStyle: 'long' })
     : ''
 )
 
@@ -55,7 +56,7 @@ async function saveName(): Promise<void> {
         <output>{{ percent(pet.needs.happiness) }}%</output>
       </div>
       <p class="meta">
-        {{ text.mood }}: <strong>{{ moodLabel(pet.mood) }}</strong> ·
+        {{ text.mood }}: <strong>{{ moodLabel(pet.mood, props.text) }}</strong> ·
         {{ text.adoptedOn(adoptedOn) }}
       </p>
       <button class="danger" type="button" @click="adoptNew">{{ text.adoptNew }}</button>

@@ -7,7 +7,6 @@ import {
 } from 'electron'
 import { RESOURCES } from './config'
 import { resourcePath, type AppActions } from './appActions'
-import { STRINGS } from '../shared/strings'
 
 const separator: MenuItemConstructorOptions = { type: 'separator' }
 
@@ -17,31 +16,32 @@ const separator: MenuItemConstructorOptions = { type: 'separator' }
  */
 export function createTray(actions: AppActions): Tray {
   const tray = new Tray(nativeImage.createFromPath(resourcePath(RESOURCES.trayIcon)))
-  tray.setToolTip(STRINGS.tray.tooltip)
+  tray.setToolTip(actions.text().tray.tooltip)
 
-  const common: MenuItemConstructorOptions[] = [
-    { label: STRINGS.tray.settings, click: actions.openSettings },
-    { label: STRINGS.tray.about, click: actions.showAbout },
-    separator,
-    { label: STRINGS.tray.quit, click: actions.quit }
-  ]
-
-  const buildMenu = (): Menu =>
-    Menu.buildFromTemplate(
+  // Built on every open, so labels follow the current state and language (FR-44).
+  const buildMenu = (): Menu => {
+    const t = actions.text().tray
+    const common: MenuItemConstructorOptions[] = [
+      { label: t.settings, click: actions.openSettings },
+      { label: t.about, click: actions.showAbout },
+      separator,
+      { label: t.quit, click: actions.quit }
+    ]
+    return Menu.buildFromTemplate(
       actions.hasPet()
         ? [
-            { label: STRINGS.tray.feed, click: actions.feed },
+            { label: t.feed, click: actions.feed },
             separator,
             actions.isPetVisible()
-              ? { label: STRINGS.tray.hide, click: actions.hidePet }
-              : { label: STRINGS.tray.show, click: actions.showPet },
-            { label: STRINGS.tray.petStatus, click: actions.openPetStatus },
+              ? { label: t.hide, click: actions.hidePet }
+              : { label: t.show, click: actions.showPet },
+            { label: t.petStatus, click: actions.openPetStatus },
             ...common
           ]
-        : [{ label: STRINGS.tray.adopt, click: actions.openAdopt }, separator, ...common]
+        : [{ label: t.adopt, click: actions.openAdopt }, separator, ...common]
     )
+  }
 
-  // Rebuild on open so labels always match the current state.
   tray.on('right-click', () => tray.popUpContextMenu(buildMenu()))
   tray.on('click', () => (actions.isPetVisible() ? actions.hidePet() : actions.showPet()))
   return tray
@@ -51,18 +51,15 @@ export function createTray(actions: AppActions): Tray {
 export function showPetContextMenu(win: BrowserWindow, actions: AppActions): void {
   // Windows only keeps a popup menu open while its owner is the foreground window.
   win.focus()
+  const t = actions.text().contextMenu
   const care: MenuItemConstructorOptions[] = actions.hasPet()
-    ? [
-        { label: STRINGS.contextMenu.feed, click: actions.feed },
-        { label: STRINGS.contextMenu.pet, click: actions.pet },
-        separator
-      ]
+    ? [{ label: t.feed, click: actions.feed }, { label: t.pet, click: actions.pet }, separator]
     : []
   Menu.buildFromTemplate([
     ...care,
-    { label: STRINGS.contextMenu.hide, click: actions.hidePet },
-    { label: STRINGS.contextMenu.settings, click: actions.openSettings },
+    { label: t.hide, click: actions.hidePet },
+    { label: t.settings, click: actions.openSettings },
     separator,
-    { label: STRINGS.contextMenu.quit, click: actions.quit }
+    { label: t.quit, click: actions.quit }
   ]).popup({ window: win })
 }

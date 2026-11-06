@@ -2,14 +2,26 @@
 import PetSection from './PetSection.vue'
 import { useSettings } from '../composables/useSettings'
 import { SETTINGS_LIMITS } from '../../shared/settings'
-import { STRINGS } from '../../shared/strings'
+import { computed } from 'vue'
+import { LANGUAGES, LANGUAGE_NAMES, isLanguage, stringsFor } from '../../shared/strings'
+import { useDocumentLanguage } from '../composables/useLanguage'
 
 const { settings, appVersion, canStartWithWindows, set } = useSettings()
-const text = STRINGS.settings
+const language = computed(() => settings.value?.language ?? 'en')
+const strings = computed(() => stringsFor(language.value))
+const text = computed(() => strings.value.settings)
+useDocumentLanguage(
+  () => language.value,
+  () => text.value.title
+)
 const percent = (value: number): string => `${Math.round(value * 100)}%`
 
 function numberFrom(event: Event): number {
   return Number((event.target as HTMLInputElement).value)
+}
+function languageFrom(event: Event): void {
+  const value = (event.target as HTMLSelectElement).value
+  if (isLanguage(value)) void set('language', value)
 }
 function checkedFrom(event: Event): boolean {
   return (event.target as HTMLInputElement).checked
@@ -20,9 +32,18 @@ function checkedFrom(event: Event): boolean {
   <main v-if="settings" class="settings">
     <h1>{{ text.title }}</h1>
 
-    <PetSection />
+    <PetSection :text="strings" />
 
     <h2 class="section">{{ text.generalSection }}</h2>
+
+    <label class="row">
+      <span class="label">{{ text.language }}</span>
+      <select class="language" :value="settings.language" @change="languageFrom">
+        <option v-for="code in LANGUAGES" :key="code" :value="code">
+          {{ LANGUAGE_NAMES[code] }}
+        </option>
+      </select>
+    </label>
 
     <label class="row">
       <span class="label">{{ text.petSize }}</span>
@@ -90,7 +111,7 @@ function checkedFrom(event: Event): boolean {
 html,
 body {
   margin: 0;
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Segoe UI', 'Leelawadee UI', system-ui, sans-serif;
   font-size: 14px;
   color: #222;
   background: #f6f4f1;
@@ -145,6 +166,12 @@ input[type='checkbox'] {
   width: 16px;
   height: 16px;
   accent-color: #e8893a;
+}
+
+.language {
+  grid-column: 2 / 4;
+  padding: 3px 6px;
+  font: inherit;
 }
 
 .minutes {

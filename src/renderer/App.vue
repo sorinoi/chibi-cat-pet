@@ -6,11 +6,13 @@ import { usePetBehavior } from './composables/usePetBehavior'
 import { usePetPointer } from './composables/usePetPointer'
 import { usePetStroke } from './composables/usePetStroke'
 import { careSummary } from '../shared/careText'
+import { useLanguage } from './composables/useLanguage'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 const scene = usePetScene(canvas)
 const clickThrough = useClickThrough(scene.hitTest)
 const behavior = usePetBehavior(scene)
+const { text } = useLanguage(window.petApi)
 
 usePetPointer(canvas, clickThrough, {
   hitTest: scene.hitTest,
@@ -31,7 +33,7 @@ const overPet = clickThrough.overPet
 
 // FR-27: hovering over the cat shows its name, needs and mood (native tooltip).
 const tooltip = computed(() =>
-  overPet.value && behavior.care.value ? careSummary(behavior.care.value) : ''
+  overPet.value && behavior.care.value ? careSummary(behavior.care.value, text.value) : ''
 )
 </script>
 
