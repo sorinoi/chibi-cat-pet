@@ -2,7 +2,7 @@
  * Focus timer status, notifications and cat reactions as pure functions
  * (requirement-v3.md sections 5-6), shared by main (tray, notifications) and the pet window.
  */
-import type { BreakPhase, FocusPhase, FocusSettings, TimerEvent } from './focusTimer'
+import type { BreakPhase, DayCount, FocusPhase, FocusSettings, TimerEvent } from './focusTimer'
 import type { Strings } from './strings'
 
 /** What the windows need to know about the timer (sent over IPC). */
@@ -13,6 +13,8 @@ export interface FocusView {
   /** Whole minutes left, rounded up; null when nothing is timed. */
   minutesLeft: number | null
   completedToday: number
+  /** The last days, oldest first (requirement-v4.md FR-49). */
+  week: DayCount[]
 }
 
 /** Phase line: "Focus · 12 min left", "Paused (Focus) · 8 min left", "Short break is ready". */

@@ -59,7 +59,7 @@ describe('focus engine: timing (NFR-16, NFR-17)', () => {
     run(1_000)
     expect(e.current().completedToday).toBe(1)
     expect(events).toEqual(['focusStarted', 'focusCompleted', 'breakStarted'])
-    expect(stored()).toEqual({ version: 1, date: '2026-11-06', completed: 1 })
+    expect(stored()).toEqual({ version: 2, days: { '2026-11-06': 1 } })
   })
 
   it('reports minutes left, refreshed once a minute while running', () => {
@@ -172,5 +172,29 @@ describe('focus engine: focus.json (FR-40)', () => {
 
   it('a missing file is fine', () => {
     expect(engine().load()).toBe('missing')
+  })
+})
+
+describe('focus engine: history (requirement-v4.md FR-48, FR-49)', () => {
+  it('upgrades a v3 focus.json and keeps today', () => {
+    writeFileSync(file, JSON.stringify({ version: 1, date: '2026-11-06', completed: 3 }))
+    const e = engine()
+    expect(e.load()).toBe('ok')
+    expect(e.current().completedToday).toBe(3)
+    e.startFocus()
+    run(25 * MIN)
+    expect(stored()).toEqual({ version: 2, days: { '2026-11-06': 4 } })
+  })
+
+  it('reports the last 7 days, oldest first', () => {
+    writeFileSync(file, JSON.stringify({ version: 2, days: { '2026-11-05': 2, '2026-11-01': 6 } }))
+    const e = engine()
+    e.load()
+    const week = e.current().week
+    expect(week).toHaveLength(7)
+    expect(week[0]).toEqual({ date: '2026-10-31', count: 0 })
+    expect(week[1]).toEqual({ date: '2026-11-01', count: 6 })
+    expect(week[5]).toEqual({ date: '2026-11-05', count: 2 })
+    expect(week[6]).toEqual({ date: '2026-11-06', count: 0 })
   })
 })

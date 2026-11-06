@@ -6,7 +6,12 @@ import { moodLabel, percent } from '../../shared/careText'
 import { sanitizeName } from '../../shared/petRecord'
 import type { Strings } from '../../shared/strings'
 
-const props = defineProps<{ text: Strings }>()
+const props = defineProps<{
+  text: Strings
+  /** FR-47: the hungry reminder switch lives with the cat. */
+  hungerReminder: boolean
+  setHungerReminder: (on: boolean) => void
+}>()
 const { pet, rename, adoptNew, openAdopt } = useCare()
 const text = computed(() => props.text.settings)
 
@@ -59,6 +64,14 @@ async function saveName(): Promise<void> {
         {{ text.mood }}: <strong>{{ moodLabel(pet.mood, props.text) }}</strong> ·
         {{ text.adoptedOn(adoptedOn) }}
       </p>
+      <label class="reminder">
+        <input
+          type="checkbox"
+          :checked="hungerReminder"
+          @change="setHungerReminder(($event.target as HTMLInputElement).checked)"
+        />
+        <span>{{ text.hungerReminder }}</span>
+      </label>
       <button class="danger" type="button" @click="adoptNew">{{ text.adoptNew }}</button>
     </template>
 
@@ -119,6 +132,20 @@ output {
 .meta {
   margin: 10px 0 12px;
   color: #555;
+}
+
+.reminder {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.reminder input {
+  width: 16px;
+  height: 16px;
+  accent-color: #e8893a;
 }
 
 .error {

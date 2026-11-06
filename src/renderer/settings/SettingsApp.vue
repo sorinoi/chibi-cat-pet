@@ -35,7 +35,11 @@ function checkedFrom(event: Event): boolean {
 
     <div class="columns">
       <div class="column">
-        <PetSection :text="strings" />
+        <PetSection
+          :text="strings"
+          :hunger-reminder="settings.hungerReminder"
+          :set-hunger-reminder="(on: boolean) => set('hungerReminder', on)"
+        />
 
         <h2 class="section">{{ text.generalSection }}</h2>
 

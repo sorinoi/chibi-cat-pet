@@ -18,6 +18,7 @@ import { IpcChannel, type CareRequest, type CareView } from '../shared/ipc'
 import { careSummary } from '../shared/careText'
 import { focusNotice, focusReaction, focusStatus } from '../shared/focusText'
 import type { TimerEvent } from '../shared/focusTimer'
+import { shouldShowHungerNotice } from '../shared/hungerNotice'
 import { DEFAULT_SETTINGS } from '../shared/settings'
 import { languageForLocales, stringsFor, type Strings } from '../shared/strings'
 
@@ -229,6 +230,28 @@ function start(): void {
       hiddenForFullscreen = false
       if (hasPet()) win.showInactive()
     }
+  })
+
+  // FR-46/47 (requirement-v4.md): optional reminder when the cat is hungry, checked on every
+  // care update (once a minute). It waits while the user is away or a fullscreen app runs.
+  let lastHungerNoticeAt: number | null = null
+  care.onChange((snapshot) => {
+    const now = Date.now()
+    const show = shouldShowHungerNotice({
+      enabled: store.settings.hungerReminder,
+      hunger: snapshot ? snapshot.needs.hunger : null,
+      lastShownAt: lastHungerNoticeAt,
+      userBusy: userIdle.idle || hiddenForFullscreen,
+      now
+    })
+    if (!show || !snapshot || !Notification.isSupported()) return
+    lastHungerNoticeAt = now
+    const t = text().care
+    new Notification({
+      title: t.hungryNoticeTitle(snapshot.name),
+      body: t.hungryNoticeBody,
+      icon: nativeImage.createFromPath(resourcePath(RESOURCES.appIcon))
+    }).show()
   })
 
   applySettings(win, motion, store.settings, null)

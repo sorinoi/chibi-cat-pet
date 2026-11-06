@@ -11,6 +11,7 @@ const view = (v: Partial<FocusView>): FocusView => ({
   phase: null,
   minutesLeft: null,
   completedToday: 0,
+  week: [],
   ...v
 })
 

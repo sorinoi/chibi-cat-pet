@@ -57,7 +57,7 @@ export const STORE = {
 
 export const SETTINGS_WINDOW = {
   width: 820,
-  height: 690
+  height: 730
 } as const
 
 export const ADOPT_WINDOW = {

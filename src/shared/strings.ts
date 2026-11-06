@@ -68,6 +68,7 @@ const EN = {
     adoptedOn: (date: string): string => `Adopted on ${date}`,
     adoptNew: 'Adopt a new cat…',
     noPet: 'You have no cat yet.',
+    hungerReminder: 'Remind me when the cat is hungry',
     adopt: 'Adopt a cat…'
   },
   care: {
@@ -75,7 +76,9 @@ const EN = {
     happy: 'Happy',
     separator: ' · ',
     noPet: 'No cat yet',
-    moods: { hungry: 'Hungry', sad: 'Sad', happy: 'Happy', content: 'Content' }
+    moods: { hungry: 'Hungry', sad: 'Sad', happy: 'Happy', content: 'Content' },
+    hungryNoticeTitle: (name: string): string => `${name} is hungry`,
+    hungryNoticeBody: "Feed them from the cat's menu or the tray menu."
   },
   adopt: {
     title: 'Adopt a cat',
@@ -127,7 +130,8 @@ const EN = {
       autoStartBreaks: 'Start breaks automatically',
       autoStartFocus: 'Start the next focus automatically',
       notifications: 'Show notifications',
-      completedToday: (count: number): string => `Completed today: ${count} 🍅`
+      completedToday: (count: number): string => `Completed today: ${count} 🍅`,
+      lastDays: (days: number): string => `Last ${days} days`
     }
   }
 }
@@ -182,6 +186,7 @@ const TH: Strings = {
     adoptedOn: (date: string): string => `รับเลี้ยงเมื่อ ${date}`,
     adoptNew: 'รับเลี้ยงแมวตัวใหม่…',
     noPet: 'คุณยังไม่มีน้องแมว',
+    hungerReminder: 'แจ้งเตือนเมื่อน้องแมวหิว',
     adopt: 'รับเลี้ยงแมว…'
   },
   care: {
@@ -189,7 +194,9 @@ const TH: Strings = {
     happy: 'สุข',
     separator: ' · ',
     noPet: 'ยังไม่มีน้องแมว',
-    moods: { hungry: 'หิว', sad: 'เศร้า', happy: 'มีความสุข', content: 'สบายดี' }
+    moods: { hungry: 'หิว', sad: 'เศร้า', happy: 'มีความสุข', content: 'สบายดี' },
+    hungryNoticeTitle: (name: string): string => `${name}หิวแล้ว`,
+    hungryNoticeBody: 'ให้อาหารได้จากเมนูคลิกขวาที่ตัวแมว หรือเมนู tray'
   },
   adopt: {
     title: 'รับเลี้ยงแมว',
@@ -242,7 +249,8 @@ const TH: Strings = {
       autoStartBreaks: 'เริ่มพักอัตโนมัติ',
       autoStartFocus: 'เริ่มโฟกัสรอบถัดไปอัตโนมัติ',
       notifications: 'แสดงการแจ้งเตือน',
-      completedToday: (count: number): string => `วันนี้ทำครบแล้ว: ${count} 🍅`
+      completedToday: (count: number): string => `วันนี้ทำครบแล้ว: ${count} 🍅`,
+      lastDays: (days: number): string => `${days} วันที่ผ่านมา`
     }
   }
 }

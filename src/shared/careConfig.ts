@@ -54,6 +54,14 @@ export const CARE = {
     minSegment: 6
   },
 
+  /** FR-46/47 (requirement-v4.md): optional Windows notification when the cat is hungry. */
+  hungryNotice: {
+    /** Notify when hunger drops below this. */
+    below: 20,
+    /** At most one notification per this long. */
+    everyMs: 4 * 60 * 60_000
+  },
+
   /** How often needs are recomputed and saved while the app runs. */
   tickIntervalMs: 60_000,
   /**

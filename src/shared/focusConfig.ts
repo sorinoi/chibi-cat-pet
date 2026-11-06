@@ -24,6 +24,10 @@ export const FOCUS = {
    * running through it is interrupted (not counted).
    */
   maxSleepGapMs: 5 * 60_000,
+  /** Days of focus history kept in focus.json (requirement-v4.md FR-48). */
+  historyKeepDays: 30,
+  /** Days shown as bars in settings (FR-49). */
+  historyShownDays: 7,
   /** How often a running phase refreshes tooltips and notices sleep gaps (NFR-16). */
   tickIntervalMs: 60_000
 } as const

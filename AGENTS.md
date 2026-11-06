@@ -23,7 +23,7 @@ Communicate with the user in Thai, casual and friendly, no rude or vulgar langua
 - Electron (main + preload + renderer)
 - Graphics: Canvas 2D drawing a PNG sprite sheet (no WebGL, no Three.js). The 3D .glb cat was replaced on 2026-11-06 (user decision); it lives in git commit 42360ca.
 - Model format: PNG sprite sheet + JSON config (grid, anchor, clips with fps/frameMs, loop, loopFrom)
-- State: Vue composables (no Pinia). Persistence: own small JSON files in the user's app data folder: settings.json (src/main/settingsStore.ts), for v2 pet.json (src/main/careEngine.ts + petStore.ts), for v3 focus.json with today's focus count (src/main/focusEngine.ts). Decided in M4 to keep deps minimal.
+- State: Vue composables (no Pinia). Persistence: own small JSON files in the user's app data folder: settings.json (src/main/settingsStore.ts), for v2 pet.json (src/main/careEngine.ts + petStore.ts), for v3/v4 focus.json with the focus history per day, version 2 (src/main/focusEngine.ts; a v3 version 1 file is upgraded on load). Decided in M4 to keep deps minimal.
 - Native calls: koffi 2.x (FFI, prebuilt binary in the package, its install script is not run). Used only in src/main/fullscreenWatcher.ts for FR-16. electron-builder.yml ships only its win32_x64 binary, unpacked from asar.
 - Packaging: electron-builder (NSIS, Windows x64)
 - Tests: Vitest. Lint/format: ESLint + Prettier

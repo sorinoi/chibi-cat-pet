@@ -21,6 +21,8 @@ export interface Settings extends FocusSettings {
   language: Language
   /** Windows notification at each focus phase end. FR-37. */
   focusNotifications: boolean
+  /** Optional notification when the cat is hungry (requirement-v4.md FR-47). Off by default. */
+  hungerReminder: boolean
 }
 
 export const SETTINGS_LIMITS = {
@@ -38,7 +40,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   sleepAfterMinutes: 5,
   /** Main replaces this with the system language on first run (FR-42). */
   language: 'en',
-  ...FOCUS.defaults
+  ...FOCUS.defaults,
+  hungerReminder: false
 }
 
 export interface Position {
@@ -106,7 +109,8 @@ export function sanitizeSettings(raw: unknown, base: Settings = DEFAULT_SETTINGS
     ),
     autoStartBreaks: bool(r['autoStartBreaks'], base.autoStartBreaks),
     autoStartFocus: bool(r['autoStartFocus'], base.autoStartFocus),
-    focusNotifications: bool(r['focusNotifications'], base.focusNotifications)
+    focusNotifications: bool(r['focusNotifications'], base.focusNotifications),
+    hungerReminder: bool(r['hungerReminder'], base.hungerReminder)
   }
 }
 

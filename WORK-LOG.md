@@ -4,8 +4,8 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v3.0 complete. v4 approved 2026-11-06 in requirement-v4.md; not started.
-- Next step: when the user says go, start V4-M1 (hungry notification FR-46/47 + focus history FR-48..50) per requirement-v4.md section 11. cat-life.png (section 9) is needed for V4-M3/M4.
+- Current phase: v4 in progress. V4-M1 done and approved; V4-M2 (focus treats) not started.
+- Next step: when the user says go, start V4-M2 (focus treats FR-51..54: setting off by default, 1 treat per completed focus, stock 5 in pet.json, "Give a treat (N)" menu item, +10/+10, notification text). cat-life.png needed for V4-M3/M4.
 - Git (check `git status` and `git log` first; this line can lag): main pushed to origin (github.com/sorinoi/chibi-cat-pet) with the v3.0 release commit. Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea, v3.0.0 -> the release 3.0.0 commit. Push and tag only when the user asks.
 - Machine state: Desktop Pet 3.0.0 installed per-user over 2.0.0 and running with the user's cat sOrinOi; data in %APPDATA%\desktop-pet (settings.json without a language yet, so English from Windows until changed; pet.json; focus.json appears after the first completed focus). The user's old dev run (npm run dev, PID 25868) may still be open. dist/ has the 1.0.0, 2.0.0 and 3.0.0 installers.
 - Waiting on the user: nothing.
@@ -58,7 +58,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V3-M4 | Focus sprite sheet and clips | done | cat-focus.png via sprite:regrid; focusStart checked in the app; 189 tests |
 | V3-M5 | Polish, measure, release v3.0 | done | gate passed; 3.0.0 installed over 2.0.0; accepted |
 | v4 | Requirements (requirement-v4.md) | done | approved by the user 2026-11-06 |
-| V4-M1 | Hungry notification, focus history | todo | waiting for go |
+| V4-M1 | Hungry notification, focus history | done | 199 tests; settings checked in the app; hungry notification checked by hand |
 | V4-M2 | Focus treats | todo | |
 | V4-M3 | cat-life.png art, sad, morning, night | todo | needs the user's art |
 | V4-M4 | Look at the mouse | todo | needs the user's art |
@@ -83,6 +83,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V3-M3 | 2026-11-06 | yes, 2026-11-06 (user checked tray Focus menu and notifications by hand) |
 | V3-M4 | 2026-11-06 | yes, 2026-11-06 |
 | V3-M5 | 2026-11-06 | yes, 2026-11-06 (v3.0 accepted) |
+| V4-M1 | 2026-11-06 | yes, 2026-11-06 (user checked the hungry notification by hand) |
 
 ## Log
 
@@ -209,3 +210,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: Pushed main 3f00e6b and tag v3.0.0 (logged above). Moved the unused cat_focus_sprite_pack to the Recycle Bin at the user's request.
 - 2026-11-06: User asked for feature ideas; proposed 6 features + quality items; user liked all. Drafted requirement-v4.md (FR-46..59, NFR-21..24, V4-M1..M5, art list for cat-life.png: sad, look, stretch, yawn). Treats are a setting off by default to keep the v3 choice. Linked from requirement.md. Not approved.
 - 2026-11-06: User approved requirement-v4.md. Status updated in requirement-v4.md, requirement.md, CLAUDE.md, AGENTS.md. V4-M1 waits for the user's go. Not committed.
+- 2026-11-06: Committed 1f0c40b (v4 requirements) at the user's request; user said go for V4-M1.
+- 2026-11-06: V4-M1 code: careConfig.hungryNotice (below 20, every 4 h); src/shared/hungerNotice.ts shouldShowHungerNotice (setting, cat, interval, waits while away or fullscreen; tests); Settings.hungerReminder (off by default) with a switch in the Pet section; main checks on every care update and shows an Electron Notification ("<name> is hungry", EN/TH). Focus history: focusTimer FocusHistory { days }, addCompleted keeps 30 days, lastDays(7), parseFocusFile reads v2 and upgrades v1, focusFileContent writes v2; focusEngine and FocusView carry week; FocusSection shows 7 bars with weekday names in the UI language and "Last 7 days". Settings window 690 -> 730 px tall. Tests 199.
+- 2026-11-06: App check (production build, isolated --user-data-dir, Thai): v3 focus.json (today 3) loaded, bars show Thai weekdays with 3 on Friday; hungry reminder switch saves hungerReminder: true; page fits (695 = 695). Not checked: the hungry notification itself (needs a hand check, like the focus notifications). Test data removed, port closed. V4-M1 gate passed; waiting for approval.
+- 2026-11-06: User hand check: hungry notification shows. User approved V4-M1. Committed V4-M1.

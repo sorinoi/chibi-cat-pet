@@ -7,17 +7,20 @@ import {
   addCompleted,
   advance,
   completedToday,
-  localDate,
+  EMPTY_HISTORY,
+  focusFileContent,
+  lastDays,
   minutesLeft,
   msUntilMidnight,
-  parseFocusDay,
+  parseFocusFile,
   pause,
   resume,
   skip,
   startBreak,
   startFocus,
   stop,
-  type FocusDay,
+  type DayCount,
+  type FocusHistory,
   type FocusSettings,
   type TimerEvent,
   type TimerState,
@@ -30,22 +33,30 @@ export interface FocusSnapshot {
   minutesLeft: number | null
   /** Focus sessions completed today (FR-36, FR-40). */
   completedToday: number
+  /** The last days, oldest first (requirement-v4.md FR-49). */
+  week: DayCount[]
 }
 
 /** The part of a snapshot the windows and menus show (FR-35, FR-36). */
-export function toFocusView({ state, minutesLeft, completedToday }: FocusSnapshot): FocusView {
+export function toFocusView({
+  state,
+  minutesLeft,
+  completedToday,
+  week
+}: FocusSnapshot): FocusView {
   return {
     kind: state.kind,
     phase: state.kind === 'idle' ? null : state.phase,
     minutesLeft,
-    completedToday
+    completedToday,
+    week
   }
 }
 
 export type FocusFileStatus = 'missing' | 'ok' | 'damaged'
 
 export interface FocusEngine {
-  /** Reads focus.json (today's count). A damaged file is moved to focus.json.bad (FR-40). */
+  /** Reads focus.json (history; a v3 file is upgraded). A damaged file is moved to focus.json.bad. */
   load(): FocusFileStatus
   current(): FocusSnapshot
   startFocus(): void
@@ -83,7 +94,7 @@ export function createFocusEngine({
   config = FOCUS
 }: FocusEngineOptions): FocusEngine {
   let state: TimerState = IDLE
-  let day: FocusDay = { date: localDate(now()), completed: 0 }
+  let history: FocusHistory = EMPTY_HISTORY
   let lastSeen = now()
   let phaseTimer: ReturnType<typeof setTimeout> | null = null
   let tickTimer: ReturnType<typeof setInterval> | null = null
@@ -92,7 +103,12 @@ export function createFocusEngine({
 
   function snapshot(): FocusSnapshot {
     const t = now()
-    return { state, minutesLeft: minutesLeft(state, t), completedToday: completedToday(day, t) }
+    return {
+      state,
+      minutesLeft: minutesLeft(state, t),
+      completedToday: completedToday(history, t),
+      week: lastDays(history, t, config.historyShownDays)
+    }
   }
 
   function emit(events: TimerEvent[]): void {
@@ -102,7 +118,7 @@ export function createFocusEngine({
 
   function save(): void {
     try {
-      writeJsonAtomic(filePath, { version: 1, date: day.date, completed: day.completed })
+      writeJsonAtomic(filePath, focusFileContent(history))
     } catch (err) {
       console.error('Failed to save focus count:', err)
     }
@@ -140,7 +156,7 @@ export function createFocusEngine({
       state = s.state
       events.push(...s.events)
       if (s.completed > 0) {
-        day = addCompleted(day, t, s.completed)
+        history = addCompleted(history, t, s.completed, config.historyKeepDays)
         save()
       }
     }
@@ -166,14 +182,14 @@ export function createFocusEngine({
     load() {
       scheduleMidnight()
       if (!existsSync(filePath)) return 'missing'
-      let parsed: FocusDay | null = null
+      let parsed: FocusHistory | null = null
       try {
-        parsed = parseFocusDay(JSON.parse(readFileSync(filePath, 'utf8')) as unknown)
+        parsed = parseFocusFile(JSON.parse(readFileSync(filePath, 'utf8')) as unknown)
       } catch {
         parsed = null
       }
       if (parsed) {
-        day = parsed
+        history = parsed
         return 'ok'
       }
       const movedTo = `${filePath}.bad`

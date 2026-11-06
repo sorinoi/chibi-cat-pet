@@ -29,6 +29,19 @@ const toggles = computed<Array<{ key: ToggleKey; label: string }>>(() => [
   { key: 'focusNotifications', label: t.value.notifications }
 ])
 
+/** FR-49 (requirement-v4.md): bars for the last days, scaled to the busiest day. */
+const week = computed(() => {
+  const days = focus.value?.week ?? []
+  const max = Math.max(1, ...days.map((d) => d.count))
+  return days.map((d) => {
+    const [y, m, day] = d.date.split('-').map(Number)
+    const weekday = new Date(y, m - 1, day, 12).toLocaleDateString(props.text.locale, {
+      weekday: 'short'
+    })
+    return { ...d, weekday, height: Math.round((d.count / max) * 100) }
+  })
+})
+
 function setNumber(key: MinuteKey, event: Event): void {
   void props.set(key, Number((event.target as HTMLInputElement).value))
 }
@@ -61,6 +74,17 @@ function setToggle(key: ToggleKey, event: Event): void {
     </label>
 
     <p v-if="focus" class="today">{{ t.completedToday(focus.completedToday) }}</p>
+
+    <div v-if="week.length" class="history">
+      <p class="history-title">{{ t.lastDays(week.length) }}</p>
+      <div class="bars">
+        <div v-for="day in week" :key="day.date" class="day" :title="day.date">
+          <span class="count">{{ day.count || '' }}</span>
+          <span class="bar" :style="{ height: `${day.height}%` }" />
+          <span class="weekday">{{ day.weekday }}</span>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
 
@@ -116,5 +140,48 @@ h2 {
 .today {
   margin: 4px 0 0;
   color: #555;
+}
+
+.history {
+  margin-top: 14px;
+}
+
+.history-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: #777;
+}
+
+.bars {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  height: 92px;
+}
+
+.day {
+  display: grid;
+  grid-template-rows: 16px 1fr 18px;
+  align-items: end;
+  justify-items: center;
+}
+
+.count {
+  font-size: 11px;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  width: 70%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: #e8893a;
+  align-self: end;
+}
+
+.weekday {
+  font-size: 11px;
+  color: #777;
 }
 </style>

@@ -173,13 +173,17 @@ export function minutesLeft(state: TimerState, now: number): number | null {
   return ms === null ? null : Math.ceil(ms / MINUTE_MS)
 }
 
-// --- Today's count (FR-40) --------------------------------------------------------------
+// --- Focus history (FR-40, requirement-v4.md FR-48) ------------------------------------
 
-export interface FocusDay {
-  /** Local calendar date, YYYY-MM-DD. */
-  date: string
-  completed: number
+/** Completed focus sessions per local day ("YYYY-MM-DD" -> count). */
+export interface FocusHistory {
+  days: Record<string, number>
 }
+
+export const EMPTY_HISTORY: FocusHistory = { days: {} }
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const isCount = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 0
 
 /** Local calendar date of `now`, YYYY-MM-DD. */
 export function localDate(now: number): string {
@@ -188,13 +192,43 @@ export function localDate(now: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
-/** Today's count; a record from another day counts as 0. */
-export function completedToday(day: FocusDay, now: number): number {
-  return day.date === localDate(now) ? day.completed : 0
+/** Local date `offset` calendar days from `now` (negative = earlier), DST-safe. */
+function dateOffset(now: number, offset: number): string {
+  const d = new Date(now)
+  return localDate(new Date(d.getFullYear(), d.getMonth(), d.getDate() + offset, 12).getTime())
 }
 
-export function addCompleted(day: FocusDay, now: number, count: number): FocusDay {
-  return { date: localDate(now), completed: completedToday(day, now) + count }
+export function completedToday(history: FocusHistory, now: number): number {
+  return history.days[localDate(now)] ?? 0
+}
+
+/** Adds to today and drops days older than `keepDays` (today counts as one). */
+export function addCompleted(
+  history: FocusHistory,
+  now: number,
+  count: number,
+  keepDays: number = FOCUS.historyKeepDays
+): FocusHistory {
+  const today = localDate(now)
+  const oldest = dateOffset(now, -(keepDays - 1))
+  const days: Record<string, number> = {}
+  for (const [date, n] of Object.entries(history.days))
+    if (date >= oldest && date <= today) days[date] = n
+  days[today] = (days[today] ?? 0) + count
+  return { days }
+}
+
+export interface DayCount {
+  date: string
+  count: number
+}
+
+/** The last `n` days ending today, oldest first, with 0 for days without focus (FR-49). */
+export function lastDays(history: FocusHistory, now: number, n: number): DayCount[] {
+  return Array.from({ length: n }, (_, i) => {
+    const date = dateOffset(now, i - (n - 1))
+    return { date, count: history.days[date] ?? 0 }
+  })
 }
 
 /** Milliseconds until the next local midnight (when the count resets). */
@@ -204,12 +238,33 @@ export function msUntilMidnight(now: number): number {
   return next.getTime() - now
 }
 
-/** Validates focus.json content; null when it is unusable. */
-export function parseFocusDay(raw: unknown): FocusDay | null {
+/**
+ * Validates focus.json; null when it is unusable. Version 1 (v3: one day) is upgraded to the
+ * version 2 history (FR-48).
+ */
+export function parseFocusFile(raw: unknown): FocusHistory | null {
   if (typeof raw !== 'object' || raw === null) return null
-  const { version, date, completed } = raw as Record<string, unknown>
-  if (version !== 1) return null
-  if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
-  if (typeof completed !== 'number' || !Number.isInteger(completed) || completed < 0) return null
-  return { date, completed }
+  const r = raw as Record<string, unknown>
+  if (r['version'] === 1) {
+    const { date, completed } = r
+    if (typeof date !== 'string' || !DATE_RE.test(date) || !isCount(completed)) return null
+    return { days: { [date]: completed } }
+  }
+  if (r['version'] !== 2) return null
+  const daysRaw = r['days']
+  if (typeof daysRaw !== 'object' || daysRaw === null || Array.isArray(daysRaw)) return null
+  const days: Record<string, number> = {}
+  for (const [date, n] of Object.entries(daysRaw)) {
+    if (!DATE_RE.test(date) || !isCount(n)) return null
+    days[date] = n
+  }
+  return { days }
+}
+
+/** What focus.json stores (version 2). */
+export function focusFileContent(history: FocusHistory): {
+  version: 2
+  days: Record<string, number>
+} {
+  return { version: 2, days: history.days }
 }

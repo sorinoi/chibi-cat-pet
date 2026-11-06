@@ -8,7 +8,10 @@ import {
   localDate,
   minutesLeft,
   msUntilMidnight,
-  parseFocusDay,
+  parseFocusFile,
+  focusFileContent,
+  lastDays,
+  EMPTY_HISTORY,
   pause,
   phaseMs,
   remainingMs,
@@ -216,16 +219,49 @@ describe('remaining time for display', () => {
   })
 })
 
-describe("today's count (FR-40)", () => {
-  it('counts only for the local date and resets on a new day', () => {
+describe("today's count and history (FR-40, v4 FR-48/49)", () => {
+  it('counts per local date; a new day starts at 0', () => {
     const today = localDate(T0)
     expect(today).toBe('2026-11-06')
-    let day = addCompleted({ date: today, completed: 2 }, T0, 1)
-    expect(day).toEqual({ date: today, completed: 3 })
+    let h = addCompleted({ days: { [today]: 2 } }, T0, 1)
+    expect(h).toEqual({ days: { '2026-11-06': 3 } })
     const tomorrow = new Date(2026, 10, 7, 0, 0, 1).getTime()
-    expect(completedToday(day, tomorrow)).toBe(0)
-    day = addCompleted(day, tomorrow, 1)
-    expect(day).toEqual({ date: '2026-11-07', completed: 1 })
+    expect(completedToday(h, tomorrow)).toBe(0)
+    h = addCompleted(h, tomorrow, 1)
+    expect(h.days).toEqual({ '2026-11-06': 3, '2026-11-07': 1 })
+  })
+
+  it('keeps only the last 30 days', () => {
+    const h = addCompleted(
+      { days: { '2026-10-07': 9, '2026-10-08': 4, '2030-01-01': 5 } },
+      T0,
+      1,
+      30
+    )
+    // 2026-10-08 is 29 days before 2026-11-06: kept. Older and future dates are dropped.
+    expect(h.days).toEqual({ '2026-10-08': 4, '2026-11-06': 1 })
+  })
+
+  it('lists the last 7 days oldest first, with zeros', () => {
+    const week = lastDays({ days: { '2026-11-06': 3, '2026-11-02': 1, '2026-10-30': 8 } }, T0, 7)
+    expect(week.map((d) => d.date)).toEqual([
+      '2026-10-31',
+      '2026-11-01',
+      '2026-11-02',
+      '2026-11-03',
+      '2026-11-04',
+      '2026-11-05',
+      '2026-11-06'
+    ])
+    expect(week.map((d) => d.count)).toEqual([0, 0, 1, 0, 0, 0, 3])
+  })
+
+  it('crosses month ends and DST-free dates correctly', () => {
+    const mar1 = new Date(2026, 2, 1, 9).getTime()
+    expect(lastDays(EMPTY_HISTORY, mar1, 2).map((d) => d.date)).toEqual([
+      '2026-02-28',
+      '2026-03-01'
+    ])
   })
 
   it('knows how long until midnight', () => {
@@ -233,15 +269,26 @@ describe("today's count (FR-40)", () => {
     expect(msUntilMidnight(new Date(2026, 10, 6, 0, 0, 0).getTime())).toBe(24 * 60 * MIN)
   })
 
-  it('validates focus.json', () => {
-    expect(parseFocusDay({ version: 1, date: '2026-11-06', completed: 4 })).toEqual({
-      date: '2026-11-06',
-      completed: 4
+  it('reads focus.json version 2 and upgrades version 1', () => {
+    expect(parseFocusFile({ version: 2, days: { '2026-11-06': 4, '2026-11-05': 0 } })).toEqual({
+      days: { '2026-11-06': 4, '2026-11-05': 0 }
     })
-    expect(parseFocusDay({ version: 2, date: '2026-11-06', completed: 4 })).toBeNull()
-    expect(parseFocusDay({ version: 1, date: 'today', completed: 4 })).toBeNull()
-    expect(parseFocusDay({ version: 1, date: '2026-11-06', completed: -1 })).toBeNull()
-    expect(parseFocusDay({ version: 1, date: '2026-11-06', completed: 1.5 })).toBeNull()
-    expect(parseFocusDay('nope')).toBeNull()
+    expect(parseFocusFile({ version: 1, date: '2026-11-06', completed: 4 })).toEqual({
+      days: { '2026-11-06': 4 }
+    })
+    expect(focusFileContent({ days: { '2026-11-06': 1 } })).toEqual({
+      version: 2,
+      days: { '2026-11-06': 1 }
+    })
+  })
+
+  it('rejects damaged files', () => {
+    expect(parseFocusFile({ version: 3, days: {} })).toBeNull()
+    expect(parseFocusFile({ version: 2, days: { today: 1 } })).toBeNull()
+    expect(parseFocusFile({ version: 2, days: { '2026-11-06': -1 } })).toBeNull()
+    expect(parseFocusFile({ version: 2, days: [] })).toBeNull()
+    expect(parseFocusFile({ version: 1, date: 'today', completed: 4 })).toBeNull()
+    expect(parseFocusFile({ version: 1, date: '2026-11-06', completed: 1.5 })).toBeNull()
+    expect(parseFocusFile('nope')).toBeNull()
   })
 })

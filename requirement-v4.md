@@ -113,7 +113,7 @@ Same phase approval rule as before. The first two phases need no art.
 
 | Phase | Work | Gate | Status |
 | --- | --- | --- | --- |
-| V4-M1 | Hungry notification, focus history (focus.json v2, 7-day bars) | Notification rules unit tested and seen once in the app; history survives restart; v1 file upgrades | - |
+| V4-M1 | Hungry notification, focus history (focus.json v2, 7-day bars) | Notification rules unit tested and seen once in the app; history survives restart; v1 file upgrades | Done 2026-11-06, approved |
 | V4-M2 | Focus treats (setting, stock in pet.json, menu item, notification text) | Earn, give, cap, wipe and setting-off rules unit tested and checked in the app | - |
 | V4-M3 | Art import (`cat-life.png`), sad reminder, morning stretch, night sleepiness | Each clip plays at the right moment; feet steady; time windows unit tested | - |
 | V4-M4 | Look at the mouse (cursor polling, mirroring) | Looks toward the cursor on both sides; never blocks clicks; polling stops when not idle or hidden | - |
