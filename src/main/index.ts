@@ -1,9 +1,10 @@
-import { app, dialog, type Tray } from 'electron'
+import { app, dialog, powerMonitor, type Tray } from 'electron'
 import { join } from 'node:path'
 import { createAppActions } from './appActions'
 import { createCareEngine, type CareSnapshot } from './careEngine'
 import { applySettings } from './applySettings'
-import { PET_FILE, STORE } from './config'
+import { FOCUS_FILE, PET_FILE, STORE } from './config'
+import { createFocusEngine } from './focusEngine'
 import { registerIpcHandlers, type CareUi } from './ipc'
 import { createTray, showPetContextMenu } from './menus'
 import { createPetMotion } from './petMotion'
@@ -49,6 +50,16 @@ function start(): void {
   const care = createCareEngine({ filePath: join(app.getPath('userData'), PET_FILE) })
   care.load()
   care.start()
+
+  // v3 focus timer (requirement-v3.md section 4). Menus and notifications come in V3-M3.
+  const focus = createFocusEngine({
+    filePath: join(app.getPath('userData'), FOCUS_FILE),
+    settings: () => store.settings
+  })
+  focus.load()
+  // A focus the PC slept through is interrupted right on wake, not at the next tick.
+  const onResume = (): void => focus.check()
+  powerMonitor.on('resume', onResume)
   const hasPet = (): boolean => care.current() !== null
 
   // FR-22: no cat on the desktop until one is adopted.
@@ -214,6 +225,8 @@ function start(): void {
     userIdle.dispose()
     fullscreen.dispose()
     care.dispose()
+    powerMonitor.off('resume', onResume)
+    focus.dispose()
     unregister()
   })
 }

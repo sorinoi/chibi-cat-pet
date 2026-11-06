@@ -46,6 +46,9 @@ export const FULLSCREEN = {
 /** v2 pet data (FR-30), next to settings.json. Deleted on uninstall with the rest. */
 export const PET_FILE = 'pet.json'
 
+/** Today's focus count (requirement-v3.md FR-40). */
+export const FOCUS_FILE = 'focus.json'
+
 export const STORE = {
   fileName: 'settings.json',
   /** Batch rapid changes (slider drags, walking) into one write. */

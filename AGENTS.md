@@ -22,7 +22,7 @@ Communicate with the user in Thai, casual and friendly, no rude or vulgar langua
 - Electron (main + preload + renderer)
 - Graphics: Canvas 2D drawing a PNG sprite sheet (no WebGL, no Three.js). The 3D .glb cat was replaced on 2026-11-06 (user decision); it lives in git commit 42360ca.
 - Model format: PNG sprite sheet + JSON config (grid, anchor, clips with fps/frameMs, loop, loopFrom)
-- State: Vue composables (no Pinia). Persistence: own small JSON files in the user's app data folder: settings.json (src/main/settingsStore.ts) and, for v2, pet.json (src/main/careEngine.ts + petStore.ts). Decided in M4 to keep deps minimal.
+- State: Vue composables (no Pinia). Persistence: own small JSON files in the user's app data folder: settings.json (src/main/settingsStore.ts), for v2 pet.json (src/main/careEngine.ts + petStore.ts), for v3 focus.json with today's focus count (src/main/focusEngine.ts). Decided in M4 to keep deps minimal.
 - Native calls: koffi 2.x (FFI, prebuilt binary in the package, its install script is not run). Used only in src/main/fullscreenWatcher.ts for FR-16. electron-builder.yml ships only its win32_x64 binary, unpacked from asar.
 - Packaging: electron-builder (NSIS, Windows x64)
 - Tests: Vitest. Lint/format: ESLint + Prettier
@@ -86,7 +86,7 @@ Performance (NFR-01 to NFR-05)
 - v2 care actions go through the renderer first (it checks the state machine), then main applies them via `care:act`; menus only send `care:request`.
 - No magic numbers for timings, sizes or fps. Put them in a config module or the settings store.
 - Models and animation clip names come from config, not hardcoded in components. Standard clip names: `idle`, `walk`, `click`, `drag`, `land`, `sleep`; optional v2 care clips: `eat`, `happy`, `hungry`, `pet`.
-- Pet-care tuning (rates, floors, cooldowns, stroke detection) lives only in src/shared/careConfig.ts.
+- Pet-care tuning (rates, floors, cooldowns, stroke detection) lives only in src/shared/careConfig.ts. Focus timer defaults, limits and internals live only in src/shared/focusConfig.ts; the timer rules are pure in src/shared/focusTimer.ts and run in main (focusEngine), not in the pet state machine.
 - User-facing text lives only in src/shared/strings.ts: one table per language (English defines the shape, Thai must match; strings.test.ts checks it). Main reads `stringsFor(store.settings.language)` when it builds a menu, tooltip or dialog; the settings window derives the language from its settings, the pet and adoption windows use `useLanguage()` (app:get-language / app:language-changed).
 - IPC channels are named `domain:action` (for example `window:set-ignore-mouse`) and typed in one shared file.
 - Small, focused commits. Conventional Commit style (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`).

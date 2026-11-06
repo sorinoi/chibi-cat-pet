@@ -81,3 +81,38 @@ describe('language setting (FR-42, FR-45)', () => {
     ).toBe('en')
   })
 })
+
+describe('focus timer settings (requirement-v3.md section 4)', () => {
+  it('defaults to the classic Pomodoro values', () => {
+    expect(DEFAULT_SETTINGS).toMatchObject({
+      focusMinutes: 25,
+      shortBreakMinutes: 5,
+      longBreakMinutes: 15,
+      longBreakEvery: 4,
+      autoStartBreaks: true,
+      autoStartFocus: false,
+      focusNotifications: true
+    })
+  })
+
+  it('clamps to the limits and rounds to whole minutes', () => {
+    const s = sanitizeSettings({
+      focusMinutes: 500,
+      shortBreakMinutes: 0,
+      longBreakMinutes: 14.6,
+      longBreakEvery: 1,
+      autoStartFocus: 'yes'
+    })
+    expect(s.focusMinutes).toBe(120)
+    expect(s.shortBreakMinutes).toBe(1)
+    expect(s.longBreakMinutes).toBe(15)
+    expect(s.longBreakEvery).toBe(2)
+    expect(s.autoStartFocus).toBe(false)
+  })
+
+  it('a v2 settings file gets the timer defaults', () => {
+    const state = parsePersistedState({ settings: { petSize: 0.7 } })
+    expect(state.settings.focusMinutes).toBe(25)
+    expect(state.settings.petSize).toBe(0.7)
+  })
+})

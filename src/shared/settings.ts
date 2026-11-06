@@ -1,7 +1,12 @@
+import { FOCUS } from './focusConfig'
+import type { FocusSettings } from './focusTimer'
 import { isLanguage, type Language } from './strings'
 
-/** User settings (requirement.md section 8, requirement-v3.md FR-42). Shared by main and the settings UI. */
-export interface Settings {
+/**
+ * User settings (requirement.md section 8; requirement-v3.md FR-39 focus timer, FR-42 language).
+ * Shared by main and the settings UI.
+ */
+export interface Settings extends FocusSettings {
   /** Pet scale; the window grows with it. FR-11. */
   petSize: number
   /** Window opacity, 0..1. FR-11. */
@@ -14,12 +19,15 @@ export interface Settings {
   sleepAfterMinutes: number
   /** UI language. FR-42. */
   language: Language
+  /** Windows notification at each focus phase end. FR-37. */
+  focusNotifications: boolean
 }
 
 export const SETTINGS_LIMITS = {
   petSize: { min: 0.5, max: 2, step: 0.1 },
   opacity: { min: 0.3, max: 1, step: 0.05 },
-  sleepAfterMinutes: { min: 1, max: 120, step: 1 }
+  sleepAfterMinutes: { min: 1, max: 120, step: 1 },
+  ...FOCUS.limits
 } as const
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
@@ -29,7 +37,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   startWithWindows: false,
   sleepAfterMinutes: 5,
   /** Main replaces this with the system language on first run (FR-42). */
-  language: 'en'
+  language: 'en',
+  ...FOCUS.defaults
 }
 
 export interface Position {
@@ -58,6 +67,12 @@ function clampNumber(
   return Math.min(Math.max(value, limits.min), limits.max)
 }
 
+const wholeNumber = (
+  value: unknown,
+  limits: { min: number; max: number },
+  fallback: number
+): number => Math.round(clampNumber(value, limits, fallback))
+
 const bool = (value: unknown, fallback: boolean): boolean =>
   typeof value === 'boolean' ? value : fallback
 
@@ -72,7 +87,26 @@ export function sanitizeSettings(raw: unknown, base: Settings = DEFAULT_SETTINGS
     sleepAfterMinutes: Math.round(
       clampNumber(r['sleepAfterMinutes'], SETTINGS_LIMITS.sleepAfterMinutes, base.sleepAfterMinutes)
     ),
-    language: isLanguage(r['language']) ? r['language'] : base.language
+    language: isLanguage(r['language']) ? r['language'] : base.language,
+    focusMinutes: wholeNumber(r['focusMinutes'], SETTINGS_LIMITS.focusMinutes, base.focusMinutes),
+    shortBreakMinutes: wholeNumber(
+      r['shortBreakMinutes'],
+      SETTINGS_LIMITS.shortBreakMinutes,
+      base.shortBreakMinutes
+    ),
+    longBreakMinutes: wholeNumber(
+      r['longBreakMinutes'],
+      SETTINGS_LIMITS.longBreakMinutes,
+      base.longBreakMinutes
+    ),
+    longBreakEvery: wholeNumber(
+      r['longBreakEvery'],
+      SETTINGS_LIMITS.longBreakEvery,
+      base.longBreakEvery
+    ),
+    autoStartBreaks: bool(r['autoStartBreaks'], base.autoStartBreaks),
+    autoStartFocus: bool(r['autoStartFocus'], base.autoStartFocus),
+    focusNotifications: bool(r['focusNotifications'], base.focusNotifications)
   }
 }
 
