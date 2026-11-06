@@ -28,7 +28,7 @@ export default defineConfig({
     },
     // Pre-bundle up front: a first-run optimize + reload left the dev window blank.
     optimizeDeps: {
-      include: ['three', 'three/examples/jsm/loaders/GLTFLoader.js']
+      include: ['vue']
     }
   }
 })

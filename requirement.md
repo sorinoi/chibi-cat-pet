@@ -1,13 +1,13 @@
-# Requirement: 3D Desktop Pet for Windows (Vue + Electron)
+# Requirement: Desktop Pet for Windows (Vue + Electron)
 
 Last updated: 2026-11-06 (M4: storage and state decisions). Source of truth for the project. Read this when unsure.
 
 ## 1. Overview
 
-A 3D cat that lives on the Windows desktop. The user can click and drag it while still using other programs normally. Built with Vue and packaged with Electron.
+A 2D sprite cat that lives on the Windows desktop (a 3D cat was used through M4; replaced by a sprite on 2026-11-06, see section 9). The user can click and drag it while still using other programs normally. Built with Vue and packaged with Electron.
 
 Goals:
-- Show a 3D pet floating on the screen that reacts to click and drag.
+- Show a pet floating on the screen that reacts to click and drag.
 - Do not disturb normal work: the mouse passes through transparent areas to the programs behind.
 - Light enough to run all day without heating up or slowing the machine.
 - Adding or swapping the model must not require changing core code.
@@ -19,7 +19,7 @@ Decisions made:
 ## 2. Scope
 
 v1 in scope:
-- One 3D cat with basic animations.
+- One sprite-animated cat with basic animations.
 - Click, drag, drop, and mouse click-through on transparent areas.
 - System tray icon and a basic settings page.
 - Windows installer that installs and uninstalls cleanly.
@@ -37,7 +37,7 @@ v1 out of scope:
 | --- | --- |
 | User | The owner, personal use |
 | OS | Windows 10 (64-bit) or newer, tested on 10 and 11 |
-| GPU | WebGL 2 support (integrated graphics is fine) |
+| GPU | Any (2D canvas; no WebGL needed) |
 | Memory | 4 GB RAM or more |
 | Display | Multiple monitors, DPI scaling 100% to 200% |
 | Internet | Not required to run |
@@ -48,7 +48,7 @@ Priority: Must / Should / Could. v1 has 16 items, 8 are Must.
 
 | ID | Area | Requirement | Priority |
 | --- | --- | --- | --- |
-| FR-01 | Pet | Show the 3D model in a transparent, frameless window that stays on top of the screen | Must |
+| FR-01 | Pet | Show the pet in a transparent, frameless window that stays on top of the screen | Must |
 | FR-02 | Pet | Loop the idle animation when there is no interaction | Must |
 | FR-03 | Pet | Clicking the pet plays a reaction animation | Must |
 | FR-04 | Pet | Drag the pet anywhere on screen and remember the last position on next launch | Must |
@@ -89,10 +89,11 @@ Initial targets. Tune after measuring on the target machine.
 | UI | Vue 3 (Composition API) + TypeScript | |
 | Build | Vite + electron-vite | Quick Electron + Vue setup, hot reload |
 | Desktop shell | Electron | Transparent window, always on top, click-through |
-| 3D | Three.js via TresJS | TresJS writes the 3D scene as Vue components (alternative: plain Three.js) |
-| Model | glTF / GLB | Single file with built-in animations |
+| Graphics | Canvas 2D sprite sheet | Replaced Three.js (3D) on 2026-11-06: lighter and matches the art. The 3D version is in git commit 42360ca. |
+| Model | PNG sprite sheet + JSON config | One sheet per model; clips, timing and anchor in the JSON |
 | State | Vue composables | Pet state and settings (Pinia dropped in M4: too small to need it) |
 | Settings storage | Own JSON store in main (atomic write, validated) | JSON file in the user app data folder, no database (electron-store dropped in M4 to keep deps minimal) |
+| Native calls | koffi (FFI, prebuilt, no install script) | FR-16: shell32 SHQueryUserNotificationState every 2 s to detect a fullscreen app (added in M5, user decision) |
 | Packaging | electron-builder (NSIS) | Windows .exe installer |
 | Tests | Vitest | Behavior logic and settings |
 
@@ -104,7 +105,7 @@ Two processes talk through a preload bridge (IPC).
 
 - Main process (Node.js): transparent window (frameless, always on top, click-through), tray and menu, settings store, system (single instance, auto-start, detect idle machine).
 - Preload: exposes a small typed API to the renderer via contextBridge.
-- Renderer (Vue 3 + Three.js): 3D scene (load .glb, play animations), click/drag detection (Raycaster), behavior controller (idle, walk, dragged, sleep), settings UI (Vue + composables).
+- Renderer (Vue 3 + Canvas 2D): sprite scene (load the sheet, play clips), click/drag detection (per-pixel alpha hit test), behavior controller (idle, walk, dragged, sleep), settings UI (Vue + composables).
 
 The renderer never calls the system directly; it sends commands through the preload.
 
@@ -113,8 +114,8 @@ Proposed structure:
 ```
 src/main/        window, tray, settings store, IPC
 src/preload/     expose functions to the renderer via contextBridge
-src/renderer/    Vue app: 3D scene, behavior, settings UI
-assets/models/   .glb files and a config per model
+src/renderer/    Vue app: sprite scene, behavior, settings UI
+assets/models/   sprite sheets (.png) with a JSON config and license note per model
 ```
 
 ## 8. UI/UX
@@ -134,9 +135,11 @@ Tray menu: show/hide pet, settings, about, quit.
 
 Settings (5 items): pet size, opacity, always on top on/off, start with Windows on/off, idle time before sleeping.
 
-## 9. 3D model and animation
+## 9. Pet model and animation
 
-The model must be a .glb file with a skeleton (rig) and animations named per the standard below, so the model can be swapped without code changes.
+Decision 2026-11-06 (user): the 3D .glb cat was replaced by a 2D sprite sheet. The 3D version (procedural rigged cat, Three.js renderer) is kept in git commit 42360ca.
+
+The model is a PNG sprite sheet plus a JSON config next to it (assets/models/). Clips are named per the standard below, so the model can be swapped without code changes.
 
 | Clip | Used when | Playback |
 | --- | --- | --- |
@@ -147,13 +150,17 @@ The model must be a .glb file with a skeleton (rig) and animations named per the
 | land | Released after drag | Once |
 | sleep | Machine unused for long | Loop |
 
-Model file limits (initial targets):
-- At most 20,000 triangles; textures at most 2048 x 2048 pixels.
-- File at most 10 MB per model.
-- Reference point at the feet so it can stand on the ground and walk at the right position.
-- Use a self-made model or one with a clear license that allows use; keep the license evidence.
+Sprite sheet rules:
+- PNG with a real alpha channel (transparent background); the alpha drives click-through hit tests.
+- Regular grid of equal cells, one clip per row starting at column 0.
+- Feet at the same height in every grounded frame (the config's anchor), so frames do not jitter.
+- Walk frames face one direction (config `walkFacing`); the other direction is mirrored.
+- Looping clips may have an intro that plays once (config `loopFrom`), for example sleep: lie down, then loop.
+- Frame timing per clip (`fps` or per-frame `frameMs`), never faster than 30 fps.
+- Sheet at most 4096 x 4096 px and 10 MB.
+- Self-made art or a clear license; keep the license note next to the file.
 
-Model plan: Claude builds the cat in code (low-poly, primitives, rigged, procedural animations) and exports .glb. Colors and pattern configurable. A third-party model can replace it later.
+Current model: assets/models/cat-sprite.png, 8 x 6 cells of 192 px, generated by the project owner with Claude (claude.ai). License note: assets/models/cat-sprite.LICENSE.txt. No 2x version yet, so it is slightly soft at 125-200 % DPI.
 
 ## 10. Milestones
 
@@ -162,7 +169,7 @@ Each phase must pass its own gate before the next phase starts. When a phase end
 | Phase | Work | Gate |
 | --- | --- | --- |
 | M1 | Scaffold: Vue 3, Electron, transparent window | Transparent always-on-top window and click-through works |
-| M2 | Show the 3D model: load .glb, play idle | Cat animates on the desktop |
+| M2 | Show the model, play idle (done with the 3D .glb; now a sprite) | Cat animates on the desktop |
 | M3 | Interaction: click, drag, drop, auto-walk, sleep | Click and drag are smooth; transparent area never blocks the mouse |
 | M4 | Tray, settings, persistence, auto-start, installer | Install, use, and uninstall all work |
 | M5 | Test and release | NFRs and acceptance criteria all pass; release v1.0 |
@@ -174,23 +181,38 @@ No dates are set (team size and time unknown).
 | Risk | Mitigation |
 | --- | --- |
 | Click-through on transparent areas is inconsistent in some setups (multi-monitor, high DPI) | Test from M1; fallback: size the window to fit the model and move the window with it |
-| 3D on Electron uses many resources; machine heats up or lags | Cap 30 fps, stop rendering when still, reduce model and texture detail |
+| Rendering uses many resources; machine heats up or lags | Sprite frames change only on a timer at their own pace (max 30 fps); nothing runs between frames |
 | Model and animation licensing | Use a self-made model or a clearly licensed one; keep license evidence |
-| Machine without WebGL 2 or with hardware acceleration off | Detect at startup, tell the user, consider a 2D fallback |
 | Windows SmartScreen warns about an unsigned installer | Personal use: accept the warning; use a code-signing certificate only if distributed |
 | Installer too large | Remove unused dependencies, compress model and textures |
 
 ## 12. Acceptance criteria (v1)
 
-- [ ] Install on Windows 10 and 11 and the pet appears on the desktop
-- [ ] Click, drag, and drop work; next launch is at the same position
-- [ ] Clicking a transparent area passes the click to the program behind
-- [ ] Tray menu works fully: show/hide, settings, quit
-- [ ] Meets NFR-01 to NFR-05 on the target machine
-- [ ] Runs 8 hours with no continuous memory growth
-- [ ] After uninstall no stray files remain
+- [~] Install on Windows 10 and 11 and the pet appears on the desktop (Windows 11: pass. Windows 10: not tested, no machine)
+- [x] Click, drag, and drop work; next launch is at the same position
+- [x] Clicking a transparent area passes the click to the program behind
+- [~] Tray menu works fully: show/hide, settings, quit (built; right-click menu verified; tray needs a hand check)
+- [~] Meets NFR-01 to NFR-05 on the target machine (NFR-01..04 pass, see section 14; NFR-05 8 h run in progress)
+- [~] Runs 8 hours with no continuous memory growth (accelerated test: no growth; real 8 h run started 2026-11-06)
+- [x] After uninstall no stray files remain
 
 ## 13. Open questions
 
 - v2 pet-care system: which needs and interactions (hunger, happiness, interactions), and whether other species besides the cat will exist.
 - Development time frame (milestones have no dates yet).
+
+## 14. v1.0 measurements (2026-11-06, target machine)
+
+Windows 11 Pro, 16 logical CPUs, one 2560 x 1600 display at 125 % scaling. Sprite build 1.0.0.
+
+| ID | Target | Measured | Result |
+| --- | --- | --- | --- |
+| NFR-01 | CPU <= 5 %, RAM <= 300 MB idle | CPU 0.05 % of the machine (2 min, incl. a walk); private RAM 170 MB | Pass |
+| NFR-02 | 30 fps while moving, stop when hidden or still | Frames change only on their own timer (max 30 fps); clock pauses while hidden | Pass |
+| NFR-03 | Visible within 5 s | 330-350 ms from process start to first sprite frame (warm); first launch right after install was about 11 s once (likely a first-run scan) | Pass |
+| NFR-04 | Click reaction within 100 ms | Clip starts 2.7 ms after pointerup; first visibly different frame 41 ms | Pass |
+| NFR-05 | No memory growth over 8 h | Accelerated: 117 cycles of click/drag/walk/sleep, JS heap after GC +4 KB on the second run, process RAM flat; real 8 h run in progress | Pending |
+| NFR-08 | Clean uninstall | No folders, shortcuts, Run/StartupApproved values or uninstall entry left | Pass |
+| NFR-09 | Installer <= 200 MB | 108.6 MB | Pass |
+
+Not covered on this machine: Windows 10, multiple monitors (FR-15), mixed-DPI monitors. FR-08 (head follows the mouse, Could) is not in v1: the sprite has no frames for it.

@@ -1,5 +1,5 @@
 import { onBeforeUnmount, onMounted, readonly, ref, type Ref } from 'vue'
-import { BEHAVIOR, PET, RENDER } from '../config'
+import { BEHAVIOR } from '../config'
 import { transition, type PetEvent, type PetState } from '../lib/petMachine'
 import type { PetScene } from './usePetScene'
 
@@ -48,7 +48,7 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
       dispatch('arrived')
       return
     }
-    scene.setFacing(planned > 0 ? PET.walkYaw.right : PET.walkYaw.left)
+    scene.setFacing(planned > 0 ? 'right' : 'left')
   }
 
   function exit(from: PetState, to: PetState): void {
@@ -58,8 +58,6 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
 
   function enter(to: PetState): void {
     scene.play(to)
-    scene.setMaxFps(to === 'sleep' ? RENDER.sleepFps : RENDER.maxFps)
-    if (to !== 'walk') scene.setFacing(PET.viewYaw)
 
     switch (to) {
       case 'idle':
@@ -112,6 +110,7 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
       window.__petDebug = {
         dispatch,
         state: () => state.value,
+        scene: () => scene.current(),
         setUserIdle: (idle: boolean) => {
           userIdle = idle
           dispatch(idle ? 'sleep' : 'wake')

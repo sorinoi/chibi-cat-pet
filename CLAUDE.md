@@ -1,13 +1,13 @@
 # Desktop Pet (Windows) — CLAUDE.md
 
-Personal Windows app: a clickable, draggable 3D cat that lives on the desktop.
-Built with Vue 3 + Electron + Three.js (TresJS). Single developer (the user) working with Claude Code. Personal use only, not distributed.
+Personal Windows app: a clickable, draggable sprite cat that lives on the desktop.
+Built with Vue 3 + Electron + Canvas 2D. Single developer (the user) working with Claude Code. Personal use only, not distributed.
 
 Communicate with the user in Thai, casual and friendly, no rude or vulgar language. Keep code, identifiers, commits and code comments in English.
 
 ## Product summary
 
-- v1: one 3D cat on a transparent, frameless, always-on-top window. Click, drag, drop, idle/walk/sleep behaviors, system tray menu, settings, NSIS installer.
+- v1: one sprite cat on a transparent, frameless, always-on-top window. Click, drag, drop, idle/walk/sleep behaviors, system tray menu, settings, NSIS installer.
 - v2 (later): pet-care system. Only ONE pet at a time. Adopting a different pet means starting over and wiping the old pet's data immediately.
 - Out of scope: macOS/Linux, multiple pets at once, cloud sync/accounts, shop/marketplace/plugins.
 - Requirement IDs (FR-xx, NFR-xx) come from the requirement doc. Reference them in commits and PRs when relevant.
@@ -17,9 +17,10 @@ Communicate with the user in Thai, casual and friendly, no rude or vulgar langua
 - Vue 3 (Composition API, `<script setup>`) + TypeScript (strict)
 - Vite via electron-vite
 - Electron (main + preload + renderer)
-- 3D: Three.js through TresJS (fall back to plain Three.js if TresJS gets in the way)
-- Model format: glTF/GLB, animations via `AnimationMixer`
+- Graphics: Canvas 2D drawing a PNG sprite sheet (no WebGL, no Three.js). The 3D .glb cat was replaced on 2026-11-06 (user decision); it lives in git commit 42360ca.
+- Model format: PNG sprite sheet + JSON config (grid, anchor, clips with fps/frameMs, loop, loopFrom)
 - State: Vue composables (no Pinia). Persistence: own small JSON store in main (src/main/settingsStore.ts, file in the user's app data folder). Decided in M4 to keep deps minimal.
+- Native calls: koffi 2.x (FFI, prebuilt binary in the package, its install script is not run). Used only in src/main/fullscreenWatcher.ts for FR-16. electron-builder.yml ships only its win32_x64 binary, unpacked from asar.
 - Packaging: electron-builder (NSIS, Windows x64)
 - Tests: Vitest. Lint/format: ESLint + Prettier
 
@@ -34,11 +35,10 @@ npm run typecheck   # vue-tsc + tsc for main/preload and scripts/
 npm run lint        # eslint
 npm run test        # vitest
 npm run dist        # build + electron-builder -> dist/desktop-pet-setup-<version>.exe (NSIS, x64)
-npm run model:build # regenerate the procedural cat .glb + .json into assets/models/
 npm run icons:build # regenerate resources/*.png and build/icon.ico
 ```
 
-`scripts/` holds the generators (`.mts`, run by Node's built-in type stripping). Re-run `model:build` after changing anything under `scripts/cat/`.
+`scripts/` holds the icon generator (`.mts`, run by Node's built-in type stripping).
 
 Installer notes: config in `electron-builder.yml`, extra uninstall steps in `build/installer.nsh` (Run key, updater cache). The installed app keeps data in `%APPDATA%\desktop-pet`; uninstall deletes it. `"Desktop Pet.exe" --settings` opens the settings window, also when the app is already running.
 
@@ -49,8 +49,9 @@ Update this section whenever scripts change. Run `typecheck`, `lint` and `test` 
 ```
 src/main/        Electron main process: window, tray, settings store, auto-start, single instance, IPC handlers
 src/preload/     contextBridge API exposed to the renderer (keep it tiny and typed)
-src/renderer/    Vue app: 3D scene, behavior state machine, settings UI
-assets/models/   .glb files plus a small JSON config per model (clip names, scale, anchor)
+src/renderer/    Vue app: sprite scene, behavior state machine, settings UI
+src/shared/      types and pure logic used by main and renderer (IPC, settings, model config, active model)
+assets/models/   sprite sheet .png + JSON config + license note per model
 ```
 
 ## Hard rules
@@ -62,14 +63,14 @@ Security (NFR-06, NFR-07)
 
 Window behavior
 - Pet window: `transparent: true`, `frame: false`, `alwaysOnTop: true`, `skipTaskbar: true`, not resizable.
-- Transparent areas must not block the mouse. Use `setIgnoreMouseEvents(true, { forward: true })` and toggle it based on whether the cursor is over the model (Raycaster hit test). Fallback if unreliable: shrink the window to fit the model and move the window instead.
+- Transparent areas must not block the mouse. Use `setIgnoreMouseEvents(true, { forward: true })` and toggle it based on whether the cursor is over the cat (per-pixel alpha hit test on the current frame). Fallback if unreliable: shrink the window to fit the model and move the window instead.
 - Test click-through early (M1) and on multi-monitor and high-DPI setups before building more on it.
 - Only one instance may run (`app.requestSingleInstanceLock`).
 
 Performance (NFR-01 to NFR-05)
-- Cap rendering at 30 fps. Stop the render loop when the window is hidden, the pet is idle and not animating, or a fullscreen app is in front.
+- Frames change at most 30 times per second, on a timer at each frame's own duration; nothing runs between frames. Pause when the window is hidden or a fullscreen app is in front.
 - Targets (tune after measuring): idle CPU under 5%, RAM under 300 MB, pet visible within 5 s of launch, click reaction within 100 ms, no memory growth over 8 hours.
-- Dispose geometries, materials, textures and mixers when swapping models. No leaks.
+- Release the sheet image, alpha mask and timers when the scene unmounts or the model changes. No leaks.
 
 ## Conventions
 
@@ -82,13 +83,13 @@ Performance (NFR-01 to NFR-05)
 - Small, focused commits. Conventional Commit style (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`).
 - Keep dependencies minimal. Ask before adding a new runtime dependency.
 
-## 3D cat model
+## Cat sprite
 
-- Claude creates the cat model in code: low-poly, built from simple primitives, rigged with bones, animated procedurally, exportable to `.glb`. Not a hand-sculpted model.
-- Targets: under 20,000 triangles, textures at most 2048 x 2048, file under 10 MB, origin at the feet so it can stand on the ground.
-- Required clips: `idle` (loop: breathing, tail sway, ear twitch, blink), `walk` (loop), `click` (once), `drag` (loop), `land` (once), `sleep` (loop).
-- Colors and pattern must be configurable (for example orange tabby, calico).
-- Any third-party model must have a clear license; keep the license note next to the file.
+- Art: assets/models/cat-sprite.png (8 x 6 cells, 192 px), generated by the user with Claude (claude.ai). License note in cat-sprite.LICENSE.txt. Claude does not hand-draw sprites; new art comes from the user.
+- Sheet rules (requirement.md section 9): real alpha, regular grid, one clip per row from column 0, feet at the same height (anchor), walk frames face one way (`walkFacing`).
+- Required clips: `idle` (loop), `walk` (loop), `click` (once), `drag` (loop, intro via `loopFrom`), `land` (once), `sleep` (loop, intro via `loopFrom`).
+- The active model is set in src/shared/activeModel.ts; main sizes the window from it (cell size x displayScale x pet size).
+- Any third-party art must have a clear license; keep the license note next to the file.
 
 ## Milestones
 
@@ -97,7 +98,7 @@ Each phase must pass its gate before starting the next one.
 **Phase approval rule:** when a phase is finished, stop. Notify the user (Thai, short): what was done, whether the gate passed, and what the next phase is. Then WAIT for explicit approval before starting the next phase. Never roll into the next phase on your own.
 
 1. M1 Scaffold: Vue 3 + Electron + transparent window. Gate: always-on-top transparent window with working click-through.
-2. M2 Model: load `.glb`, play `idle`. Gate: cat animates on the desktop.
+2. M2 Model: load the model, play `idle` (done with 3D; replaced by the sprite after M4). Gate: cat animates on the desktop.
 3. M3 Interaction: click, drag, drop, auto-walk, sleep. Gate: smooth click/drag, transparent areas never block the mouse.
 4. M4 Shell: tray menu, settings window, persistence, auto-start, installer. Gate: install, use and uninstall cleanly.
 5. M5 Polish: measure against NFRs, fix bugs, release v1.0.

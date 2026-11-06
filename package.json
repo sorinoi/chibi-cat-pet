@@ -1,6 +1,6 @@
 {
   "name": "desktop-pet",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A 3D cat that lives on the Windows desktop",
   "private": true,
   "main": "./out/main/index.js",
@@ -14,14 +14,12 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "model:build": "node scripts/generate-cat.mts",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json",
     "icons:build": "node scripts/generate-icons.mts",
     "dist": "npm run build && electron-builder --win --x64"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
-    "@types/three": "^0.187.0",
     "@vitejs/plugin-vue": "^6.0.10",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.9.0",
@@ -31,12 +29,14 @@
     "eslint": "^10.14.0",
     "eslint-plugin-vue": "^10.12.0",
     "prettier": "^3.9.10",
-    "three": "^0.187.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.1",
     "vite": "^8.3.6",
     "vitest": "^5.1.0",
     "vue": "^3.5.45",
     "vue-tsc": "^3.3.14"
+  },
+  "dependencies": {
+    "koffi": "~2.16.3"
   }
 }

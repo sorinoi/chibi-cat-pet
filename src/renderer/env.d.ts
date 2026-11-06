@@ -5,6 +5,7 @@ import type { PetEvent, PetState } from './lib/petMachine'
 interface PetDebug {
   dispatch(event: PetEvent): void
   state(): PetState
+  scene(): { clip: string; frame: number; facing: string }
   setUserIdle(idle: boolean): void
 }
 

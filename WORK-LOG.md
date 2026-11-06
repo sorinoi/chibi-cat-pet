@@ -4,8 +4,9 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: M4 done; gate passed (install, use, uninstall clean). Waiting for the user's hand check of the tray icon/menu and a real right-click, and approval to start M5.
-- Next step: when approved, start M5: measure NFR-01..05 properly (startup, click latency, 8 h memory), FR-16 (pause when hidden / fullscreen app in front), multi-monitor check, acceptance criteria, release v1.0. Open question: keep plain Three.js instead of TresJS (then update requirement.md)?
+- Current phase: M5 nearly done. v1.0.0 built and installed; 8 h soak (NFR-05) running since 2026-11-06 15:30, ends about 23:30.
+- Next step: read the soak summary (background task, CSV at the scratchpad soak-8h.csv), fill NFR-05 in requirement.md section 14, then report the M5 gate. Still needs the user: tray hand check, fullscreen hand check (F11 or a fullscreen video), commit + tag v1.0.0 on request.
+- Restore point: commit 42360ca has the full 3D version (M1-M4). Work after it is not committed yet.
 - Testing rule (user, 2026-11-06): do not inject keyboard or move the real mouse system-wide. Use CDP events into the app's own pages and messages posted to the app's own windows; leave real-input checks to the user.
 
 ## Task status
@@ -23,8 +24,9 @@ Read this first in every new session. Keep entries short.
 | M4 | Settings window and persistence | done | all 5 settings apply live and survive restart; right-click menu -> Settings verified |
 | M4 | Auto-start and single instance | done | Run key written by installed app, removed on uninstall; dev never registers |
 | M4 | NSIS installer | done | 108 MB, per-user, install/update/uninstall verified clean |
-| M5 | Measure against NFRs, fix bugs | todo | |
-| M5 | Release v1.0 | todo | |
+| - | Replace 3D cat with 2D sprite | done | user's claude.ai sheet; verified dev, production, installer |
+| M5 | Measure against NFRs, fix bugs | in progress | NFR-01..04 pass; NFR-05 8 h run in progress; FR-16 done |
+| M5 | Release v1.0 | in progress | 1.0.0 installer built and installed; not committed or tagged |
 | v2 | Pet-care system | todo | not started until the user says go |
 
 ## Phase approvals
@@ -34,7 +36,8 @@ Read this first in every new session. Keep entries short.
 | M1 | 2026-11-06 | yes, 2026-11-06 |
 | M2 | 2026-11-06 | yes, 2026-11-06 |
 | M3 | 2026-11-06 | yes, 2026-11-06 (user checked drag by hand: smooth) |
-| M4 | 2026-11-06 | waiting |
+| M4 | 2026-11-06 | yes, 2026-11-06 |
+| M5 | - | - |
 
 ## Log
 
@@ -79,3 +82,18 @@ Read this first in every new session. Keep entries short.
 - 2026-11-06: Installer: dist/desktop-pet-setup-0.1.0.exe, 108 MB, per-user to %LOCALAPPDATA%\Programs\desktop-pet, Start menu + desktop shortcuts. First launch 11 s (likely first-run scan), later 0.3-0.9 s. Update install keeps settings.
 - 2026-11-06: Uninstall left %LOCALAPPDATA%\desktop-pet-updater (the installer's own copy, 108 MB). Fixed in build/installer.nsh. Final cycle with auto-start on: install -> use -> uninstall leaves no folders, shortcuts, Run/StartupApproved values or uninstall entry.
 - 2026-11-06: Checks pass: typecheck, lint, test (62), prettier, build, dist. Not checked by hand: tray icon and tray menu, a real right-click.
+- 2026-11-06: User asked about a 2D sprite instead of 3D and provided assets/sprites-inbox/cat_spritesheet.png (made with claude.ai). Checked: real alpha (80.5 % transparent), 1536x1152 = 8x6 cells of 192 px, feet at y=177 in every grounded frame, no frame crosses its cell, empty cells clean. All 6 clips present. No 2x version.
+- 2026-11-06: Decision (user): replace 3D (not keep both). TresJS question is moot. Committed M1-M4 first as restore point 42360ca (user chose "commit first").
+- 2026-11-06: Sprite: assets/models/cat-sprite.png + cat-sprite.json (grid, anchor, displayScale, edgeOverflow, walkFacing, clips with frameMs/fps, loop, loopFrom) + cat-sprite.LICENSE.txt. drag = intro frame 0 then loop 1-2; sleep = intro 0-4 then loop 5-7.
+- 2026-11-06: Code: src/shared/modelConfig.ts rewritten for sprites (tested, incl. the shipped JSON), src/shared/activeModel.ts (static import used by main and renderer), src/renderer/lib/spriteTimeline.ts (frame at time; tested), lib/spriteLayout.ts (fit, feet bottom-center, mirror; tested), usePetScene.ts rewritten on Canvas 2D: timer per frame (no render loop), alpha-mask hit test, mirror for walking left. Window size and edge overflow come from the model (192x192 DIP at size 1).
+- 2026-11-06: Removed: scripts/cat/, generate-cat.mts, .glb models, frameLimiter, three and @types/three, model:build script, 3D camera/light config. Facing is now left/right; the cat keeps its last facing after a walk.
+- 2026-11-06: Verified (dev, CDP): idle frame order, click -> click -> idle, empty-area clicks ignored, sleep intro then loop, walk left mirrored / right as drawn and the window moves, drag -> land -> idle. Production: file:// sheet does not taint the canvas, hit test toggles click-through. Installed build: shows the sprite, visible in 0.8 s, uninstall clean.
+- 2026-11-06: Production idle: CPU 0.10 % of the machine (3D was 0.36 %), private RAM 168 MB (was 189). Renderer JS 23 KB (was 1.5 MB). Installer 108 MB.
+- 2026-11-06: requirement.md (sections 1, 2, 3, 6, 7, 9, 10, 11) and CLAUDE.md updated for the sprite. Not done: light outline for dark effects (user did not ask), 2x art.
+- 2026-11-06: User approved M5. Decision (user): FR-16 fullscreen detection via koffi (runtime dep) calling shell32 SHQueryUserNotificationState.
+- 2026-11-06: koffi 3.x needs its install script (download/build), which npm 11 blocks. Used koffi 2.16.3 instead: it ships prebuilt binaries, works without the install script. Verified the installed app loads koffi.node from app.asar.unpacked.
+- 2026-11-06: FR-16: src/main/fullscreenWatcher.ts polls SHQueryUserNotificationState every 2 s (lib/notificationState.ts maps BUSY, D3D fullscreen, presentation = fullscreen; tested). Main hides the pet while fullscreen and shows it again after, unless the user hid it from the tray. Renderer: sprite clock pauses on visibilitychange and resumes mid-clip (verified via Hide from the menu, then show via a second launch).
+- 2026-11-06: Click lead frame shortened to 34 ms (NFR-04 margin). One-time performance mark 'pet:first-frame' added for NFR-03.
+- 2026-11-06: Measured (see requirement.md section 14): NFR-01 CPU 0.05 %, RAM 170 MB; NFR-03 330-350 ms; NFR-04 clip start 2.7 ms, visible change 41 ms. Accelerated leak test: 68 + 44 cycles of every behavior; heap +70 KB on the first run (warm-up), +4 KB on the second; a control run with only CDP calls stayed flat; process RAM flat.
+- 2026-11-06: Version 1.0.0. npm audit: 0 issues in production deps; 16 moderate in dev tooling only. Installer desktop-pet-setup-1.0.0.exe 108.6 MB, installed and running normally (no debug port) for the 8 h soak.
+- 2026-11-06: Not testable here: Windows 10, multiple monitors. FR-08 (Could) not in v1.

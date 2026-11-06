@@ -5,12 +5,19 @@ copyright: Personal use, not distributed
 directories:
   buildResources: build
   output: dist
-# Vite bundles everything (including vue and three) into out/, so node_modules is not needed.
+# Vite bundles the renderer (vue) into out/. The only runtime dependency left in node_modules
+# is koffi (FR-16), which main loads natively; ship just its Windows x64 binary.
 files:
   - out/**
   - resources/**
   - package.json
+  - '!node_modules/koffi/{doc,src,vendor,lib}/**'
+  - '!node_modules/koffi/build/koffi/!(win32_x64)/**'
+  - '!node_modules/koffi/build/koffi/win32_x64/*.{exp,lib}'
 asar: true
+# Native modules cannot load from inside app.asar.
+asarUnpack:
+  - node_modules/koffi/build/koffi/win32_x64/koffi.node
 npmRebuild: false
 # Ship only the Chromium locales we need; saves about 40 MB.
 electronLanguages:

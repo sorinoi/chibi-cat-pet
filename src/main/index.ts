@@ -10,6 +10,7 @@ import { createPetWindow } from './petWindow'
 import { lockDownWebContents } from './security'
 import { createSettingsStore } from './settingsStore'
 import { createSettingsWindowManager } from './settingsWindow'
+import { watchFullscreen } from './fullscreenWatcher'
 import { watchUserIdle } from './userIdle'
 import { IpcChannel } from '../shared/ipc'
 
@@ -68,6 +69,22 @@ function start(): void {
     if (userIdle.idle) sendToPet(IpcChannel.SystemUserIdle, true)
   })
 
+  // FR-16: step aside while a fullscreen app is in front, then come back, unless the
+  // user hid the pet from the tray in the meantime.
+  let hiddenForFullscreen = false
+  const fullscreen = watchFullscreen((isFullscreen) => {
+    if (win.isDestroyed()) return
+    if (isFullscreen && win.isVisible()) {
+      hiddenForFullscreen = true
+      motion.stopWalk()
+      motion.endDrag()
+      win.hide()
+    } else if (!isFullscreen && hiddenForFullscreen) {
+      hiddenForFullscreen = false
+      win.showInactive()
+    }
+  })
+
   applySettings(win, motion, store.settings, null)
   store.onChange((next, previous) => {
     applySettings(win, motion, next, previous)
@@ -84,6 +101,7 @@ function start(): void {
   win.on('closed', () => {
     motion.dispose()
     userIdle.dispose()
+    fullscreen.dispose()
     unregister()
     petWindow = null
   })
