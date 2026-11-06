@@ -12,3 +12,10 @@ cat-care.png (v2): 8 x 4 grid of 224 x 224 px cells, feet at y = 210.
 Rows: 1 eat, 2 happy, 3 hungry, 4 pet (also the adoption welcome).
 Made from the user's cat_care_spritesheet.png with `npm run sprite:prepare`
 (near-opaque alpha set to 255, faint stray specks cleared; colors unchanged).
+
+cat-focus.png (v3): 8 x 4 grid of 224 x 224 px cells, feet at y = 210.
+Rows: 1 focusStart, 2 focusDone, 3 longBreak, 4 breakOver.
+Made from the user's "Kawaii Cat Focus and Break Sprite Sheet.png" (also generated with Claude,
+claude.ai) with `npm run sprite:regrid -- <in> <out> 0.8`: hazy semi-transparent background removed
+(alpha ramp 205..240), each frame cut out by its own art, scaled to 0.8 to match the care sheet's
+cat, head-anchored and placed with the feet on one line. Pixels are only moved and resampled.

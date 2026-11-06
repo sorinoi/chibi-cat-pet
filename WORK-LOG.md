@@ -4,8 +4,8 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v3 in progress. V3-M1..M3 done and approved. V3-M4 blocked until the user sends cat-focus.png (requirement-v3.md section 9).
-- Next step: when the user puts cat-focus.png in assets/sprites-inbox/, start V3-M4: sprite:prepare, add sheet `focus` + clips focusStart/focusDone/breakOver/longBreak to cat-sprite.json, check feet alignment and each reaction, rerun readme:art. V3-M5 (measure, 3.0.0 installer) could also run before the art if the user prefers.
+- Current phase: v3 in progress. V3-M4 approved; V3-M5 (release 3.0) in progress.
+- Next step: when approved, V3-M5: NFR-01/16/17 measurement (idle and with a running timer), README (v3 features + focus clip row; previews already in docs/images), version 3.0.0, installer, install over 2.0.0, acceptance criteria in requirement-v3.md section 12. V3-M4 not committed yet (last commit 4a52851).
 - Git (check `git status` and `git log` first; this line can lag): main and origin/main at b506a6a (pushed 2026-11-06). Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea. Older: 87cde4e V2-M4, 7770fe1 V2-M3, d196771 V2-M2, f706658 V2-M1, 42360ca (3D restore point). Remote: origin = github.com/sorinoi/chibi-cat-pet. Push and tag only when the user asks.
 - Machine state: Desktop Pet 2.0.0 is installed per-user (over 1.0.0) and running with the user's adopted cat; data in %APPDATA%desktop-pet (settings.json, pet.json). Dev data %APPDATA%desktop-pet-dev has settings.json only. dist/ has the 1.0.0 and 2.0.0 installers.
 - Waiting on the user: nothing.
@@ -55,8 +55,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V3-M1 | Language: Thai/English | done | 134 tests; all windows checked in the app; tray/menus/About checked by hand |
 | V3-M2 | Timer engine | done | 172 tests; damaged focus.json checked in the app; no UI yet (V3-M3) |
 | V3-M3 | Timer UI, notifications, reactions (fallback clips) | done | 186 tests; full cycle checked in the app; tray menu + notifications checked by hand |
-| V3-M4 | Focus sprite sheet and clips | blocked | waiting for the user's cat-focus.png |
-| V3-M5 | Polish, measure, release v3.0 | todo | |
+| V3-M4 | Focus sprite sheet and clips | done | cat-focus.png via sprite:regrid; focusStart checked in the app; 189 tests |
+| V3-M5 | Polish, measure, release v3.0 | in progress | started 2026-11-06 |
 
 ## Phase approvals
 
@@ -75,6 +75,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V3-M1 | 2026-11-06 | yes, 2026-11-06 (user checked Thai tray/menus/About by hand) |
 | V3-M2 | 2026-11-06 | yes, 2026-11-06 |
 | V3-M3 | 2026-11-06 | yes, 2026-11-06 (user checked tray Focus menu and notifications by hand) |
+| V3-M4 | 2026-11-06 | yes, 2026-11-06 |
 
 ## Log
 
@@ -191,3 +192,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: V3-M3 code: strings focus.* (EN/TH); src/shared/focusText.ts (FocusView, focusStatus, focusNotice, focusReaction; tests); menus get a Focus submenu (status line + only the actions that apply) in the tray (with or without a cat) and the cat menu; tray tooltip = app + care + focus lines; IPC focus:get / focus:state / focus:reaction; Electron Notification per phase end when focusNotifications is on; app.setAppUserModelId(appId) when packaged. Pet: FOCUS_CLIPS + resolveClip() fallbacks (focusStart/breakOver -> click, focusDone -> happy -> click, longBreak -> focusDone), state machine cues and reaction states (tests), queue of one during another reaction, skipped while hidden/dragged/no pet; tooltip shows the focus line. Settings: FocusSection.vue; settings window now two columns, 820 x 690 (one column needed 901 px). Tests 186.
 - 2026-11-06: App check (production build, isolated --user-data-dir in the scratchpad because the user's old dev run PID 25868 still holds the dev lock; CDP into app pages; keys posted only to the app's own menu window): Start focus from the cat menu; full cycle with 1-minute phases and long break every 2: focus 8:44 -> short 8:45 -> focus 8:46 -> long 8:47 -> focus 8:48, each on the minute, reactions focusStart, focusDone, breakOver, longBreak, breakOver; today 2 saved to focus.json; settings showed the count. Pause from the menu -> paused; cat tooltip "ส้ม · อิ่ม 69% · ... / หยุดชั่วคราว (พักสั้น) · เหลือ 1 นาที · วันนี้: 3 🍅"; Stop -> idle. Not checked: tray Focus submenu, tray tooltip, Windows notifications (need a hand check). Test data removed, debug port closed. V3-M3 gate passed; waiting for approval.
 - 2026-11-06: User hand check: tray Focus submenu and Windows notifications work. User approved V3-M3. Committed V3-M3.
+- 2026-11-06: User added "Kawaii Cat Focus and Break Sprite Sheet.png" to the inbox. Checked: poses fit all four reactions, but off-spec: no transparent pixel at all (haze alpha ~60-170, cat ~251), 2172 x 724 (271.5 px cells), art crossing cells, feet varying up to 14 px. Trial cleanup in the scratchpad looked fine. User then added cat_focus_sprite_pack (real alpha, 128 px frames) but each frame was scaled to fit on its own (cat 118 px tall in one frame, 83 px in the next) and small; not usable. User chose the tool fix.
+- 2026-11-06: V3-M4 code: scripts/lib/image.mts (resize moved out of build-readme-art), scripts/lib/spriteRegrid.mts (alpha ramp 205..240, 8-neighbour pieces assigned to cells by centre, specks dropped, head-anchored horizontally, row centred, feet on feetY, area resampling; tests), scripts/regrid-sprite.mts (npm run sprite:regrid). Produced assets/models/cat-focus.png at scale 0.8 (cat ~11,000 px vs care sheet ~10,900; nothing clipped). Model: sheet focus + clips focusStart/focusDone/longBreak/breakOver (once, frameMs). License note updated. readme:art renders the 4 new clips (README itself not changed yet). Tests 189.
+- 2026-11-06: App check (production build, isolated --user-data-dir, keys only to the app's own menu window): Start focus -> the focusStart clip from the new sheet (laptop, fired up, glow) then idle; feet steady. Focus cat is a little bigger than the v1 idle cat (same as the v2 care cat). Test data removed, port closed. V3-M4 gate passed; waiting for approval.
+- 2026-11-06: User approved V3-M4 and said go for V3-M5. Committed V3-M4 (Kawaii original kept in the inbox; the unusable 128 px pack left untracked).

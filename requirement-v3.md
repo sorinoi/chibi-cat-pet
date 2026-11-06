@@ -154,7 +154,9 @@ to the engine:
 | 3 | `breakOver` | Must | An alarm clock rings next to the cat; it taps it and points "back to work" |
 | 4 | `longBreak` | Should | The cat stretches long and yawns, or lies down with a cup of tea |
 
-Three rows are enough to ship (row 4 falls back to `focusDone`). The inbox file goes into
+Three rows are enough to ship (row 4 falls back to `focusDone`).
+
+Received 2026-11-06: "Kawaii Cat Focus and Break Sprite Sheet.png" (rows: laptop focus start, done with medal, beanbag coffee break, nap and wake up). It was off-spec (semi-transparent haze background, 2172 x 724 so 271.5 px cells, art crossing cells, feet not aligned), so it was rebuilt with `npm run sprite:regrid` into assets/models/cat-focus.png with rows focusStart, focusDone, longBreak, breakOver. A second pack (cat_focus_sprite_pack, 128 px frames) was not usable: each frame was scaled on its own, so the cat changed size between frames. The inbox file goes into
 `assets/sprites-inbox/`; `npm run sprite:prepare` cleans it like the care sheet.
 
 ## 10. Behavior state machine additions
@@ -182,7 +184,7 @@ The language work comes first because it needs no art and touches every window o
 | V3-M1 | Language: Thai and English tables, language setting, live switch, all existing text moved to the tables | Every window, menu, tooltip, dialog and notification shows correct Thai and English; key-parity test passes; upgrade from v2 keeps settings | Done 2026-11-06, approved |
 | V3-M2 | Timer engine: pure timer logic, focus.json, today's count, midnight reset, sleep gap, config | Unit tests for every rule in section 4; count survives restart; damaged focus.json handled | Done 2026-11-06, approved |
 | V3-M3 | Timer UI: Focus submenus, tooltips, notifications, settings section; reactions with fallback clips | Full focus/break/long-break cycle works from tray and cat menu; notifications appear; settings apply | Done 2026-11-06, approved |
-| V3-M4 | Art: import cat-focus.png, new clips and reactions (needs the user's sheet) | Each reaction plays at the right moment; feet do not jump between sheets | - |
+| V3-M4 | Art: import cat-focus.png, new clips and reactions (needs the user's sheet) | Each reaction plays at the right moment; feet do not jump between sheets | Done 2026-11-06, approved |
 | V3-M5 | Polish: NFR-01/16/17 measurement, installer 3.0.0, upgrade from 2.0.0 | Acceptance criteria below pass | - |
 
 ## 12. Acceptance criteria (v3)

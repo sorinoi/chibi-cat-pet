@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  CARE_CLIPS,
+  CLIP_NAMES,
   modelFrame,
   parseModelConfig,
   resolveClip,
@@ -88,9 +88,12 @@ describe('parseModelConfig', () => {
     expect(() => parseModelConfig(null)).toThrow(/object/)
   })
 
-  it('accepts the shipped cat model with every v1 and v2 clip', () => {
+  it('accepts the shipped cat model with every v1, v2 and v3 clip', () => {
     const config = parseModelConfig(shipped)
-    expect(Object.keys(config.clips).sort()).toEqual([...STANDARD_CLIPS, ...CARE_CLIPS].sort())
+    expect(Object.keys(config.clips).sort()).toEqual([...CLIP_NAMES].sort())
+    for (const clip of ['focusStart', 'focusDone', 'breakOver', 'longBreak'] as const) {
+      expect(config.clips[clip]?.sheet).toBe('focus')
+    }
     for (const clip of STANDARD_CLIPS) expect(config.clips[clip]?.sheet).toBe('main')
   })
 })
