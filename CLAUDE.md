@@ -36,9 +36,10 @@ npm run lint        # eslint
 npm run test        # vitest
 npm run dist        # build + electron-builder -> dist/desktop-pet-setup-<version>.exe (NSIS, x64)
 npm run icons:build # regenerate resources/*.png and build/icon.ico
+npm run sprite:prepare -- <in.png> <out.png> [cols] [rows]   # clean a sprite sheet, print cell boxes
 ```
 
-`scripts/` holds the icon generator (`.mts`, run by Node's built-in type stripping).
+`scripts/` holds the icon generator and the sprite prep tool (`.mts`, run by Node's built-in type stripping). `scripts/lib/png.mts` is a tiny dependency-free PNG codec. New art from the user goes into `assets/sprites-inbox/`, then through `sprite:prepare` into `assets/models/`.
 
 Installer notes: config in `electron-builder.yml`, extra uninstall steps in `build/installer.nsh` (Run key, updater cache). The installed app keeps data in `%APPDATA%\desktop-pet`; uninstall deletes it. `"Desktop Pet.exe" --settings` opens the settings window, also when the app is already running.
 
@@ -103,7 +104,7 @@ Each phase must pass its gate before starting the next one.
 4. M4 Shell: tray menu, settings window, persistence, auto-start, installer. Gate: install, use and uninstall cleanly.
 5. M5 Polish: measure against NFRs, fix bugs, release v1.0.
 
-v2 (pet-care system) is planned after v1.0. Details are still open (needs, interactions, other species). Do not start v2 work without an explicit go-ahead.
+v2 (pet-care system) requirements are in `requirement-v2.md` (hunger + happiness, gentle, one pet; V2-M1..M5). Approved by the user on 2026-11-06. Do not start v2 implementation (V2-M1) without an explicit go-ahead.
 
 ## Source of truth: requirement.md
 

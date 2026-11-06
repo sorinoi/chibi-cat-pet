@@ -1,13 +1,15 @@
 import { ACTIVE_MODEL } from '../shared/activeModel'
+import { modelFrame } from '../shared/modelConfig'
 
 /** Main-process constants. Sizes are in DIP (device-independent pixels). */
 
-const { sheet, displayScale, edgeOverflow } = ACTIVE_MODEL
+const { displayScale, edgeOverflow } = ACTIVE_MODEL
+const frame = modelFrame(ACTIVE_MODEL)
 
 export const PET_WINDOW = {
-  /** Size at pet size 1.0: one sprite cell. */
-  width: Math.round(sheet.cellWidth * displayScale),
-  height: Math.round(sheet.cellHeight * displayScale),
+  /** Size at pet size 1.0: the model frame that fits every sprite sheet. */
+  width: Math.round(frame.width * displayScale),
+  height: Math.round(frame.height * displayScale),
   /** Gap between the window and the work area edge on first launch (lower right). */
   edgeMargin: 24
 } as const

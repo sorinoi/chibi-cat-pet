@@ -45,9 +45,24 @@ export function clampPosition(x: number, y: number, area: Area): { x: number; y:
   return { x: clamp(x, area.minX, area.maxX), y: clamp(y, area.minY, area.maxY) }
 }
 
-/** Window size for a pet scale, rounded to whole DIP. */
+/**
+ * DIP values that are multiples of this are whole device pixels at 125, 150, 175 and 200 %
+ * scaling. A new window with a fractional pixel size or origin came out a few pixels too
+ * big on Windows, so window sizes and the restored start position snap to this grid.
+ */
+export const WINDOW_GRID = 4
+
+const roundUpToGrid = (n: number): number => Math.ceil(n / WINDOW_GRID) * WINDOW_GRID
+const roundToGrid = (n: number): number => Math.round(n / WINDOW_GRID) * WINDOW_GRID
+
+/** Window size for a pet scale, rounded up to the window grid. */
 export function scaledSize(base: Size, scale: number): Size {
-  return { width: Math.round(base.width * scale), height: Math.round(base.height * scale) }
+  return { width: roundUpToGrid(base.width * scale), height: roundUpToGrid(base.height * scale) }
+}
+
+/** Start position snapped to the window grid, then kept inside the area. */
+export function snapToGrid(x: number, y: number, area: Area): { x: number; y: number } {
+  return clampPosition(roundToGrid(x), roundToGrid(y), area)
 }
 
 /** Overflow grows with the window, since the transparent margins grow too. */

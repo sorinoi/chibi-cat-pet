@@ -14,7 +14,7 @@ Goals:
 
 Decisions made:
 - The pet is a cat. Personal use only, not distributed. Claude (via Claude Code) is the sole developer.
-- v2: pet-care system. Only one pet at a time. Adopting a different pet means starting over and wiping the previous pet's data immediately.
+- v2: pet-care system. Only one pet at a time. Adopting a different pet means starting over and wiping the previous pet's data immediately. Requirements: requirement-v2.md (approved 2026-11-06).
 
 ## 2. Scope
 
@@ -27,7 +27,7 @@ v1 in scope:
 v1 out of scope:
 - macOS and Linux.
 - Multiple pets at the same time (never: one pet at a time, also in v2).
-- Pet-care mechanics (hunger, happiness, money, shop): planned for v2.
+- Pet-care mechanics: hunger and happiness planned for v2 (requirement-v2.md); money and shop moved to a later version.
 - Accounts, online, or cloud sync.
 - Model shop or plugin system.
 
@@ -191,14 +191,15 @@ No dates are set (team size and time unknown).
 - [~] Install on Windows 10 and 11 and the pet appears on the desktop (Windows 11: pass. Windows 10: not tested, no machine)
 - [x] Click, drag, and drop work; next launch is at the same position
 - [x] Clicking a transparent area passes the click to the program behind
-- [~] Tray menu works fully: show/hide, settings, quit (built; right-click menu verified; tray needs a hand check)
-- [~] Meets NFR-01 to NFR-05 on the target machine (NFR-01..04 pass, see section 14; NFR-05 8 h run in progress)
-- [~] Runs 8 hours with no continuous memory growth (accelerated test: no growth; real 8 h run started 2026-11-06)
+- [x] Tray menu works fully: show/hide, settings, quit (user hand check 2026-11-06: left click toggles the pet, right click opens the menu)
+- [~] Meets NFR-01 to NFR-05 on the target machine (NFR-01..04 pass, see section 14; NFR-05 deferred, accelerated test only)
+- [ ] Runs 8 hours with no continuous memory growth (deferred by the user on 2026-11-06; accelerated test showed no growth, see section 14)
 - [x] After uninstall no stray files remain
 
 ## 13. Open questions
 
-- v2 pet-care system: which needs and interactions (hunger, happiness, interactions), and whether other species besides the cat will exist.
+- NFR-05: run the real 8 hour memory test (deferred after v1.0, 2026-11-06). The first 15 minutes rose 185.6 -> 204.3 MB; check whether it levels off. If it keeps growing, fix in v1.0.1.
+- v2 pet-care system: approved in requirement-v2.md (2026-11-06); its own open questions are listed there.
 - Development time frame (milestones have no dates yet).
 
 ## 14. v1.0 measurements (2026-11-06, target machine)
@@ -209,9 +210,10 @@ Windows 11 Pro, 16 logical CPUs, one 2560 x 1600 display at 125 % scaling. Sprit
 | --- | --- | --- | --- |
 | NFR-01 | CPU <= 5 %, RAM <= 300 MB idle | CPU 0.05 % of the machine (2 min, incl. a walk); private RAM 170 MB | Pass |
 | NFR-02 | 30 fps while moving, stop when hidden or still | Frames change only on their own timer (max 30 fps); clock pauses while hidden | Pass |
+| FR-16 | Stop when hidden or a fullscreen app is in front | Hidden: clock pauses (tested). Fullscreen: user hand check (browser F11 / fullscreen video): the pet hides and comes back after | Pass |
 | NFR-03 | Visible within 5 s | 330-350 ms from process start to first sprite frame (warm); first launch right after install was about 11 s once (likely a first-run scan) | Pass |
 | NFR-04 | Click reaction within 100 ms | Clip starts 2.7 ms after pointerup; first visibly different frame 41 ms | Pass |
-| NFR-05 | No memory growth over 8 h | Accelerated: 117 cycles of click/drag/walk/sleep, JS heap after GC +4 KB on the second run, process RAM flat; real 8 h run in progress | Pending |
+| NFR-05 | No memory growth over 8 h | Accelerated: 117 cycles of click/drag/walk/sleep, JS heap after GC +4 KB on the second run, process RAM flat. Real 8 h run stopped after 15 min by user decision: 185.6 -> 188.8 -> 204.3 MB private (during tray/fullscreen hand tests; too short to tell warm-up from growth) | Deferred |
 | NFR-08 | Clean uninstall | No folders, shortcuts, Run/StartupApproved values or uninstall entry left | Pass |
 | NFR-09 | Installer <= 200 MB | 108.6 MB | Pass |
 

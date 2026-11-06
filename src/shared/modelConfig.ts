@@ -2,11 +2,34 @@
 export const STANDARD_CLIPS = ['idle', 'walk', 'click', 'drag', 'land', 'sleep'] as const
 export type StandardClip = (typeof STANDARD_CLIPS)[number]
 
+/** v2 pet-care clips (requirement-v2.md section 9). Optional: v1-style models still load. */
+export const CARE_CLIPS = ['eat', 'happy', 'hungry', 'pet'] as const
+export type CareClip = (typeof CARE_CLIPS)[number]
+
+export const CLIP_NAMES = [...STANDARD_CLIPS, ...CARE_CLIPS] as const
+export type ClipName = (typeof CLIP_NAMES)[number]
+
 /** NFR-02: frames never change faster than this. */
 export const MAX_FPS = 30
 
-/** One animation: a run of frames in one sheet row, starting at column 0. */
+/** One sprite sheet image: a regular grid of equal cells. */
+export interface SpriteSheet {
+  /** File name in assets/models/. */
+  file: string
+  columns: number
+  rows: number
+  cellWidth: number
+  cellHeight: number
+  /** The point in a cell that stands on the ground (feet center), in cell pixels. */
+  anchor: { x: number; y: number }
+  /** Extra scale so cats drawn at different sizes in different sheets match. Default 1. */
+  scale: number
+}
+
+/** One animation: a run of frames in one row of one sheet, starting at column 0. */
 export interface SpriteClip {
+  /** Key into ModelConfig.sheets. */
+  sheet: string
   row: number
   frames: number
   loop: boolean
@@ -16,24 +39,44 @@ export interface SpriteClip {
   frameMs: number[]
 }
 
-/** Per-model JSON stored next to the sprite sheet in assets/models/. */
+/** Per-model JSON stored next to its sprite sheets in assets/models/. */
 export interface ModelConfig {
   id: string
   name: string
-  /** Sprite sheet file name, relative to the JSON file. */
-  file: string
-  sheet: { columns: number; rows: number; cellWidth: number; cellHeight: number }
-  /** The point in a cell that stands on the ground (feet center), in cell pixels. */
-  anchor: { x: number; y: number }
+  sheets: Record<string, SpriteSheet>
   /** DIP per sheet pixel at pet size 1.0. */
   displayScale: number
-  /** Always-empty margins of a cell, in cell pixels; the window may hang this far off-screen. */
+  /** Always-empty margins of the frame, in sheet pixels; the window may hang this far off-screen. */
   edgeOverflow: { x: number; top: number; bottom: number }
   /** Direction the walk frames face in the sheet; the other direction is mirrored. */
   walkFacing: 'left' | 'right'
-  clips: Record<'idle', SpriteClip> & Partial<Record<StandardClip, SpriteClip>>
+  clips: Record<'idle', SpriteClip> & Partial<Record<ClipName, SpriteClip>>
   /** License or origin note for the artwork. */
   license: string
+}
+
+/**
+ * The box every sheet's cells are drawn into, in sheet pixels (after each sheet's scale),
+ * with every sheet's feet anchor at the same point. The pet window has this shape.
+ */
+export interface ModelFrame {
+  width: number
+  height: number
+  feetX: number
+  feetY: number
+}
+
+export function modelFrame(model: Pick<ModelConfig, 'sheets'>): ModelFrame {
+  const sheets = Object.values(model.sheets)
+  const max = (fn: (s: SpriteSheet) => number): number => Math.max(...sheets.map(fn))
+  const feetX = max((s) => s.anchor.x * s.scale)
+  const feetY = max((s) => s.anchor.y * s.scale)
+  return {
+    width: feetX + max((s) => (s.cellWidth - s.anchor.x) * s.scale),
+    height: feetY + max((s) => (s.cellHeight - s.anchor.y) * s.scale),
+    feetX,
+    feetY
+  }
 }
 
 function fail(reason: string): never {
@@ -44,9 +87,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function requireString(obj: Record<string, unknown>, key: string): string {
+function requireString(obj: Record<string, unknown>, key: string, where = 'model'): string {
   const value = obj[key]
-  if (typeof value !== 'string' || value.length === 0) fail(`"${key}" must be a non-empty string`)
+  if (typeof value !== 'string' || value.length === 0) {
+    fail(`"${where}.${key}" must be a non-empty string`)
+  }
   return value
 }
 
@@ -64,20 +109,49 @@ function requireNumber(
   return value
 }
 
-function requireRecord(obj: Record<string, unknown>, key: string): Record<string, unknown> {
+function requireRecord(
+  obj: Record<string, unknown>,
+  key: string,
+  where = 'model'
+): Record<string, unknown> {
   const value = obj[key]
-  if (!isRecord(value)) fail(`"${key}" must be an object`)
+  if (!isRecord(value)) fail(`"${where}.${key}" must be an object`)
   return value
+}
+
+function parseSheet(name: string, raw: unknown): SpriteSheet {
+  if (!isRecord(raw)) fail(`sheet "${name}" must be an object`)
+  const where = `sheets.${name}`
+  const sheet = {
+    file: requireString(raw, 'file', where),
+    columns: requireNumber(raw, 'columns', where, { min: 1, integer: true }),
+    rows: requireNumber(raw, 'rows', where, { min: 1, integer: true }),
+    cellWidth: requireNumber(raw, 'cellWidth', where, { min: 1, integer: true }),
+    cellHeight: requireNumber(raw, 'cellHeight', where, { min: 1, integer: true })
+  }
+  const anchorRaw = requireRecord(raw, 'anchor', where)
+  const anchor = {
+    x: requireNumber(anchorRaw, 'x', `${where}.anchor`),
+    y: requireNumber(anchorRaw, 'y', `${where}.anchor`)
+  }
+  if (anchor.x > sheet.cellWidth || anchor.y > sheet.cellHeight) {
+    fail(`"${where}.anchor" is outside the cell`)
+  }
+  const scale = raw['scale'] === undefined ? 1 : requireNumber(raw, 'scale', where, { min: 0.01 })
+  return { ...sheet, anchor, scale }
 }
 
 function parseClip(
   name: string,
   raw: unknown,
-  sheet: ModelConfig['sheet'],
+  sheets: Record<string, SpriteSheet>,
   maxFps: number
 ): SpriteClip {
   if (!isRecord(raw)) fail(`clip "${name}" must be an object`)
   const where = `clips.${name}`
+  const sheetName = requireString(raw, 'sheet', where)
+  const sheet = sheets[sheetName]
+  if (!sheet) fail(`"${where}.sheet" names an unknown sheet "${sheetName}"`)
   const row = requireNumber(raw, 'row', where, { integer: true })
   if (row >= sheet.rows) fail(`"${where}.row" is outside the sheet`)
   const frames = requireNumber(raw, 'frames', where, { min: 1, integer: true })
@@ -94,36 +168,26 @@ function parseClip(
     const list = raw['frameMs'] as unknown[]
     if (list.length !== frames) fail(`"${where}.frameMs" needs one entry per frame`)
     frameMs = list.map((ms) => {
-      if (typeof ms !== 'number' || !Number.isFinite(ms) || ms <= 0)
+      if (typeof ms !== 'number' || !Number.isFinite(ms) || ms <= 0) {
         fail(`"${where}.frameMs" must be positive numbers`)
+      }
       return Math.max(ms, minFrameMs)
     })
   } else {
     const fps = requireNumber(raw, 'fps', where, { min: 0.1 })
     frameMs = Array.from({ length: frames }, () => Math.max(1000 / fps, minFrameMs))
   }
-  return { row, frames, loop: raw['loop'], loopFrom, frameMs }
+  return { sheet: sheetName, row, frames, loop: raw['loop'], loopFrom, frameMs }
 }
 
 /** Validates raw JSON. Throws with a readable reason when the config is unusable. */
 export function parseModelConfig(raw: unknown, maxFps = MAX_FPS): ModelConfig {
   if (!isRecord(raw)) fail('expected an object')
 
-  const sheetRaw = requireRecord(raw, 'sheet')
-  const sheet = {
-    columns: requireNumber(sheetRaw, 'columns', 'sheet', { min: 1, integer: true }),
-    rows: requireNumber(sheetRaw, 'rows', 'sheet', { min: 1, integer: true }),
-    cellWidth: requireNumber(sheetRaw, 'cellWidth', 'sheet', { min: 1, integer: true }),
-    cellHeight: requireNumber(sheetRaw, 'cellHeight', 'sheet', { min: 1, integer: true })
-  }
-
-  const anchorRaw = requireRecord(raw, 'anchor')
-  const anchor = {
-    x: requireNumber(anchorRaw, 'x', 'anchor'),
-    y: requireNumber(anchorRaw, 'y', 'anchor')
-  }
-  if (anchor.x > sheet.cellWidth || anchor.y > sheet.cellHeight)
-    fail('"anchor" is outside the cell')
+  const sheetsRaw = requireRecord(raw, 'sheets')
+  const sheets: Record<string, SpriteSheet> = {}
+  for (const [name, value] of Object.entries(sheetsRaw)) sheets[name] = parseSheet(name, value)
+  if (Object.keys(sheets).length === 0) fail('"sheets" needs at least one sheet')
 
   const overflowRaw = requireRecord(raw, 'edgeOverflow')
   const edgeOverflow = {
@@ -133,14 +197,15 @@ export function parseModelConfig(raw: unknown, maxFps = MAX_FPS): ModelConfig {
   }
 
   const walkFacing = raw['walkFacing']
-  if (walkFacing !== 'left' && walkFacing !== 'right')
+  if (walkFacing !== 'left' && walkFacing !== 'right') {
     fail('"walkFacing" must be "left" or "right"')
+  }
 
   const clipsRaw = requireRecord(raw, 'clips')
-  const clips: Partial<Record<StandardClip, SpriteClip>> = {}
+  const clips: Partial<Record<ClipName, SpriteClip>> = {}
   for (const [key, value] of Object.entries(clipsRaw)) {
-    if (!(STANDARD_CLIPS as readonly string[]).includes(key)) fail(`unknown clip "${key}"`)
-    clips[key as StandardClip] = parseClip(key, value, sheet, maxFps)
+    if (!(CLIP_NAMES as readonly string[]).includes(key)) fail(`unknown clip "${key}"`)
+    clips[key as ClipName] = parseClip(key, value, sheets, maxFps)
   }
   const idle = clips.idle
   if (!idle) fail('"clips.idle" is required')
@@ -148,9 +213,7 @@ export function parseModelConfig(raw: unknown, maxFps = MAX_FPS): ModelConfig {
   return {
     id: requireString(raw, 'id'),
     name: requireString(raw, 'name'),
-    file: requireString(raw, 'file'),
-    sheet,
-    anchor,
+    sheets,
     displayScale: requireNumber(raw, 'displayScale', 'model', { min: 0.01 }),
     edgeOverflow,
     walkFacing,

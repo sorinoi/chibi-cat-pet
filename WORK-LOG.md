@@ -4,9 +4,9 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: M5 nearly done. v1.0.0 built and installed; 8 h soak (NFR-05) running since 2026-11-06 15:30, ends about 23:30.
-- Next step: read the soak summary (background task, CSV at the scratchpad soak-8h.csv), fill NFR-05 in requirement.md section 14, then report the M5 gate. Still needs the user: tray hand check, fullscreen hand check (F11 or a fullscreen video), commit + tag v1.0.0 on request.
-- Restore point: commit 42360ca has the full 3D version (M1-M4). Work after it is not committed yet.
+- Current phase: V2-M1 done. (v1: M5 done; v1.0.0 built and installed.) Gate passed except NFR-05, which the user deferred (8 h test not run; accelerated test passed). v1 is complete.
+- Next step: V2-M1 done (gate passed). Start V2-M2 (needs engine, pet.json, offline decay, moods) when the user says go. Open items: real 8 h NFR-05 test (requirement.md section 13), commit the latest doc edits and tag v1.0.0 when the user asks, Windows 10 and multi-monitor checks when hardware exists. v2 (pet-care) only after an explicit go-ahead.
+- Restore point: commit 42360ca has the full 3D version (M1-M4). The sprite + M5 commit was handed to the user to run (message in the session scratchpad); doc edits after it are uncommitted.
 - Testing rule (user, 2026-11-06): do not inject keyboard or move the real mouse system-wide. Use CDP events into the app's own pages and messages posted to the app's own windows; leave real-input checks to the user.
 
 ## Task status
@@ -20,14 +20,14 @@ Read this first in every new session. Keep entries short.
 | M2 | Load model and play idle | done | verified by screenshots in dev and production build |
 | M3 | Click, drag, drop | done | verified via CDP + real cursor; saving the position waits for M4 |
 | M3 | Auto-walk and sleep | done | walk verified (also fired on its own); sleep fired from real 5 min idle |
-| M4 | Tray menu | done | built (show/hide, settings, about, quit); not clicked by hand yet |
+| M4 | Tray menu | done | user hand check 2026-11-06: left click toggles, right click opens the menu |
 | M4 | Settings window and persistence | done | all 5 settings apply live and survive restart; right-click menu -> Settings verified |
 | M4 | Auto-start and single instance | done | Run key written by installed app, removed on uninstall; dev never registers |
 | M4 | NSIS installer | done | 108 MB, per-user, install/update/uninstall verified clean |
 | - | Replace 3D cat with 2D sprite | done | user's claude.ai sheet; verified dev, production, installer |
-| M5 | Measure against NFRs, fix bugs | in progress | NFR-01..04 pass; NFR-05 8 h run in progress; FR-16 done |
-| M5 | Release v1.0 | in progress | 1.0.0 installer built and installed; not committed or tagged |
-| v2 | Pet-care system | todo | not started until the user says go |
+| M5 | Measure against NFRs, fix bugs | done | NFR-01..04 pass; FR-16 pass (hand check); NFR-05 deferred by user |
+| M5 | Release v1.0 | done | 1.0.0 installer built and installed; tag v1.0.0 not created yet |
+| v2 | Pet-care system | in progress | requirement-v2.md approved; V2-M1 done, waiting for approval of V2-M2 |
 
 ## Phase approvals
 
@@ -37,7 +37,7 @@ Read this first in every new session. Keep entries short.
 | M2 | 2026-11-06 | yes, 2026-11-06 |
 | M3 | 2026-11-06 | yes, 2026-11-06 (user checked drag by hand: smooth) |
 | M4 | 2026-11-06 | yes, 2026-11-06 |
-| M5 | - | - |
+| M5 | 2026-11-06 | - (v1 complete; v2 needs a go-ahead) |
 
 ## Log
 
@@ -97,3 +97,14 @@ Read this first in every new session. Keep entries short.
 - 2026-11-06: Measured (see requirement.md section 14): NFR-01 CPU 0.05 %, RAM 170 MB; NFR-03 330-350 ms; NFR-04 clip start 2.7 ms, visible change 41 ms. Accelerated leak test: 68 + 44 cycles of every behavior; heap +70 KB on the first run (warm-up), +4 KB on the second; a control run with only CDP calls stayed flat; process RAM flat.
 - 2026-11-06: Version 1.0.0. npm audit: 0 issues in production deps; 16 moderate in dev tooling only. Installer desktop-pet-setup-1.0.0.exe 108.6 MB, installed and running normally (no debug port) for the 8 h soak.
 - 2026-11-06: Not testable here: Windows 10, multiple monitors. FR-08 (Could) not in v1.
+- 2026-11-06: User checked the tray by hand: left click toggles the pet, right click opens the menu. Pass. Sprite + M5 commit: message prepared, user runs it (classifier errors blocked it here).
+- 2026-11-06: User checked fullscreen by hand (F11 / fullscreen video): the pet hides and comes back. FR-16 pass. Only NFR-05 (8 h soak) is left for the M5 gate.
+- 2026-11-06: Decision (user): skip the 8 h soak for now. Stopped it after 15 min (185.6 -> 188.8 -> 204.3 MB private, during tray/fullscreen hand tests; too short to judge). NFR-05 marked Deferred in requirement.md sections 12-14; added to open questions. M5 closed.
+- 2026-11-06: User provided assets/sprites-inbox/cat_care_spritesheet.png (eat, happy, hungry, pet/adopt rows; 1792x896, 8x4 cells of 224 px, transparent, feet ~y=210; cat pixels alpha 251-254). Asked 4 design questions; user chose hunger + happiness, slow decay while closed with a floor, gentle neglect, row 4 for both adopt and pet. Drafted requirement-v2.md (FR-17..34, NFR-11..15, V2-M1..M5); linked from requirement.md and CLAUDE.md. Not approved yet; no v2 code.
+- 2026-11-06: User approved requirement-v2.md. Status updated in requirement-v2.md, requirement.md and CLAUDE.md. V2-M1 waits for a go-ahead.
+- 2026-11-06: User said go for V2-M1. Started V2-M1.
+- 2026-11-06: V2-M1: scripts/lib/png.mts (8-bit RGBA PNG decode/encode, node:zlib only), scripts/lib/spritePrep.mts (near-opaque alpha >= 240 -> 255, clear faint specks < 32 alpha more than 3 px from the art, per-cell boxes; tested), `npm run sprite:prepare`. Care sheet -> assets/models/cat-care.png: 325,816 px made solid, 1,024 stray specks (alpha 1-6) cleared, colors unchanged. Edge brightness matches the v1 sheet, so no dark-wallpaper halo.
+- 2026-11-06: Model config now has `sheets` (file, grid, anchor, optional scale per sheet) and each clip names its sheet. modelFrame() fits all sheets with every feet anchor on one point (224 x 225 frame). Care clips eat/happy/hungry/pet added (CARE_CLIPS, optional). Scene loads all sheets with an alpha mask each. Dev hook __petDebug.playClip previews any clip; a one-off clip returns to the state's clip when it ends.
+- 2026-11-06: Verified in dev via canvas pixels: feet bottom 263-266 canvas px for idle (main sheet) and all care clips (happy's jump frame excepted); contact sheet with a feet line looks right. Production build loads both sheets from file://; hit test OK. Care cat is drawn a bit rounder (head ~5-8 % bigger); sheet scale left at 1.
+- 2026-11-06: Window sizes now snap up to multiples of 4 DIP and the start position to the 4 DIP grid (placement.ts WINDOW_GRID; tested): 225 DIP x 1.25 = 281.25 px made Windows create the window a few px too big. Default position now exact (280x285 px). Known cosmetic issue: at one restored position the window is still 3 px taller than asked; it is transparent space under the feet, harmless.
+- 2026-11-06: Checks: typecheck, lint, test (64), build pass. Installed v1.0.0 relaunched for the user after testing. V2-M1 gate passed; waiting for approval to start V2-M2.

@@ -7,6 +7,7 @@ import {
   resizeKeepingFeet,
   scaledOverflow,
   scaledSize,
+  snapToGrid,
   type Area,
   type Size
 } from './lib/placement'
@@ -42,13 +43,14 @@ export function initialPosition(scale: number, preferred: Position | null): Posi
     // getDisplayMatching picks the nearest display, so a position on a monitor that
     // was unplugged lands on a connected one.
     const { workArea } = screen.getDisplayMatching({ ...preferred, ...size })
-    return clampPosition(preferred.x, preferred.y, allowedArea(workArea, size, overflow))
+    return snapToGrid(preferred.x, preferred.y, allowedArea(workArea, size, overflow))
   }
   const { workArea } = screen.getPrimaryDisplay()
-  return {
-    x: Math.round(workArea.x + workArea.width - size.width - PET_WINDOW.edgeMargin),
-    y: Math.round(workArea.y + workArea.height - size.height - PET_WINDOW.edgeMargin)
-  }
+  return snapToGrid(
+    workArea.x + workArea.width - size.width - PET_WINDOW.edgeMargin,
+    workArea.y + workArea.height - size.height - PET_WINDOW.edgeMargin,
+    allowedArea(workArea, size, overflow)
+  )
 }
 
 /**

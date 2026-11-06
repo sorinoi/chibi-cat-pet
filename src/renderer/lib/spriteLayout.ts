@@ -1,10 +1,11 @@
-import type { ModelConfig } from '../../shared/modelConfig'
+import type { ModelFrame, SpriteSheet } from '../../shared/modelConfig'
 
 /**
- * Maps cell pixels to canvas pixels: x = originX + sign * scale * u, y = originY + scale * v.
- * The cell is scaled uniformly to fit, its feet anchor sits at the horizontal center, and the
- * cell bottom touches the canvas bottom. Mirroring flips around the anchor, so the cat turns
- * in place.
+ * Maps cell pixels of one sheet to canvas pixels:
+ * x = originX + sign * scale * u, y = originY + scale * v.
+ * The model frame is fitted uniformly into the canvas (bottom aligned, centered), and the
+ * sheet's feet anchor lands on the frame's feet point, so switching sheets never moves the
+ * feet. Mirroring flips around the feet, so the cat turns in place.
  */
 export interface SpriteLayout {
   scale: number
@@ -14,22 +15,23 @@ export interface SpriteLayout {
   originY: number
 }
 
-type Geometry = Pick<ModelConfig, 'sheet' | 'anchor'>
-
 export function spriteLayout(
   canvasWidth: number,
   canvasHeight: number,
-  model: Geometry,
+  frame: ModelFrame,
+  sheet: Pick<SpriteSheet, 'anchor' | 'scale'>,
   mirrored: boolean
 ): SpriteLayout {
-  const { cellWidth, cellHeight } = model.sheet
-  const scale = Math.min(canvasWidth / cellWidth, canvasHeight / cellHeight)
+  const fit = Math.min(canvasWidth / frame.width, canvasHeight / frame.height)
+  const feetX = (canvasWidth - frame.width * fit) / 2 + frame.feetX * fit
+  const feetY = canvasHeight - frame.height * fit + frame.feetY * fit
+  const scale = fit * sheet.scale
   const sign = mirrored ? -1 : 1
   return {
     scale,
     sign,
-    originX: canvasWidth / 2 - sign * model.anchor.x * scale,
-    originY: canvasHeight - cellHeight * scale
+    originX: feetX - sign * sheet.anchor.x * scale,
+    originY: feetY - sheet.anchor.y * scale
   }
 }
 

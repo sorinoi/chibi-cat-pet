@@ -4,44 +4,74 @@ import { frameAt } from '../lib/spriteTimeline'
 import { spriteLayout, toCell, type SpriteLayout } from '../lib/spriteLayout'
 import { spriteSheetUrl } from '../models/registry'
 import { ACTIVE_MODEL } from '../../shared/activeModel'
-import type { SpriteClip, StandardClip } from '../../shared/modelConfig'
+import {
+  modelFrame,
+  type ClipName,
+  type SpriteClip,
+  type SpriteSheet
+} from '../../shared/modelConfig'
 
 export type Facing = 'left' | 'right'
 
 export interface PetScene {
   /** True when the pixel under the point (client CSS pixels) is part of the cat. */
   hitTest(clientX: number, clientY: number): boolean
-  /** Starts a standard clip from its first frame. Safe to call before the sheet loads. */
-  play(clip: StandardClip): void
+  /** Starts a clip from its first frame. Safe to call before the sheets load. */
+  play(clip: ClipName): void
   /** Which way the cat faces; frames are mirrored for the direction the sheet does not draw. */
   setFacing(facing: Facing): void
   /** Called when a non-looping clip reaches its end. */
-  onClipFinished(listener: (clip: StandardClip) => void): void
+  onClipFinished(listener: (clip: ClipName) => void): void
   /** Called after every drawn frame. */
   onFrame(listener: () => void): void
   /** What is on screen now (for debugging). */
-  current(): { clip: StandardClip; frame: number; facing: Facing }
+  current(): { clip: ClipName; frame: number; facing: Facing }
+}
+
+/** A decoded sheet plus its alpha channel (row-major) for hit tests. */
+interface LoadedSheet {
+  spec: SpriteSheet
+  image: HTMLImageElement
+  alpha: Uint8Array
+}
+
+async function loadSheet(spec: SpriteSheet): Promise<LoadedSheet> {
+  const image = new Image()
+  image.src = spriteSheetUrl(spec.file)
+  await image.decode()
+  const { naturalWidth: w, naturalHeight: h } = image
+  if (w !== spec.columns * spec.cellWidth || h !== spec.rows * spec.cellHeight) {
+    console.warn(
+      `${spec.file} is ${w}x${h}, config expects ${spec.columns * spec.cellWidth}x${spec.rows * spec.cellHeight}`
+    )
+  }
+  const scratch = new OffscreenCanvas(w, h)
+  const scratchCtx = scratch.getContext('2d')
+  if (!scratchCtx) throw new Error('2D context unavailable')
+  scratchCtx.drawImage(image, 0, 0)
+  const rgba = scratchCtx.getImageData(0, 0, w, h).data
+  const alpha = new Uint8Array(w * h)
+  for (let i = 0; i < alpha.length; i++) alpha[i] = rgba[i * 4 + 3]
+  return { spec, image, alpha }
 }
 
 /**
- * Draws the pet from its sprite sheet on a 2D canvas (no WebGL).
+ * Draws the pet from its sprite sheets on a 2D canvas (no WebGL).
  * Frames advance on a timer at each frame's own duration, so nothing runs between
- * frame changes; idle CPU stays near zero (NFR-01, NFR-02).
+ * frame changes; idle CPU stays near zero (NFR-01, NFR-02). Every sheet's feet anchor
+ * lands on the same point, so switching between sheets does not move the cat.
  */
 export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
   const model = ACTIVE_MODEL
-  const { cellWidth, cellHeight } = model.sheet
+  const frame = modelFrame(model)
 
   let ctx: CanvasRenderingContext2D | null = null
-  let sheet: HTMLImageElement | null = null
-  /** Alpha channel of the whole sheet, row-major, for hit tests. */
-  let alpha: Uint8Array | null = null
-  let sheetWidth = 0
+  const sheets = new Map<string, LoadedSheet>()
   let layout: SpriteLayout | null = null
   let removeDprListener: (() => void) | null = null
   let disposed = false
 
-  let clipName: StandardClip = 'idle'
+  let clipName: ClipName = 'idle'
   let clip: SpriteClip = model.clips.idle
   let startedAt = 0
   let shownFrame = 0
@@ -51,7 +81,7 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
   let pausedAt: number | null = null
   let facing: Facing = model.walkFacing
 
-  const finishedListeners: Array<(clip: StandardClip) => void> = []
+  const finishedListeners: Array<(clip: ClipName) => void> = []
   const frameListeners: Array<() => void> = []
 
   function draw(): void {
@@ -59,13 +89,15 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
     if (!ctx || !el) return
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, el.width, el.height)
+    const sheet = sheets.get(clip.sheet)
     if (!sheet) return
-    layout = spriteLayout(el.width, el.height, model, facing !== model.walkFacing)
+    const { cellWidth, cellHeight } = sheet.spec
+    layout = spriteLayout(el.width, el.height, frame, sheet.spec, facing !== model.walkFacing)
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
     ctx.setTransform(layout.sign * layout.scale, 0, 0, layout.scale, layout.originX, layout.originY)
     ctx.drawImage(
-      sheet,
+      sheet.image,
       shownFrame * cellWidth,
       clip.row * cellHeight,
       cellWidth,
@@ -100,7 +132,7 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
     if (state.nextChangeMs !== null) timer = setTimeout(tick, state.nextChangeMs)
   }
 
-  function play(name: StandardClip): void {
+  function play(name: ClipName): void {
     const next = model.clips[name]
     if (!next) console.warn(`Model ${model.id} has no "${name}" clip; showing idle`)
     clipName = name
@@ -146,27 +178,11 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
     removeDprListener = () => mq.removeEventListener('change', onChange)
   }
 
-  async function loadSheet(): Promise<void> {
-    const img = new Image()
-    img.src = spriteSheetUrl(model.file)
-    await img.decode()
+  async function loadAll(): Promise<void> {
+    const entries = Object.entries(model.sheets)
+    const loaded = await Promise.all(entries.map(([, spec]) => loadSheet(spec)))
     if (disposed) return
-    const { columns, rows } = model.sheet
-    if (img.naturalWidth !== columns * cellWidth || img.naturalHeight !== rows * cellHeight) {
-      console.warn(
-        `Sprite sheet is ${img.naturalWidth}x${img.naturalHeight}, config expects ${columns * cellWidth}x${rows * cellHeight}`
-      )
-    }
-    const scratch = new OffscreenCanvas(img.naturalWidth, img.naturalHeight)
-    const scratchCtx = scratch.getContext('2d')
-    if (!scratchCtx) throw new Error('2D context unavailable')
-    scratchCtx.drawImage(img, 0, 0)
-    const rgba = scratchCtx.getImageData(0, 0, img.naturalWidth, img.naturalHeight).data
-    const a = new Uint8Array(img.naturalWidth * img.naturalHeight)
-    for (let i = 0; i < a.length; i++) a[i] = rgba[i * 4 + 3]
-    alpha = a
-    sheetWidth = img.naturalWidth
-    sheet = img
+    entries.forEach(([name], i) => sheets.set(name, loaded[i]))
     draw()
     // NFR-03: one mark per launch, read by the startup measurement (never repeated, no growth).
     performance.mark('pet:first-frame')
@@ -180,7 +196,7 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
     watchPixelRatio()
     document.addEventListener('visibilitychange', onVisibilityChange)
     window.addEventListener('resize', resize)
-    loadSheet().catch((err: unknown) => console.error('Failed to load sprite sheet:', err))
+    loadAll().catch((err: unknown) => console.error('Failed to load sprite sheets:', err))
   })
 
   onBeforeUnmount(() => {
@@ -192,15 +208,15 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
     removeDprListener?.()
     finishedListeners.length = 0
     frameListeners.length = 0
-    sheet = null
-    alpha = null
+    sheets.clear()
     ctx = null
   })
 
   return {
     hitTest(clientX, clientY) {
       const el = canvas.value
-      if (!el || !alpha || !layout) return false
+      const sheet = sheets.get(clip.sheet)
+      if (!el || !sheet || !layout) return false
       const rect = el.getBoundingClientRect()
       if (rect.width === 0 || rect.height === 0) return false
       const x = (clientX - rect.left) * (el.width / rect.width)
@@ -208,10 +224,11 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
       const { u, v } = toCell(layout, x, y)
       const cu = Math.floor(u)
       const cv = Math.floor(v)
+      const { cellWidth, cellHeight, columns } = sheet.spec
       if (cu < 0 || cv < 0 || cu >= cellWidth || cv >= cellHeight) return false
       const sx = shownFrame * cellWidth + cu
       const sy = clip.row * cellHeight + cv
-      return alpha[sy * sheetWidth + sx] > RENDER.hitAlphaThreshold
+      return sheet.alpha[sy * columns * cellWidth + sx] > RENDER.hitAlphaThreshold
     },
     play,
     setFacing(next) {

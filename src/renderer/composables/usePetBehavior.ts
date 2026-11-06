@@ -2,6 +2,7 @@ import { onBeforeUnmount, onMounted, readonly, ref, type Ref } from 'vue'
 import { BEHAVIOR } from '../config'
 import { transition, type PetEvent, type PetState } from '../lib/petMachine'
 import type { PetScene } from './usePetScene'
+import type { ClipName } from '../../shared/modelConfig'
 
 export interface PetBehavior {
   state: Readonly<Ref<PetState>>
@@ -91,6 +92,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
 
   scene.onClipFinished((clip) => {
     if (clip === state.value) dispatch('clipFinished')
+    // A one-off clip outside the state machine (dev preview): go back to the state's clip.
+    else scene.play(state.value)
   })
 
   onMounted(() => {
@@ -111,6 +114,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
         dispatch,
         state: () => state.value,
         scene: () => scene.current(),
+        // Preview any clip (including v2 care clips) without changing the behavior state.
+        playClip: (clip: ClipName) => scene.play(clip),
         setUserIdle: (idle: boolean) => {
           userIdle = idle
           dispatch(idle ? 'sleep' : 'wake')

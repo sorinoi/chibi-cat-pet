@@ -5,12 +5,15 @@ import {
   planWalk,
   resizeKeepingFeet,
   scaledOverflow,
-  scaledSize
+  scaledSize,
+  snapToGrid
 } from './placement'
 
 describe('pet size', () => {
   it('scales the window and the overflow', () => {
-    expect(scaledSize({ width: 380, height: 300 }, 1.5)).toEqual({ width: 570, height: 450 })
+    expect(scaledSize({ width: 380, height: 300 }, 1.5)).toEqual({ width: 572, height: 452 })
+    // 225 x 1.25 = 281.25 px is not whole; 228 gives 285 px.
+    expect(scaledSize({ width: 224, height: 225 }, 1)).toEqual({ width: 224, height: 228 })
     expect(scaledOverflow({ x: 60, top: 0, bottom: 40 }, 0.5)).toEqual({
       x: 30,
       top: 0,
@@ -82,5 +85,18 @@ describe('planWalk', () => {
   it('returns 0 when there is no room either way', () => {
     const narrow = { minX: 0, maxX: 30, minY: 0, maxY: 0 }
     expect(planWalk(15, 100, narrow, 40)).toBe(0)
+  })
+})
+
+describe('snapToGrid', () => {
+  const area = { minX: -60, maxX: 1680, minY: 0, maxY: 780 }
+
+  it('rounds the start position to whole pixels at common scales', () => {
+    expect(snapToGrid(275, 814, { ...area, maxY: 1000 })).toEqual({ x: 276, y: 816 })
+    expect(snapToGrid(1801, 802, { ...area, maxX: 2000, maxY: 1000 })).toEqual({ x: 1800, y: 804 })
+  })
+
+  it('still keeps the window inside the area', () => {
+    expect(snapToGrid(5000, -50, area)).toEqual({ x: 1680, y: 0 })
   })
 })
