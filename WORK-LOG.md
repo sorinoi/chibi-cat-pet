@@ -5,10 +5,10 @@ Read this first in every new session. Keep entries short.
 ## Current state
 
 - Current phase: v2.0 complete and accepted by the user (2026-11-06). No next phase planned yet.
-- Next step: none planned. Ask the user what comes next (options: push + tags v1.0.0/v2.0.0, tuning after a few days of use, open questions in requirement-v2.md section 15, NFR-05 8 h soak).
-- Git (check `git status` and `git log` first; this line can lag): main has f52d0ea (release 2.0.0), d1a41b5 (feed fix) on top of 8d65ddc; origin/main is at 8d65ddc (not pushed since). Older: 87cde4e V2-M4, 7770fe1 V2-M3, d196771 V2-M2, f706658 V2-M1, 171ec84 (sprite cat + M5), 42360ca (3D restore point). Remote: origin = github.com/sorinoi/chibi-cat-pet. No tags yet. Push and tag only when the user asks.
+- Next step: none planned. Ask the user what comes next (options: tuning after a few days of use, open questions in requirement-v2.md section 15, NFR-05 8 h soak).
+- Git (check `git status` and `git log` first; this line can lag): main and origin/main at b506a6a (pushed 2026-11-06). Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea. Older: 87cde4e V2-M4, 7770fe1 V2-M3, d196771 V2-M2, f706658 V2-M1, 42360ca (3D restore point). Remote: origin = github.com/sorinoi/chibi-cat-pet. Push and tag only when the user asks.
 - Machine state: Desktop Pet 2.0.0 is installed per-user (over 1.0.0) and running with the user's adopted cat; data in %APPDATA%desktop-pet (settings.json, pet.json). Dev data %APPDATA%desktop-pet-dev has settings.json only. dist/ has the 1.0.0 and 2.0.0 installers.
-- Waiting on the user: nothing. Push and tags only when asked.
+- Waiting on the user: nothing.
 - Open items: real 8 h NFR-05 test (requirement.md section 13); Windows 10 and multi-monitor checks need hardware; v2 open questions (requirement-v2.md section 15) use the written defaults until decided.
 - Testing rule (user, 2026-11-06): do not inject keyboard or move the real mouse system-wide. Use CDP events into the app's own pages and messages posted to the app's own windows; leave real-input checks (tray, real clicks, fullscreen) to the user.
 
@@ -164,3 +164,5 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: User asked to commit. Committed d1a41b5 (feed fix) and f52d0ea (release 2.0.0). Not pushed, not tagged.
 - 2026-11-06: User hand check (installed 2.0.0): tray right-click menu shows Pet status… (first looked at the cat menu by mistake, which has no Pet status by design). Pass for the tray menu.
 - 2026-11-06: User hand check of the rest of FR-28: Pet status… opens the settings Pet section, tray tooltip shows the summary, left click hides/shows. User approved V2-M5: v2.0 complete.
+- 2026-11-06: User asked to push and tag. Annotated tags v1.0.0 (171ec84) and v2.0.0 (f52d0ea); pushed main (8d65ddc..b506a6a) and both tags to origin.
+- 2026-11-06: User asked for a README. Wrote README.md (features v1/v2, install, data folder, dev commands, stack, layout, docs, art note). Not committed yet.
