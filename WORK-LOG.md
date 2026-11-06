@@ -4,9 +4,9 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v2 in progress. V2-M1 done (gate passed), waiting for the user's approval to start V2-M2. v1.0 is complete (M5 gate passed except NFR-05, deferred by the user).
-- Next step: when the user says go, start V2-M2 per requirement-v2.md section 13: pure needs math (section 4 rules, all unit tested), pet.json store (section 11), offline decay with floor, moods (section 5). Each V2 phase waits for approval, like v1.
-- Git: main is clean; the latest commit is the session-handoff docs update, on top of f706658 (V2-M1). Earlier: 171ec84 (user's "initial commit": sprite cat + M5), 42360ca (full 3D version, restore point). Nothing pushed. Tag v1.0.0 not created (do it only when the user asks).
+- Current phase: v2 in progress. V2-M2 done (gate passed), waiting for the user's approval to start V2-M3. v1.0 is complete (M5 gate passed except NFR-05, deferred by the user).
+- Next step: when the user says go, start V2-M3 per requirement-v2.md sections 5-6 and 13: feed and pet from the menus, stroke detection, click bonus, hungry reminder and mood behavior, wired to the care engine over typed IPC. The engine already has feed/pet/click; there is still no adoption UI (V2-M4), so testing needs a hand-written pet.json in %APPDATA%\desktop-pet-dev. Each V2 phase waits for approval, like v1.
+- Git: main is clean; the latest commit is V2-M2 (needs engine). Earlier: 0d5e63c (handoff docs), f706658 (V2-M1), 171ec84 (user's "initial commit": sprite cat + M5), 42360ca (full 3D version, restore point). Nothing pushed. Tag v1.0.0 not created (do it only when the user asks).
 - Machine state: Desktop Pet 1.0.0 (v1, no v2 code) is installed per-user and running; its data is %APPDATA%\desktop-pet. Dev runs use %APPDATA%\desktop-pet-dev.
 - Open items: real 8 h NFR-05 test (requirement.md section 13); Windows 10 and multi-monitor checks need hardware; v2 open questions (requirement-v2.md section 15) use the written defaults until decided.
 - Testing rule (user, 2026-11-06): do not inject keyboard or move the real mouse system-wide. Use CDP events into the app's own pages and messages posted to the app's own windows; leave real-input checks (tray, real clicks, fullscreen) to the user.
@@ -42,8 +42,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | M5 | Release v1.0 | done | 1.0.0 installer built and installed; tag v1.0.0 not created yet |
 | v2 | Requirements (requirement-v2.md) | done | approved by the user 2026-11-06 |
 | V2-M1 | Care sheet, multi-sheet model, eat/happy/hungry/pet clips | done | feet aligned across sheets; sprite:prepare tool |
-| V2-M2 | Needs engine, pet.json, offline decay, moods | todo | waiting for approval |
-| V2-M3 | Feed, pet (stroke + menu), click bonus, hungry reminder | todo | |
+| V2-M2 | Needs engine, pet.json, offline decay, moods | done | 103 tests; restart and offline gap checked in the app |
+| V2-M3 | Feed, pet (stroke + menu), click bonus, hungry reminder | todo | waiting for approval |
 | V2-M4 | Adoption, settings Pet section, tooltip, tray | todo | |
 | V2-M5 | Polish, measure, installer, release v2.0 | todo | |
 
@@ -56,7 +56,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | M3 | 2026-11-06 | yes, 2026-11-06 (user checked drag by hand: smooth) |
 | M4 | 2026-11-06 | yes, 2026-11-06 |
 | M5 | 2026-11-06 | v1 complete; user then approved requirement-v2.md and V2-M1 |
-| V2-M1 | 2026-11-06 | waiting |
+| V2-M1 | 2026-11-06 | yes, 2026-11-06 |
+| V2-M2 | 2026-11-06 | waiting |
 
 ## Log
 
@@ -128,3 +129,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: Window sizes now snap up to multiples of 4 DIP and the start position to the 4 DIP grid (placement.ts WINDOW_GRID; tested): 225 DIP x 1.25 = 281.25 px made Windows create the window a few px too big. Default position now exact (280x285 px). Known cosmetic issue: at one restored position the window is still 3 px taller than asked; it is transparent space under the feet, harmless.
 - 2026-11-06: Checks: typecheck, lint, test (64), build pass. Installed v1.0.0 relaunched for the user after testing. V2-M1 gate passed; waiting for approval to start V2-M2.
 - 2026-11-06: WORK-LOG prepared for a new session: current state rewritten (git, machine state, open items), test how-to added, V2 rows in both tables.
+- 2026-11-06: User approved V2-M2. Started V2-M2. Decision: needs kept at full precision in memory and pet.json (rounding every 60 s tick would drift 10/h to 12/h); rounded only for display. requirement-v2.md section 4 updated.
+- 2026-11-06: V2-M2 code: src/shared/careConfig.ts (all section 4 tuning, NFR-14), src/shared/needs.ts (pure: advanceNeeds with exact piecewise hungry multiplier, offline floor, sleep rate, clock-backwards safe; runningMode treats a gap > 5 min as offline; moodOf; feed/pet/click with cooldowns), src/shared/petRecord.ts (createPet, parse/validate, name 1-20 visible characters via Intl.Segmenter so Thai marks do not count), src/main/petStore.ts (read/atomic write/delete; damaged file -> pet.json.bad), src/main/careEngine.ts (load + offline catch-up, 60 s tick + save, setAsleep, adopt/wipe/feed/pet/click, onChange; no Electron imports).
+- 2026-11-06: Main wiring: care engine loads userData/pet.json at start, ticks every 60 s, sleeps with the user-idle watcher, flushes on quit. No pet yet means it stays inactive (adoption UI is V2-M4; feed/pet IPC is V2-M3).
+- 2026-11-06: Tests: 103 pass (39 new: needs math incl. "one step == many small steps", engine with temp dir + fake clock, records, Thai name lengths).
+- 2026-11-06: App check (production build, dev data folder, hand-written test pet.json): saved 2 h ago -> launch gives hunger 74.999 / happiness 75.832 (expected 75.000 / 75.833); 60 s tick saved at the sleep rate (user away); normal quit flushed; simulated 3 h closed -> 67.339 / 69.449 (expected ~67.36 / ~69.46); garbage pet.json -> moved to pet.json.bad, app runs. Test files removed afterwards. V2-M2 gate passed; waiting for approval to start V2-M3.

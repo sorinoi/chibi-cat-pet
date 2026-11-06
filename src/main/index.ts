@@ -1,8 +1,9 @@
 import { app, type BrowserWindow, type Tray } from 'electron'
 import { join } from 'node:path'
 import { createAppActions } from './appActions'
+import { createCareEngine } from './careEngine'
 import { applySettings } from './applySettings'
-import { STORE } from './config'
+import { PET_FILE, STORE } from './config'
 import { registerIpcHandlers } from './ipc'
 import { createTray, showPetContextMenu } from './menus'
 import { createPetMotion } from './petMotion'
@@ -35,6 +36,11 @@ function start(): void {
   )
   const settingsWindow = createSettingsWindowManager()
 
+  // v2 pet care (requirement-v2.md sections 4 and 11). Inactive until a pet is adopted.
+  const care = createCareEngine({ filePath: join(app.getPath('userData'), PET_FILE) })
+  care.load()
+  care.start()
+
   const win = createPetWindow({ version: 1, settings: store.settings, position: store.position })
   petWindow = win
   const sendToPet = (channel: string, payload?: unknown): void => {
@@ -62,7 +68,10 @@ function start(): void {
 
   const userIdle = watchUserIdle(
     () => store.settings.sleepAfterMinutes * SECONDS_PER_MINUTE,
-    (idle) => sendToPet(IpcChannel.SystemUserIdle, idle)
+    (idle) => {
+      care.setAsleep(idle)
+      sendToPet(IpcChannel.SystemUserIdle, idle)
+    }
   )
   // A reloaded page starts awake; tell it if the user is already away.
   win.webContents.on('did-finish-load', () => {
@@ -97,11 +106,15 @@ function start(): void {
   }
   openSettingsFromArgs(process.argv)
 
-  app.on('before-quit', () => store.flush())
+  app.on('before-quit', () => {
+    store.flush()
+    care.flush()
+  })
   win.on('closed', () => {
     motion.dispose()
     userIdle.dispose()
     fullscreen.dispose()
+    care.dispose()
     unregister()
     petWindow = null
   })

@@ -68,7 +68,8 @@ Rules:
 - Needs are computed from elapsed time (last saved value + rate x time), not by a per-second timer. The app recomputes on events and every 60 s.
 - Offline time is the gap between the last save and the next launch, measured with the wall clock.
 - Clock safety: if the clock goes backwards, no change; if the gap is huge, the floor already bounds the result.
-- Values are clamped to 0..100 and stored with one decimal.
+- While the app runs, a gap between updates longer than 5 minutes (PC asleep, app frozen) counts at the offline rate for the whole gap.
+- Values are clamped to 0..100 and kept at full precision (in memory and in pet.json); they are rounded only for display. Rounding on every 60 s update would drift the rates.
 
 ## 5. Moods
 
@@ -176,8 +177,8 @@ Same rule as v1: each phase must pass its gate, then wait for the user's approva
 
 | Phase | Work | Gate | Status |
 | --- | --- | --- | --- |
-| V2-M1 | Assets: import the care sheet (alpha fix, license), multi-sheet model config, clips eat/happy/hungry/pet | All four clips play correctly next to the v1 clips; feet do not jump between sheets | Done 2026-11-06, waiting for approval |
-| V2-M2 | Needs engine: pure needs math, pet.json store, offline decay, moods | Unit tests for every rule in section 4; values survive restart; offline gap math checked | - |
+| V2-M1 | Assets: import the care sheet (alpha fix, license), multi-sheet model config, clips eat/happy/hungry/pet | All four clips play correctly next to the v1 clips; feet do not jump between sheets | Done 2026-11-06 |
+| V2-M2 | Needs engine: pure needs math, pet.json store, offline decay, moods | Unit tests for every rule in section 4; values survive restart; offline gap math checked | Done 2026-11-06, waiting for approval |
 | V2-M3 | Interactions: feed, pet (stroke + menu), click bonus, hungry reminder, mood behavior | Each action changes the needs as specified and plays the right clip; stroke detection does not trigger on normal mouse moves | - |
 | V2-M4 | Adoption and status: adoption window, settings Pet section, rename, re-adopt wipe, tooltip, tray | Adopt, rename, re-adopt (data gone), upgrade from v1 all work | - |
 | V2-M5 | Polish: tuning pass, NFR-01/11 measurement, installer, release v2.0 | Acceptance criteria below pass | - |

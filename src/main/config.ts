@@ -43,6 +43,9 @@ export const FULLSCREEN = {
   pollIntervalMs: 2000
 } as const
 
+/** v2 pet data (FR-30), next to settings.json. Deleted on uninstall with the rest. */
+export const PET_FILE = 'pet.json'
+
 export const STORE = {
   fileName: 'settings.json',
   /** Batch rapid changes (slider drags, walking) into one write. */
