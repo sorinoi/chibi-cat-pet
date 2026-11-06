@@ -110,23 +110,79 @@ function chunk(type: string, body: Uint8Array): Buffer {
   return Buffer.concat([len, typeAndBody, crc])
 }
 
-/** Encodes RGBA with filter 0 per row (simple; zlib still compresses well). */
-export function encodePng({ width, height, data }: RgbaImage): Buffer {
+function rgbaHeader(width: number, height: number): Buffer {
   const header = Buffer.alloc(13)
   header.writeUInt32BE(width, 0)
   header.writeUInt32BE(height, 4)
   header[8] = 8
   header[9] = 6
+  return header
+}
+
+/** Compressed image data with filter 0 per row (simple; zlib still compresses well). */
+function compressRgba({ width, height, data }: RgbaImage): Buffer {
   const stride = width * 4
   const raw = Buffer.alloc(height * (stride + 1))
   for (let y = 0; y < height; y++) {
     raw[y * (stride + 1)] = 0
     raw.set(data.subarray(y * stride, (y + 1) * stride), y * (stride + 1) + 1)
   }
+  return deflateSync(raw, { level: 9 })
+}
+
+export function encodePng(image: RgbaImage): Buffer {
   return Buffer.concat([
     SIGNATURE,
-    chunk('IHDR', header),
-    chunk('IDAT', deflateSync(raw, { level: 9 })),
+    chunk('IHDR', rgbaHeader(image.width, image.height)),
+    chunk('IDAT', compressRgba(image)),
     chunk('IEND', new Uint8Array(0))
   ])
+}
+
+export interface ApngFrame {
+  /** Same size as every other frame. */
+  image: RgbaImage
+  delayMs: number
+}
+
+/**
+ * Animated PNG (APNG), looping forever. Every frame is a full image that replaces the
+ * previous one (dispose to background, blend source), so transparent art stays clean.
+ * Viewers without APNG support show the first frame.
+ */
+export function encodeApng(frames: ApngFrame[]): Buffer {
+  if (frames.length === 0) throw new Error('APNG needs at least one frame')
+  const { width, height } = frames[0].image
+  const actl = Buffer.alloc(8)
+  actl.writeUInt32BE(frames.length, 0)
+  actl.writeUInt32BE(0, 4) // 0 = loop forever
+  const parts: Buffer[] = [SIGNATURE, chunk('IHDR', rgbaHeader(width, height)), chunk('acTL', actl)]
+  let sequence = 0
+  frames.forEach(({ image, delayMs }, index) => {
+    if (image.width !== width || image.height !== height) {
+      throw new Error(
+        `APNG frame ${index} is ${image.width}x${image.height}, expected ${width}x${height}`
+      )
+    }
+    const fctl = Buffer.alloc(26)
+    fctl.writeUInt32BE(sequence++, 0)
+    fctl.writeUInt32BE(width, 4)
+    fctl.writeUInt32BE(height, 8)
+    fctl.writeUInt32BE(0, 12) // x offset
+    fctl.writeUInt32BE(0, 16) // y offset
+    fctl.writeUInt16BE(Math.min(0xffff, Math.round(delayMs)), 20)
+    fctl.writeUInt16BE(1000, 22) // delay is in milliseconds
+    fctl[24] = 1 // dispose: clear to transparent
+    fctl[25] = 0 // blend: replace
+    parts.push(chunk('fcTL', fctl))
+    const compressed = compressRgba(image)
+    if (index === 0) parts.push(chunk('IDAT', compressed))
+    else {
+      const seq = Buffer.alloc(4)
+      seq.writeUInt32BE(sequence++)
+      parts.push(chunk('fdAT', Buffer.concat([seq, compressed])))
+    }
+  })
+  parts.push(chunk('IEND', new Uint8Array(0)))
+  return Buffer.concat(parts)
 }

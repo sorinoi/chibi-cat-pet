@@ -17,7 +17,8 @@
     "typecheck:scripts": "tsc -p tsconfig.scripts.json",
     "icons:build": "node scripts/generate-icons.mts",
     "dist": "npm run build && electron-builder --win --x64",
-    "sprite:prepare": "node scripts/prepare-sprite.mts"
+    "sprite:prepare": "node scripts/prepare-sprite.mts",
+    "readme:art": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-readme-art.mts"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

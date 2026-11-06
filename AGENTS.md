@@ -39,9 +39,10 @@ npm run test        # vitest
 npm run dist        # build + electron-builder -> dist/desktop-pet-setup-<version>.exe (NSIS, x64)
 npm run icons:build # regenerate resources/*.png and build/icon.ico
 npm run sprite:prepare -- <in.png> <out.png> [cols] [rows]   # clean a sprite sheet, print cell boxes
+npm run readme:art  # re-render the animated README previews (APNG) into docs/images/
 ```
 
-`scripts/` holds the icon generator and the sprite prep tool (`.mts`, run by Node's built-in type stripping). `scripts/lib/png.mts` is a tiny dependency-free PNG codec. New art from the user goes into `assets/sprites-inbox/`, then through `sprite:prepare` into `assets/models/`.
+`scripts/` holds the icon generator, the sprite prep tool and the README image renderer (`.mts`, run by Node's built-in type stripping). `scripts/lib/png.mts` is a tiny dependency-free PNG codec (also writes APNG). README.md is bilingual (English + Thai); rerun `readme:art` when the sprites or clip timings change. New art from the user goes into `assets/sprites-inbox/`, then through `sprite:prepare` into `assets/models/`.
 
 Installer notes: config in `electron-builder.yml`, extra uninstall steps in `build/installer.nsh` (Run key, updater cache). The installed app keeps data in `%APPDATA%\desktop-pet` (settings.json, pet.json); uninstall deletes it. `"Desktop Pet.exe" --settings` opens the settings window, also when the app is already running.
 

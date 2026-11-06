@@ -166,3 +166,5 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: User hand check of the rest of FR-28: Pet status… opens the settings Pet section, tray tooltip shows the summary, left click hides/shows. User approved V2-M5: v2.0 complete.
 - 2026-11-06: User asked to push and tag. Annotated tags v1.0.0 (171ec84) and v2.0.0 (f52d0ea); pushed main (8d65ddc..b506a6a) and both tags to origin.
 - 2026-11-06: User asked for a README. Wrote README.md (features v1/v2, install, data folder, dev commands, stack, layout, docs, art note). Not committed yet.
+- 2026-11-06: Pushed main (b506a6a..241ddf7) at the user's request.
+- 2026-11-06: User asked for a Thai README with preview images. Added scripts/build-readme-art.mts (`npm run readme:art`): renders APNG previews of every clip plus a hero scene from the real sheets and frame timings into docs/images (3.2 MB total, hero 2.1 MB; checked it animates in a browser). png.mts gained encodeApng. README.md redesigned: icon, badges, hero, clip gallery, English + Thai sections. CLAUDE.md/AGENTS.md commands updated. Not committed yet.
