@@ -4,8 +4,8 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v3.0 complete and accepted by the user (2026-11-06). No next phase planned yet.
-- Next step: none planned. Ask the user what comes next (options: tuning after use, open questions in requirement-v2.md section 15 and requirement-v3.md section 13, NFR-05 8 h soak, deleting the unused cat_focus_sprite_pack).
+- Current phase: v3.0 complete. v4 approved 2026-11-06 in requirement-v4.md; not started.
+- Next step: when the user says go, start V4-M1 (hungry notification FR-46/47 + focus history FR-48..50) per requirement-v4.md section 11. cat-life.png (section 9) is needed for V4-M3/M4.
 - Git (check `git status` and `git log` first; this line can lag): main pushed to origin (github.com/sorinoi/chibi-cat-pet) with the v3.0 release commit. Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea, v3.0.0 -> the release 3.0.0 commit. Push and tag only when the user asks.
 - Machine state: Desktop Pet 3.0.0 installed per-user over 2.0.0 and running with the user's cat sOrinOi; data in %APPDATA%\desktop-pet (settings.json without a language yet, so English from Windows until changed; pet.json; focus.json appears after the first completed focus). The user's old dev run (npm run dev, PID 25868) may still be open. dist/ has the 1.0.0, 2.0.0 and 3.0.0 installers.
 - Waiting on the user: nothing.
@@ -57,6 +57,12 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V3-M3 | Timer UI, notifications, reactions (fallback clips) | done | 186 tests; full cycle checked in the app; tray menu + notifications checked by hand |
 | V3-M4 | Focus sprite sheet and clips | done | cat-focus.png via sprite:regrid; focusStart checked in the app; 189 tests |
 | V3-M5 | Polish, measure, release v3.0 | done | gate passed; 3.0.0 installed over 2.0.0; accepted |
+| v4 | Requirements (requirement-v4.md) | done | approved by the user 2026-11-06 |
+| V4-M1 | Hungry notification, focus history | todo | waiting for go |
+| V4-M2 | Focus treats | todo | |
+| V4-M3 | cat-life.png art, sad, morning, night | todo | needs the user's art |
+| V4-M4 | Look at the mouse | todo | needs the user's art |
+| V4-M5 | Polish, 8 h run, release v4.0 | todo | |
 
 ## Phase approvals
 
@@ -200,3 +206,6 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: V3-M5 measurements (production build, isolated --user-data-dir, cat adopted, settings window closed): timer idle CPU 0.092 % of machine (1.47 % of one core), private RAM 202.5 MB; timer running CPU 0.103 %, RAM 216.5 MB (NFR-01/16 pass). 1-minute focus ended 60.005 s after start (NFR-17 pass, target 1 s). README updated for v3 (tagline, badge 3.0.0, focus clip row, v3 features EN/TH, focus.json, sprite:regrid, requirement-v3 link). Version 3.0.0; npm run dist -> dist/desktop-pet-setup-3.0.0.exe (116.1 MB). Not installed yet: waiting for the user to OK installing over the running 2.0.0.
 - 2026-11-06: User said install. Backed up the installed app's settings.json and pet.json (scratchpad); 2.0.0 was not running. desktop-pet-setup-3.0.0.exe /S -> exit 0, Uninstall entry 3.0.0; both files byte-identical after install; launched: the cat sOrinOi appears (no adoption), Run key kept. Ticked all acceptance criteria in requirement-v3.md section 12; measurements in section 14. V3-M5 gate passed; waiting for acceptance. Not committed.
 - 2026-11-06: User accepted v3.0 and asked to commit and push. Committed release 3.0.0, tagged v3.0.0 (annotated), pushed main and the tag.
+- 2026-11-06: Pushed main 3f00e6b and tag v3.0.0 (logged above). Moved the unused cat_focus_sprite_pack to the Recycle Bin at the user's request.
+- 2026-11-06: User asked for feature ideas; proposed 6 features + quality items; user liked all. Drafted requirement-v4.md (FR-46..59, NFR-21..24, V4-M1..M5, art list for cat-life.png: sad, look, stretch, yawn). Treats are a setting off by default to keep the v3 choice. Linked from requirement.md. Not approved.
+- 2026-11-06: User approved requirement-v4.md. Status updated in requirement-v4.md, requirement.md, CLAUDE.md, AGENTS.md. V4-M1 waits for the user's go. Not committed.
