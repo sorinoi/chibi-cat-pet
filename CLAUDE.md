@@ -8,7 +8,7 @@ Communicate with the user in Thai, casual and friendly, no rude or vulgar langua
 ## Product summary
 
 - v1: one sprite cat on a transparent, frameless, always-on-top window. Click, drag, drop, idle/walk/sleep behaviors, system tray menu, settings, NSIS installer.
-- v2 (later): pet-care system. Only ONE pet at a time. Adopting a different pet means starting over and wiping the old pet's data immediately.
+- v2 (in progress): pet-care system, see `requirement-v2.md`. Only ONE pet at a time. Adopting a different pet means starting over and wiping the old pet's data immediately.
 - Out of scope: macOS/Linux, multiple pets at once, cloud sync/accounts, shop/marketplace/plugins.
 - Requirement IDs (FR-xx, NFR-xx) come from the requirement doc. Reference them in commits and PRs when relevant.
 
@@ -104,7 +104,7 @@ Each phase must pass its gate before starting the next one.
 4. M4 Shell: tray menu, settings window, persistence, auto-start, installer. Gate: install, use and uninstall cleanly.
 5. M5 Polish: measure against NFRs, fix bugs, release v1.0.
 
-v2 (pet-care system) requirements are in `requirement-v2.md` (hunger + happiness, gentle, one pet; V2-M1..M5). Approved by the user on 2026-11-06. Do not start v2 implementation (V2-M1) without an explicit go-ahead.
+v2 (pet-care system) requirements are in `requirement-v2.md` (hunger + happiness, gentle, one pet; V2-M1..M5). Approved by the user on 2026-11-06. V2 phases follow the same phase approval rule as v1: finish one, report, wait for approval before the next.
 
 ## Source of truth: requirement.md
 

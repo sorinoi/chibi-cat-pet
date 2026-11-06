@@ -4,10 +4,23 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: V2-M1 done. (v1: M5 done; v1.0.0 built and installed.) Gate passed except NFR-05, which the user deferred (8 h test not run; accelerated test passed). v1 is complete.
-- Next step: V2-M1 done (gate passed). Start V2-M2 (needs engine, pet.json, offline decay, moods) when the user says go. Open items: real 8 h NFR-05 test (requirement.md section 13), commit the latest doc edits and tag v1.0.0 when the user asks, Windows 10 and multi-monitor checks when hardware exists. v2 (pet-care) only after an explicit go-ahead.
-- Restore point: commit 42360ca has the full 3D version (M1-M4). The sprite + M5 commit was handed to the user to run (message in the session scratchpad); doc edits after it are uncommitted.
-- Testing rule (user, 2026-11-06): do not inject keyboard or move the real mouse system-wide. Use CDP events into the app's own pages and messages posted to the app's own windows; leave real-input checks to the user.
+- Current phase: v2 in progress. V2-M1 done (gate passed), waiting for the user's approval to start V2-M2. v1.0 is complete (M5 gate passed except NFR-05, deferred by the user).
+- Next step: when the user says go, start V2-M2 per requirement-v2.md section 13: pure needs math (section 4 rules, all unit tested), pet.json store (section 11), offline decay with floor, moods (section 5). Each V2 phase waits for approval, like v1.
+- Git: main is clean; the latest commit is the session-handoff docs update, on top of f706658 (V2-M1). Earlier: 171ec84 (user's "initial commit": sprite cat + M5), 42360ca (full 3D version, restore point). Nothing pushed. Tag v1.0.0 not created (do it only when the user asks).
+- Machine state: Desktop Pet 1.0.0 (v1, no v2 code) is installed per-user and running; its data is %APPDATA%\desktop-pet. Dev runs use %APPDATA%\desktop-pet-dev.
+- Open items: real 8 h NFR-05 test (requirement.md section 13); Windows 10 and multi-monitor checks need hardware; v2 open questions (requirement-v2.md section 15) use the written defaults until decided.
+- Testing rule (user, 2026-11-06): do not inject keyboard or move the real mouse system-wide. Use CDP events into the app's own pages and messages posted to the app's own windows; leave real-input checks (tray, real clicks, fullscreen) to the user.
+
+## How to test (for a new session)
+
+The helper scripts used so far lived in a session scratchpad and are gone; rebuild them as needed:
+- Dev with DevTools protocol: `npx electron-vite dev --remoteDebuggingPort 9223`. Production: `node_modules/electron/dist/electron.exe . --remote-debugging-port=9224` (after `npm run build`). Installed app: `"%LOCALAPPDATA%\Programs\desktop-pet\Desktop Pet.exe" --remote-debugging-port=9225`. Never leave a debug port open on the app the user keeps running.
+- CDP client: Node's global WebSocket against http://127.0.0.1:<port>/json; `Runtime.evaluate` for page state, `Input.dispatchMouseEvent` for clicks/drags into the page only.
+- Dev-only hook `window.__petDebug`: `state()`, `scene()` (clip, frame, facing), `dispatch(event)`, `playClip(name)`, `setUserIdle(bool)`. Stripped from production builds.
+- Window checks from PowerShell (read-only): find the window by title "Desktop Pet", `GetWindowRect`, `GetWindowLong(GWL_EXSTYLE)` (0x20 transparent = click-through on, 0x8 topmost), `GetLayeredWindowAttributes` (opacity). Call `SetProcessDpiAwarenessContext(-4)` first so sizes are physical pixels.
+- Precise visuals: read the pet canvas through CDP (`getImageData` / `convertToBlob`) instead of screen captures, which are too slow for short frames.
+- Menus: Electron popup menus are `Chrome_WidgetWin_1` windows with no title (not Win32 `#32768`); PostMessage WM_KEYDOWN to that window only.
+- Startup timing: performance mark `pet:first-frame` vs the process StartTime.
 
 ## Task status
 
@@ -27,7 +40,12 @@ Read this first in every new session. Keep entries short.
 | - | Replace 3D cat with 2D sprite | done | user's claude.ai sheet; verified dev, production, installer |
 | M5 | Measure against NFRs, fix bugs | done | NFR-01..04 pass; FR-16 pass (hand check); NFR-05 deferred by user |
 | M5 | Release v1.0 | done | 1.0.0 installer built and installed; tag v1.0.0 not created yet |
-| v2 | Pet-care system | in progress | requirement-v2.md approved; V2-M1 done, waiting for approval of V2-M2 |
+| v2 | Requirements (requirement-v2.md) | done | approved by the user 2026-11-06 |
+| V2-M1 | Care sheet, multi-sheet model, eat/happy/hungry/pet clips | done | feet aligned across sheets; sprite:prepare tool |
+| V2-M2 | Needs engine, pet.json, offline decay, moods | todo | waiting for approval |
+| V2-M3 | Feed, pet (stroke + menu), click bonus, hungry reminder | todo | |
+| V2-M4 | Adoption, settings Pet section, tooltip, tray | todo | |
+| V2-M5 | Polish, measure, installer, release v2.0 | todo | |
 
 ## Phase approvals
 
@@ -37,7 +55,8 @@ Read this first in every new session. Keep entries short.
 | M2 | 2026-11-06 | yes, 2026-11-06 |
 | M3 | 2026-11-06 | yes, 2026-11-06 (user checked drag by hand: smooth) |
 | M4 | 2026-11-06 | yes, 2026-11-06 |
-| M5 | 2026-11-06 | - (v1 complete; v2 needs a go-ahead) |
+| M5 | 2026-11-06 | v1 complete; user then approved requirement-v2.md and V2-M1 |
+| V2-M1 | 2026-11-06 | waiting |
 
 ## Log
 
@@ -108,3 +127,4 @@ Read this first in every new session. Keep entries short.
 - 2026-11-06: Verified in dev via canvas pixels: feet bottom 263-266 canvas px for idle (main sheet) and all care clips (happy's jump frame excepted); contact sheet with a feet line looks right. Production build loads both sheets from file://; hit test OK. Care cat is drawn a bit rounder (head ~5-8 % bigger); sheet scale left at 1.
 - 2026-11-06: Window sizes now snap up to multiples of 4 DIP and the start position to the 4 DIP grid (placement.ts WINDOW_GRID; tested): 225 DIP x 1.25 = 281.25 px made Windows create the window a few px too big. Default position now exact (280x285 px). Known cosmetic issue: at one restored position the window is still 3 px taller than asked; it is transparent space under the feet, harmless.
 - 2026-11-06: Checks: typecheck, lint, test (64), build pass. Installed v1.0.0 relaunched for the user after testing. V2-M1 gate passed; waiting for approval to start V2-M2.
+- 2026-11-06: WORK-LOG prepared for a new session: current state rewritten (git, machine state, open items), test how-to added, V2 rows in both tables.
