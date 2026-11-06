@@ -4,10 +4,10 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v3 in progress. V3-M4 approved; V3-M5 (release 3.0) in progress.
-- Next step: when approved, V3-M5: NFR-01/16/17 measurement (idle and with a running timer), README (v3 features + focus clip row; previews already in docs/images), version 3.0.0, installer, install over 2.0.0, acceptance criteria in requirement-v3.md section 12. V3-M4 not committed yet (last commit 4a52851).
-- Git (check `git status` and `git log` first; this line can lag): main and origin/main at b506a6a (pushed 2026-11-06). Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea. Older: 87cde4e V2-M4, 7770fe1 V2-M3, d196771 V2-M2, f706658 V2-M1, 42360ca (3D restore point). Remote: origin = github.com/sorinoi/chibi-cat-pet. Push and tag only when the user asks.
-- Machine state: Desktop Pet 2.0.0 is installed per-user (over 1.0.0) and running with the user's adopted cat; data in %APPDATA%desktop-pet (settings.json, pet.json). Dev data %APPDATA%desktop-pet-dev has settings.json only. dist/ has the 1.0.0 and 2.0.0 installers.
+- Current phase: v3.0 complete and accepted by the user (2026-11-06). No next phase planned yet.
+- Next step: none planned. Ask the user what comes next (options: tuning after use, open questions in requirement-v2.md section 15 and requirement-v3.md section 13, NFR-05 8 h soak, deleting the unused cat_focus_sprite_pack).
+- Git (check `git status` and `git log` first; this line can lag): main pushed to origin (github.com/sorinoi/chibi-cat-pet) with the v3.0 release commit. Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea, v3.0.0 -> the release 3.0.0 commit. Push and tag only when the user asks.
+- Machine state: Desktop Pet 3.0.0 installed per-user over 2.0.0 and running with the user's cat sOrinOi; data in %APPDATA%\desktop-pet (settings.json without a language yet, so English from Windows until changed; pet.json; focus.json appears after the first completed focus). The user's old dev run (npm run dev, PID 25868) may still be open. dist/ has the 1.0.0, 2.0.0 and 3.0.0 installers.
 - Waiting on the user: nothing.
 - Open items: real 8 h NFR-05 test (requirement.md section 13); Windows 10 and multi-monitor checks need hardware; v2 open questions (requirement-v2.md section 15) use the written defaults until decided.
 - Testing rule (user, 2026-11-06): do not inject keyboard or move the real mouse system-wide. Use CDP events into the app's own pages and messages posted to the app's own windows; leave real-input checks (tray, real clicks, fullscreen) to the user.
@@ -56,7 +56,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V3-M2 | Timer engine | done | 172 tests; damaged focus.json checked in the app; no UI yet (V3-M3) |
 | V3-M3 | Timer UI, notifications, reactions (fallback clips) | done | 186 tests; full cycle checked in the app; tray menu + notifications checked by hand |
 | V3-M4 | Focus sprite sheet and clips | done | cat-focus.png via sprite:regrid; focusStart checked in the app; 189 tests |
-| V3-M5 | Polish, measure, release v3.0 | in progress | started 2026-11-06 |
+| V3-M5 | Polish, measure, release v3.0 | done | gate passed; 3.0.0 installed over 2.0.0; accepted |
 
 ## Phase approvals
 
@@ -76,6 +76,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V3-M2 | 2026-11-06 | yes, 2026-11-06 |
 | V3-M3 | 2026-11-06 | yes, 2026-11-06 (user checked tray Focus menu and notifications by hand) |
 | V3-M4 | 2026-11-06 | yes, 2026-11-06 |
+| V3-M5 | 2026-11-06 | yes, 2026-11-06 (v3.0 accepted) |
 
 ## Log
 
@@ -196,3 +197,6 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: V3-M4 code: scripts/lib/image.mts (resize moved out of build-readme-art), scripts/lib/spriteRegrid.mts (alpha ramp 205..240, 8-neighbour pieces assigned to cells by centre, specks dropped, head-anchored horizontally, row centred, feet on feetY, area resampling; tests), scripts/regrid-sprite.mts (npm run sprite:regrid). Produced assets/models/cat-focus.png at scale 0.8 (cat ~11,000 px vs care sheet ~10,900; nothing clipped). Model: sheet focus + clips focusStart/focusDone/longBreak/breakOver (once, frameMs). License note updated. readme:art renders the 4 new clips (README itself not changed yet). Tests 189.
 - 2026-11-06: App check (production build, isolated --user-data-dir, keys only to the app's own menu window): Start focus -> the focusStart clip from the new sheet (laptop, fired up, glow) then idle; feet steady. Focus cat is a little bigger than the v1 idle cat (same as the v2 care cat). Test data removed, port closed. V3-M4 gate passed; waiting for approval.
 - 2026-11-06: User approved V3-M4 and said go for V3-M5. Committed V3-M4 (Kawaii original kept in the inbox; the unusable 128 px pack left untracked).
+- 2026-11-06: V3-M5 measurements (production build, isolated --user-data-dir, cat adopted, settings window closed): timer idle CPU 0.092 % of machine (1.47 % of one core), private RAM 202.5 MB; timer running CPU 0.103 %, RAM 216.5 MB (NFR-01/16 pass). 1-minute focus ended 60.005 s after start (NFR-17 pass, target 1 s). README updated for v3 (tagline, badge 3.0.0, focus clip row, v3 features EN/TH, focus.json, sprite:regrid, requirement-v3 link). Version 3.0.0; npm run dist -> dist/desktop-pet-setup-3.0.0.exe (116.1 MB). Not installed yet: waiting for the user to OK installing over the running 2.0.0.
+- 2026-11-06: User said install. Backed up the installed app's settings.json and pet.json (scratchpad); 2.0.0 was not running. desktop-pet-setup-3.0.0.exe /S -> exit 0, Uninstall entry 3.0.0; both files byte-identical after install; launched: the cat sOrinOi appears (no adoption), Run key kept. Ticked all acceptance criteria in requirement-v3.md section 12; measurements in section 14. V3-M5 gate passed; waiting for acceptance. Not committed.
+- 2026-11-06: User accepted v3.0 and asked to commit and push. Committed release 3.0.0, tagged v3.0.0 (annotated), pushed main and the tag.

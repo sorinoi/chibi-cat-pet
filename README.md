@@ -4,10 +4,10 @@
 
 # Desktop Pet
 
-**A little cat that lives on your Windows desktop, and wants you to look after it.**<br>
-**แมวน้อยที่มาอยู่บนเดสก์ท็อป Windows ของคุณ และรอให้คุณดูแล**
+**A little cat that lives on your Windows desktop, wants you to look after it, and cheers on your focus sessions.**<br>
+**แมวน้อยที่มาอยู่บนเดสก์ท็อป Windows ของคุณ รอให้คุณดูแล และคอยเชียร์ตอนคุณโฟกัสทำงาน**
 
-![version](https://img.shields.io/badge/version-2.0.0-f4a261)
+![version](https://img.shields.io/badge/version-3.0.0-f4a261)
 ![platform](https://img.shields.io/badge/platform-Windows%20x64-2a9d8f)
 ![offline](https://img.shields.io/badge/works-100%25%20offline-264653)
 ![stack](https://img.shields.io/badge/Electron%20%2B%20Vue%203-TypeScript-6c757d)
@@ -37,6 +37,13 @@ Every animation below is rendered straight from the app's sprite sheets.<br>
     <td align="center"><img src="docs/images/clip-happy.png" width="128" alt="happy"><br><sub><b>happy</b><br>ดีใจ</sub></td>
     <td align="center"><img src="docs/images/clip-hungry.png" width="128" alt="hungry"><br><sub><b>hungry</b><br>หิวแล้ว</sub></td>
     <td align="center"><img src="docs/images/clip-pet.png" width="128" alt="pet"><br><sub><b>pet</b><br>โดนลูบหัว</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/clip-focusStart.png" width="128" alt="focusStart"><br><sub><b>focus start</b><br>เริ่มโฟกัส</sub></td>
+    <td align="center"><img src="docs/images/clip-focusDone.png" width="128" alt="focusDone"><br><sub><b>focus done</b><br>โฟกัสครบ</sub></td>
+    <td align="center"><img src="docs/images/clip-longBreak.png" width="128" alt="longBreak"><br><sub><b>long break</b><br>พักยาว</sub></td>
+    <td align="center"><img src="docs/images/clip-breakOver.png" width="128" alt="breakOver"><br><sub><b>break over</b><br>หมดเวลาพัก</sub></td>
+    <td></td>
   </tr>
 </table>
 
@@ -72,15 +79,28 @@ Every animation below is rendered straight from the app's sprite sheets.<br>
 - 🌱 Gentle by design: it never dies, never runs away and never nags.
 - 🔍 Hover over the cat or the tray icon to see its name, needs and mood.
 
+**A focus buddy (v3)**
+
+- 🍅 A **Pomodoro-style focus timer** in the cat's menu and the tray menu: focus, short
+  breaks, and a long break after every few sessions. Start, pause, resume, skip or stop.
+- ⏱️ You set the minutes, how often the long break comes, and whether breaks and the next
+  focus start on their own.
+- 🐱 The cat keeps living its normal life, then reacts at each change: opens its laptop to
+  start, shows off a medal when you finish, sips coffee on a long break, wakes from a nap
+  when the break is over.
+- 🔔 A Windows notification at the end of each phase (can be turned off), and today's 🍅
+  count in the tooltips and settings.
+- 🌏 **Thai or English**: pick the language in Settings; everything switches at once.
+
 ### Install
 
-Build the installer (see Development) and run `dist/desktop-pet-setup-2.0.0.exe`. It
+Build the installer (see Development) and run `dist/desktop-pet-setup-3.0.0.exe`. It
 installs for your user only (no admin rights) and adds Start menu and desktop shortcuts.
 Installing over an older version keeps your settings.
 
 | | |
 | --- | --- |
-| Your data | `%APPDATA%\desktop-pet` (`settings.json`, `pet.json`), removed on uninstall |
+| Your data | `%APPDATA%\desktop-pet` (`settings.json`, `pet.json`, `focus.json` with today's count), removed on uninstall |
 | Open settings | `"Desktop Pet.exe" --settings`, also while the app is running |
 | Privacy | No network, no telemetry, no account. Nothing leaves your PC |
 | Tested on | Windows 11, one monitor. Windows 10 is the target but untested |
@@ -105,6 +125,7 @@ npm run dev
 | `npm run dist` | Build plus the NSIS installer in `dist/` |
 | `npm run icons:build` | Regenerate `resources/*.png` and `build/icon.ico` |
 | `npm run sprite:prepare -- <in.png> <out.png> [cols] [rows]` | Clean a sprite sheet and print its cell boxes |
+| `npm run sprite:regrid -- <in.png> <out.png> [scale] [cols] [rows]` | Rebuild an off-spec sheet: clear a hazy background, cut frames by their art, 224 px grid, feet on one line |
 | `npm run readme:art` | Re-render the animated README images in `docs/images/` |
 
 Run `typecheck`, `lint` and `test` before committing.
@@ -116,22 +137,22 @@ Run `typecheck`, `lint` and `test` before committing.
   typed API per window
 - Vue 3 (Composition API, `<script setup>`) and strict TypeScript, built with electron-vite
 - Canvas 2D drawing PNG sprite sheets, at most 30 frames per second and nothing in between
-- Small JSON files for settings and pet data, no database
+- Small JSON files for settings, pet data and the focus count, no database
 - koffi (FFI) for one Windows call: detecting fullscreen apps
 - electron-builder (NSIS), Vitest, ESLint, Prettier
 
 ```
-src/main/        Electron main process: windows, tray, settings store, care engine, IPC
+src/main/        Electron main process: windows, tray, settings store, care and focus engines, IPC
 src/preload/     one typed contextBridge API per window (pet, settings, adopt)
 src/renderer/    Vue pages: the pet scene and state machine, settings, adoption
-src/shared/      types and pure logic shared by main and renderer (needs math, care config, IPC)
+src/shared/      pure logic and types shared by main and renderer (needs, focus timer, strings, IPC)
 assets/models/   sprite sheets, model config and the art license note
-scripts/         icon generator, sprite prep tool, README image renderer
+scripts/         icon generator, sprite prep and regrid tools, README image renderer
 docs/images/     animated README previews (generated)
 ```
 
-Pet-care tuning (rates, floors, cooldowns, stroke detection) lives in
-`src/shared/careConfig.ts`. Behavior is an explicit state machine in
+Pet-care tuning lives in `src/shared/careConfig.ts`, focus timer defaults in
+`src/shared/focusConfig.ts`, and all UI text (English and Thai) in `src/shared/strings.ts`. Behavior is an explicit state machine in
 `src/renderer/lib/petMachine.ts`.
 
 </details>
@@ -162,14 +183,22 @@ Pet-care tuning (rates, floors, cooldowns, stroke detection) lives in
 - 🌱 ใจดีเป็นหลัก: น้องไม่มีวันตาย ไม่หนีหาย และไม่ตื๊อให้รำคาญ
 - 🔍 ชี้เมาส์ค้างที่ตัวแมวหรือไอคอน tray เพื่อดูชื่อ ค่าความอิ่ม ความสุข และอารมณ์
 
+**เพื่อนช่วยโฟกัส (v3)**
+
+- 🍅 **ตัวจับเวลาโฟกัสแบบ Pomodoro** ในเมนูตัวแมวและเมนู tray: โฟกัส พักสั้น และพักยาวทุก ๆ กี่รอบ เริ่ม หยุดชั่วคราว ทำต่อ ข้าม หรือหยุดได้
+- ⏱️ ตั้งนาทีเองได้ ตั้งได้ว่าพักยาวทุกกี่รอบ และจะให้เริ่มพักหรือเริ่มโฟกัสรอบถัดไปเองอัตโนมัติไหม
+- 🐱 น้องแมวยังใช้ชีวิตตามปกติ แล้วเล่นท่าพิเศษตอนเปลี่ยนช่วง: เปิดแล็ปท็อปตอนเริ่ม โชว์เหรียญรางวัลตอนโฟกัสครบ จิบกาแฟตอนพักยาว ตื่นจากงีบตอนหมดเวลาพัก
+- 🔔 แจ้งเตือน Windows ตอนจบแต่ละช่วง (ปิดได้) และดูจำนวน 🍅 ของวันนี้ได้ใน tooltip และหน้าตั้งค่า
+- 🌏 **ภาษาไทยหรืออังกฤษ**: เลือกได้ในหน้าตั้งค่า เปลี่ยนแล้วมีผลทันที
+
 ### ติดตั้ง
 
-build installer ก่อน (ดูหัวข้อพัฒนาต่อ) แล้วรัน `dist/desktop-pet-setup-2.0.0.exe` ติดตั้งเฉพาะผู้ใช้ปัจจุบัน
+build installer ก่อน (ดูหัวข้อพัฒนาต่อ) แล้วรัน `dist/desktop-pet-setup-3.0.0.exe` ติดตั้งเฉพาะผู้ใช้ปัจจุบัน
 ไม่ต้องใช้สิทธิ์ admin และสร้าง shortcut ให้ทั้งใน Start menu และบนเดสก์ท็อป ติดตั้งทับเวอร์ชันเก่าได้โดยการตั้งค่าเดิมยังอยู่
 
 | | |
 | --- | --- |
-| ข้อมูลของคุณ | `%APPDATA%\desktop-pet` (`settings.json`, `pet.json`) ลบออกเมื่อถอนการติดตั้ง |
+| ข้อมูลของคุณ | `%APPDATA%\desktop-pet` (`settings.json`, `pet.json`, `focus.json` ที่เก็บจำนวนรอบของวันนี้) ลบออกเมื่อถอนการติดตั้ง |
 | เปิดหน้าตั้งค่า | `"Desktop Pet.exe" --settings` ใช้ได้แม้แอปเปิดอยู่ |
 | ความเป็นส่วนตัว | ไม่ใช้เน็ต ไม่เก็บสถิติ ไม่มีบัญชี ข้อมูลไม่ออกจากเครื่อง |
 | ทดสอบแล้วบน | Windows 11 จอเดียว (Windows 10 เป็นเป้าหมาย แต่ยังไม่ได้ทดสอบ) |
@@ -184,7 +213,7 @@ npm run dev
 ```
 
 คำสั่งทั้งหมดอยู่ในตารางหัวข้อ [Development](#development) ด้านบน ก่อน commit ให้รัน `typecheck`, `lint` และ `test` ทุกครั้ง
-ค่าที่ใช้จูนระบบเลี้ยง (อัตราลด ค่าต่ำสุด คูลดาวน์ การจับการลูบ) อยู่ที่ `src/shared/careConfig.ts`
+ค่าที่ใช้จูนระบบเลี้ยงอยู่ที่ `src/shared/careConfig.ts` ค่าตั้งต้นของตัวจับเวลาอยู่ที่ `src/shared/focusConfig.ts` และข้อความทั้งหมด (ไทยและอังกฤษ) อยู่ที่ `src/shared/strings.ts`
 
 ---
 
@@ -194,6 +223,7 @@ npm run dev
 | --- | --- |
 | [requirement.md](requirement.md) | v1 requirements, architecture, measurements |
 | [requirement-v2.md](requirement-v2.md) | Pet-care system, acceptance criteria, open questions |
+| [requirement-v3.md](requirement-v3.md) | Focus timer and Thai/English UI |
 | [WORK-LOG.md](WORK-LOG.md) | Progress log and where to resume |
 | [CLAUDE.md](CLAUDE.md) · [AGENTS.md](AGENTS.md) | Working rules for coding agents |
 
@@ -204,5 +234,5 @@ artwork is included. See [cat-sprite.LICENSE.txt](assets/models/cat-sprite.LICEN
 ภาพแมวสร้างโดยเจ้าของโปรเจกต์ด้วย Claude (claude.ai) ไม่มีภาพจากบุคคลอื่น
 
 <div align="center">
-<sub>v2.0.0 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
+<sub>v3.0.0 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
 </div>

@@ -1,6 +1,6 @@
 # Requirement v3: Focus timer (Pomodoro) and Thai/English UI - | - | - | - |
 
-Status: APPROVED by the user on 2026-11-06. Not built yet; implementation starts with V3-M1 only after the user says go. Open questions (section 13) use the defaults written here until decided. v2.0 (requirement-v2.md) stays the base: everything in v1 and v2 keeps working.
+Status: APPROVED by the user on 2026-11-06. Built as 3.0.0 on 2026-11-06 (V3-M1..M5 done; accepted by the user). Open questions (section 13) use the defaults written here until decided. v2.0 (requirement-v2.md) stays the base: everything in v1 and v2 keeps working.
 
 ## 1. Overview
 
@@ -185,20 +185,20 @@ The language work comes first because it needs no art and touches every window o
 | V3-M2 | Timer engine: pure timer logic, focus.json, today's count, midnight reset, sleep gap, config | Unit tests for every rule in section 4; count survives restart; damaged focus.json handled | Done 2026-11-06, approved |
 | V3-M3 | Timer UI: Focus submenus, tooltips, notifications, settings section; reactions with fallback clips | Full focus/break/long-break cycle works from tray and cat menu; notifications appear; settings apply | Done 2026-11-06, approved |
 | V3-M4 | Art: import cat-focus.png, new clips and reactions (needs the user's sheet) | Each reaction plays at the right moment; feet do not jump between sheets | Done 2026-11-06, approved |
-| V3-M5 | Polish: NFR-01/16/17 measurement, installer 3.0.0, upgrade from 2.0.0 | Acceptance criteria below pass | - |
+| V3-M5 | Polish: NFR-01/16/17 measurement, installer 3.0.0, upgrade from 2.0.0 | Acceptance criteria below pass | Done 2026-11-06, approved (v3.0 accepted) |
 
 ## 12. Acceptance criteria (v3)
 
-- [ ] Language can be switched between Thai and English; all UI text follows without restart.
-- [ ] A full cycle (4 focus sessions with breaks, then a long break) runs with the chosen
-      durations; skip, pause, resume and stop behave as in section 4.
-- [ ] Notifications show at each phase end and can be turned off.
-- [ ] Tooltips and menus show the phase, minutes left and today's count.
-- [ ] Today's count survives restart and resets at midnight.
-- [ ] The cat plays the right reaction at each phase change and otherwise behaves as in v2.
-- [ ] Pet care is not affected by the timer.
-- [ ] Idle CPU and RAM still meet NFR-01, with and without a running timer.
-- [ ] Upgrading from 2.0.0 keeps settings and pet data.
+- [x] Language can be switched between Thai and English; all UI text follows without restart. (V3-M1 app check + user hand check)
+- [x] A full cycle (4 focus sessions with breaks, then a long break) runs with the chosen
+      durations; skip, pause, resume and stop behave as in section 4. (V3-M3 app check, unit tests)
+- [x] Notifications show at each phase end and can be turned off. (user hand check, V3-M3)
+- [x] Tooltips and menus show the phase, minutes left and today's count. (V3-M3 app check + user hand check)
+- [x] Today's count survives restart and resets at midnight. (focusEngine tests; count saved in focus.json in the app)
+- [x] The cat plays the right reaction at each phase change and otherwise behaves as in v2. (V3-M3, V3-M4 app checks)
+- [x] Pet care is not affected by the timer. (no shared state; care tests unchanged)
+- [x] Idle CPU and RAM still meet NFR-01, with and without a running timer. (section 14)
+- [x] Upgrading from 2.0.0 keeps settings and pet data. (3.0.0 installed over 2.0.0, files byte-identical)
 
 ## 13. Open questions
 
@@ -210,3 +210,14 @@ Defaults are used until the user decides:
   tooltips only (a badge needs a bigger window and its own design).
 - Notification sound: Windows default, or silent? Default: Windows default.
 - Long-break reaction (row 4): wanted, or reuse `focusDone`?
+
+## 14. v3.0 measurements (2026-11-06, target machine)
+
+Windows 11 Pro, 16 logical CPUs, one 2560 x 1600 display at 125 % scaling. Production build 3.0.0 (unpacked, isolated data folder) with an adopted cat, settings window closed.
+
+| ID | Target | Measured | Result |
+| --- | --- | --- | --- |
+| NFR-01 / NFR-16 | CPU <= 5 %, RAM <= 300 MB idle; no per-second timer work | Timer idle: CPU 0.092 % of the machine, private RAM 202.5 MB. Timer running: CPU 0.103 %, 216.5 MB (2 min each) | Pass |
+| NFR-17 | Phase ends within 1 s | A 1-minute focus ended 60.005 s after it started | Pass |
+| NFR-09 | Installer <= 200 MB | 116.1 MB | Pass |
+| FR-45 / upgrade | 2.0.0 -> 3.0.0 keeps settings and pet | Installed silently over 2.0.0: settings.json and pet.json byte-identical, Run key kept, the cat appears | Pass |

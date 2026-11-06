@@ -9,7 +9,7 @@ Communicate with the user in Thai, casual and friendly, no rude or vulgar langua
 
 - v1: one sprite cat on a transparent, frameless, always-on-top window. Click, drag, drop, idle/walk/sleep behaviors, system tray menu, settings, NSIS installer.
 - v2.0 (done and accepted 2026-11-06): pet-care system, see `requirement-v2.md`. Only ONE pet at a time. Adopting a different pet means starting over and wiping the old pet's data immediately.
-- v3 (approved 2026-11-06, not started): Pomodoro focus timer + Thai/English UI, see `requirement-v3.md`. The timer is not linked to pet care; the cat keeps living as usual and only reacts at phase changes.
+- v3.0 (done and accepted 2026-11-06): Pomodoro focus timer + Thai/English UI, see `requirement-v3.md`. The timer is not linked to pet care; the cat keeps living as usual and only reacts at phase changes.
 - Out of scope: macOS/Linux, multiple pets at once, cloud sync/accounts, shop/marketplace/plugins.
 - Requirement IDs (FR-xx, NFR-xx) come from the requirement doc. Reference them in commits and PRs when relevant.
 
