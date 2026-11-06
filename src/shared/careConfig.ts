@@ -36,6 +36,24 @@ export const CARE = {
     happyFrom: 80
   },
 
+  /** Mood behavior (section 5). */
+  behavior: {
+    /** The hungry animation replaces a wander at most this often. */
+    hungryReminderCooldownMs: 10 * 60_000,
+    /** A sad pet waits this many times longer between wanders. */
+    sadWanderDelayMultiplier: 2,
+    /** Chance that a click on a happy pet plays `happy` instead of `click`. */
+    happyClickChance: 0.5
+  },
+
+  /** FR-18 stroke detection: back-and-forth over the cat without pressing. */
+  stroke: {
+    directionChanges: 3,
+    windowMs: 1_500,
+    /** Moves shorter than this (DIP) are jitter and do not count as a direction. */
+    minSegment: 6
+  },
+
   /** How often needs are recomputed and saved while the app runs. */
   tickIntervalMs: 60_000,
   /**

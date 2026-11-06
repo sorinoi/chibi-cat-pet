@@ -4,9 +4,9 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v2 in progress. V2-M2 done (gate passed), waiting for the user's approval to start V2-M3. v1.0 is complete (M5 gate passed except NFR-05, deferred by the user).
-- Next step: when the user says go, start V2-M3 per requirement-v2.md sections 5-6 and 13: feed and pet from the menus, stroke detection, click bonus, hungry reminder and mood behavior, wired to the care engine over typed IPC. The engine already has feed/pet/click; there is still no adoption UI (V2-M4), so testing needs a hand-written pet.json in %APPDATA%\desktop-pet-dev. Each V2 phase waits for approval, like v1.
-- Git: main is clean; the latest commit is V2-M2 (needs engine). Earlier: 0d5e63c (handoff docs), f706658 (V2-M1), 171ec84 (user's "initial commit": sprite cat + M5), 42360ca (full 3D version, restore point). Nothing pushed. Tag v1.0.0 not created (do it only when the user asks).
+- Current phase: v2 in progress. V2-M3 done (gate passed), waiting for the user's approval to start V2-M4. v1.0 is complete (M5 gate passed except NFR-05, deferred by the user).
+- Next step: when the user says go, start V2-M4 per requirement-v2.md sections 7-8 and 13: adoption window (name, Thai allowed; no cat until adopted), settings Pet section (rename, bars, adopted date, "Adopt a new cat..." with confirm and wipe), hover tooltip and tray tooltip with name, needs and mood, tray "Adopt..." before adoption. The care engine already has adopt/wipe. Each V2 phase waits for approval, like v1.
+- Git: main is clean; the latest commit is V2-M3 (care interactions). Earlier: d196771 (V2-M2), 0d5e63c (handoff docs), f706658 (V2-M1), 171ec84 (user's "initial commit": sprite cat + M5), 42360ca (full 3D version, restore point). Nothing pushed. Tag v1.0.0 not created (do it only when the user asks).
 - Machine state: Desktop Pet 1.0.0 (v1, no v2 code) is installed per-user and running; its data is %APPDATA%\desktop-pet. Dev runs use %APPDATA%\desktop-pet-dev.
 - Open items: real 8 h NFR-05 test (requirement.md section 13); Windows 10 and multi-monitor checks need hardware; v2 open questions (requirement-v2.md section 15) use the written defaults until decided.
 - Testing rule (user, 2026-11-06): do not inject keyboard or move the real mouse system-wide. Use CDP events into the app's own pages and messages posted to the app's own windows; leave real-input checks (tray, real clicks, fullscreen) to the user.
@@ -43,8 +43,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | v2 | Requirements (requirement-v2.md) | done | approved by the user 2026-11-06 |
 | V2-M1 | Care sheet, multi-sheet model, eat/happy/hungry/pet clips | done | feet aligned across sheets; sprite:prepare tool |
 | V2-M2 | Needs engine, pet.json, offline decay, moods | done | 103 tests; restart and offline gap checked in the app |
-| V2-M3 | Feed, pet (stroke + menu), click bonus, hungry reminder | todo | waiting for approval |
-| V2-M4 | Adoption, settings Pet section, tooltip, tray | todo | |
+| V2-M3 | Feed, pet (stroke + menu), click bonus, hungry reminder | done | 118 tests; every action checked in the app |
+| V2-M4 | Adoption, settings Pet section, tooltip, tray | todo | waiting for approval |
 | V2-M5 | Polish, measure, installer, release v2.0 | todo | |
 
 ## Phase approvals
@@ -57,7 +57,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | M4 | 2026-11-06 | yes, 2026-11-06 |
 | M5 | 2026-11-06 | v1 complete; user then approved requirement-v2.md and V2-M1 |
 | V2-M1 | 2026-11-06 | yes, 2026-11-06 |
-| V2-M2 | 2026-11-06 | waiting |
+| V2-M2 | 2026-11-06 | yes, 2026-11-06 |
+| V2-M3 | 2026-11-06 | waiting |
 
 ## Log
 
@@ -134,3 +135,8 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-06: Main wiring: care engine loads userData/pet.json at start, ticks every 60 s, sleeps with the user-idle watcher, flushes on quit. No pet yet means it stays inactive (adoption UI is V2-M4; feed/pet IPC is V2-M3).
 - 2026-11-06: Tests: 103 pass (39 new: needs math incl. "one step == many small steps", engine with temp dir + fake clock, records, Thai name lengths).
 - 2026-11-06: App check (production build, dev data folder, hand-written test pet.json): saved 2 h ago -> launch gives hunger 74.999 / happiness 75.832 (expected 75.000 / 75.833); 60 s tick saved at the sleep rate (user away); normal quit flushed; simulated 3 h closed -> 67.339 / 69.449 (expected ~67.36 / ~69.46); garbage pet.json -> moved to pet.json.bad, app runs. Test files removed afterwards. V2-M2 gate passed; waiting for approval to start V2-M3.
+- 2026-11-06: User approved V2-M3. Started V2-M3.
+- 2026-11-06: V2-M3 code: careConfig behavior + stroke tuning; src/renderer/lib/strokeDetector.ts (3 reversals within 1.5 s over the cat, moves < 6 DIP ignored, reset when leaving the cat or pressing; tested), lib/careBehavior.ts (idleAction: hungry reminder at most every 10 min; wanderDelayMs x2 when sad; clickReaction: happy 50 % when the mood is happy; tested), petMachine states eat/happy/hungry/pet with events feed/refuseFood/pet/clickHappy/hungryReminder (tested).
+- 2026-11-06: IPC: care:state (main -> pet, mood or null), care:request (menu Feed/Pet -> pet), care:act (pet -> main: feed/pet/click -> {counted, refused}). Design: the renderer gates every care action on the state machine, then main applies it, so a care action during another care animation changes nothing (first version applied menu feeds in main first; fixed). Click bonus only counts when the click reaction plays.
+- 2026-11-06: Menus: Feed (+ Pet in the right-click menu) at the top only when a pet exists; tray gets Feed. Feeding from the tray shows a hidden pet. Scene: play(clip, { once }) plays the looping hungry clip a single time. App: usePetStroke on window mousemove (forwarded while click-through is on). About text no longer says 3D.
+- 2026-11-06: Tests: 118 pass. App check (dev, hand-written pet.json, CDP + posting keys to the app's own menu window only): click +2; Feed 50 -> 90 / +5 with eat; Feed to 100; Feed when full -> click clip, needs unchanged; 2nd Feed during eat ignored (20 -> 60 once); menu Pet +15; fast stroke from idle -> pet +15; straight sweep -> nothing; hungry pet: wander timer plays hungry once then idle, next timer walks; happy pet: 8 clicks gave 4 happy / 4 click; no pet: menu has no Feed/Pet, clicks work as v1. Test pet files removed. Sad wander x2 is unit tested only. V2-M3 gate passed; waiting for approval to start V2-M4.

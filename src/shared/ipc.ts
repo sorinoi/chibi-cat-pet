@@ -2,6 +2,7 @@
  * Single source of truth for IPC channels and the preload API shape.
  * Channel names follow the `domain:action` convention.
  */
+import type { Mood } from './needs'
 import type { Settings } from './settings'
 
 export const IpcChannel = {
@@ -26,7 +27,16 @@ export const IpcChannel = {
   /** settings renderer -> main (invoke): Partial<Settings> -> Settings (sanitized). */
   SettingsUpdate: 'settings:update',
   /** main -> settings renderer: Settings, after any change. */
-  SettingsChanged: 'settings:changed'
+  SettingsChanged: 'settings:changed',
+  /** main -> pet renderer: CareView | null (no pet yet), on load and after every change. */
+  CareState: 'care:state',
+  /**
+   * main -> pet renderer: CareRequest from a menu (FR-17, FR-19). The renderer decides whether
+   * the pet can react now and, if so, applies it with care:act.
+   */
+  CareRequest: 'care:request',
+  /** pet renderer -> main (invoke): CareAct -> CareActResult | null (no pet). */
+  CareAct: 'care:act'
 } as const
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
@@ -36,6 +46,24 @@ export interface WalkRequest {
   dx: number
   /** DIP per second. */
   speed: number
+}
+
+/** What the pet renderer needs to know about care (section 5). */
+export interface CareView {
+  mood: Mood
+}
+
+/** A care action asked for from a menu. */
+export type CareRequest = 'feed' | 'pet'
+
+/** Care actions the pet renderer applies: feed, pet (menu or stroke, FR-18) or click (FR-20). */
+export type CareAct = 'feed' | 'pet' | 'click'
+
+export interface CareActResult {
+  /** false inside a cooldown or when refused: the animation may play, nothing changes. */
+  counted: boolean
+  /** feed only: the pet was too full to eat (it plays the click reaction instead). */
+  refused: boolean
 }
 
 export interface WalkEnded {
@@ -58,6 +86,12 @@ export interface PetApi {
   onUserIdleChanged(listener: (idle: boolean) => void): () => void
   /** Opens the pet's right-click menu at the cursor. */
   showContextMenu(): void
+  /** Returns an unsubscribe function. */
+  onCareState(listener: (view: CareView | null) => void): () => void
+  /** Returns an unsubscribe function. */
+  onCareRequest(listener: (request: CareRequest) => void): () => void
+  /** Applies a care action in main; resolves null when there is no pet. */
+  careAct(act: CareAct): Promise<CareActResult | null>
 }
 
 export interface SettingsSnapshot {

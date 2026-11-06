@@ -13,7 +13,7 @@ import { createSettingsStore } from './settingsStore'
 import { createSettingsWindowManager } from './settingsWindow'
 import { watchFullscreen } from './fullscreenWatcher'
 import { watchUserIdle } from './userIdle'
-import { IpcChannel } from '../shared/ipc'
+import { IpcChannel, type CareRequest } from '../shared/ipc'
 
 const SECONDS_PER_MINUTE = 60
 
@@ -52,10 +52,33 @@ function start(): void {
     onSettled: (position) => store.setPosition(position) // FR-04
   })
 
+  // v2 care state for the pet renderer: its mood drives behavior (section 5).
+  const sendCareState = (): void => {
+    const s = care.current()
+    sendToPet(IpcChannel.CareState, s ? { mood: s.mood } : null)
+  }
+  care.onChange(sendCareState)
+  win.webContents.on('did-finish-load', sendCareState)
+
+  /**
+   * Menu care actions are requests: the pet renderer knows whether the cat can react right
+   * now (a care action during another care animation is ignored) and applies it via care:act.
+   */
+  const request = (action: CareRequest): void => {
+    if (!care.current()) return
+    if (!win.isDestroyed() && !win.isVisible()) win.showInactive()
+    sendToPet(IpcChannel.CareRequest, action)
+  }
+
   const actions = createAppActions(
     () => (win.isDestroyed() ? null : win),
     () => settingsWindow.open(),
-    () => motion.stopWalk()
+    () => motion.stopWalk(),
+    {
+      hasPet: () => care.current() !== null,
+      feed: () => request('feed'),
+      pet: () => request('pet')
+    }
   )
 
   const unregister = registerIpcHandlers({
@@ -63,6 +86,7 @@ function start(): void {
     getSettingsWindow: settingsWindow.get,
     motion,
     store,
+    care,
     showContextMenu: () => showPetContextMenu(win, actions)
   })
 

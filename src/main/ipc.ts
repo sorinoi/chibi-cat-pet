@@ -5,10 +5,14 @@ import {
   type IpcMainEvent,
   type IpcMainInvokeEvent
 } from 'electron'
-import { IpcChannel, type SettingsSnapshot, type WalkRequest } from '../shared/ipc'
+import { IpcChannel, type CareAct, type SettingsSnapshot, type WalkRequest } from '../shared/ipc'
+import type { CareEngine } from './careEngine'
 import type { PetMotion } from './petMotion'
 import type { SettingsStore } from './settingsStore'
 import { canStartWithWindows } from './applySettings'
+
+const isCareAct = (value: unknown): value is CareAct =>
+  value === 'feed' || value === 'pet' || value === 'click'
 
 function isWalkRequest(value: unknown): value is WalkRequest {
   if (typeof value !== 'object' || value === null) return false
@@ -21,12 +25,13 @@ export interface IpcContext {
   getSettingsWindow(): BrowserWindow | null
   motion: PetMotion
   store: SettingsStore
+  care: CareEngine
   showContextMenu(): void
 }
 
 /** Registers all IPC handlers. Each channel accepts only the window it belongs to. */
 export function registerIpcHandlers(ctx: IpcContext): () => void {
-  const { petWindow: win, motion, store } = ctx
+  const { petWindow: win, motion, store, care } = ctx
   const fromPet = (event: IpcMainEvent | IpcMainInvokeEvent): boolean =>
     !win.isDestroyed() && event.sender === win.webContents
   const fromSettings = (event: IpcMainInvokeEvent): boolean =>
@@ -51,6 +56,16 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
   ipcMain.handle(IpcChannel.PetWalkStart, (event, request: unknown) => {
     if (!fromPet(event) || !isWalkRequest(request)) return 0
     return motion.startWalk(request)
+  })
+
+  ipcMain.handle(IpcChannel.CareAct, (event, act: unknown) => {
+    if (!fromPet(event) || !isCareAct(act)) return null
+    if (act === 'feed') {
+      const fed = care.feed()
+      return fed && { counted: !fed.refused, refused: fed.refused }
+    }
+    const bonus = act === 'pet' ? care.pet() : care.click()
+    return bonus && { counted: bonus.counted, refused: false }
   })
 
   ipcMain.handle(IpcChannel.SettingsGet, (event): SettingsSnapshot | null => {
@@ -78,6 +93,7 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
     }
     for (const channel of [
       IpcChannel.PetWalkStart,
+      IpcChannel.CareAct,
       IpcChannel.SettingsGet,
       IpcChannel.SettingsUpdate
     ]) {

@@ -178,8 +178,8 @@ Same rule as v1: each phase must pass its gate, then wait for the user's approva
 | Phase | Work | Gate | Status |
 | --- | --- | --- | --- |
 | V2-M1 | Assets: import the care sheet (alpha fix, license), multi-sheet model config, clips eat/happy/hungry/pet | All four clips play correctly next to the v1 clips; feet do not jump between sheets | Done 2026-11-06 |
-| V2-M2 | Needs engine: pure needs math, pet.json store, offline decay, moods | Unit tests for every rule in section 4; values survive restart; offline gap math checked | Done 2026-11-06, waiting for approval |
-| V2-M3 | Interactions: feed, pet (stroke + menu), click bonus, hungry reminder, mood behavior | Each action changes the needs as specified and plays the right clip; stroke detection does not trigger on normal mouse moves | - |
+| V2-M2 | Needs engine: pure needs math, pet.json store, offline decay, moods | Unit tests for every rule in section 4; values survive restart; offline gap math checked | Done 2026-11-06 |
+| V2-M3 | Interactions: feed, pet (stroke + menu), click bonus, hungry reminder, mood behavior | Each action changes the needs as specified and plays the right clip; stroke detection does not trigger on normal mouse moves | Done 2026-11-06, waiting for approval |
 | V2-M4 | Adoption and status: adoption window, settings Pet section, rename, re-adopt wipe, tooltip, tray | Adopt, rename, re-adopt (data gone), upgrade from v1 all work | - |
 | V2-M5 | Polish: tuning pass, NFR-01/11 measurement, installer, release v2.0 | Acceptance criteria below pass | - |
 

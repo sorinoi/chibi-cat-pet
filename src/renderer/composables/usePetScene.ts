@@ -16,8 +16,11 @@ export type Facing = 'left' | 'right'
 export interface PetScene {
   /** True when the pixel under the point (client CSS pixels) is part of the cat. */
   hitTest(clientX: number, clientY: number): boolean
-  /** Starts a clip from its first frame. Safe to call before the sheets load. */
-  play(clip: ClipName): void
+  /**
+   * Starts a clip from its first frame. Safe to call before the sheets load. `once` plays a
+   * looping clip a single time (intro + one loop) and then reports it finished.
+   */
+  play(clip: ClipName, options?: { once?: boolean }): void
   /** Which way the cat faces; frames are mirrored for the direction the sheet does not draw. */
   setFacing(facing: Facing): void
   /** Called when a non-looping clip reaches its end. */
@@ -132,11 +135,12 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
     if (state.nextChangeMs !== null) timer = setTimeout(tick, state.nextChangeMs)
   }
 
-  function play(name: ClipName): void {
+  function play(name: ClipName, options?: { once?: boolean }): void {
     const next = model.clips[name]
     if (!next) console.warn(`Model ${model.id} has no "${name}" clip; showing idle`)
     clipName = name
-    clip = next ?? model.clips.idle
+    const base = next ?? model.clips.idle
+    clip = options?.once ? { ...base, loop: false } : base
     startedAt = performance.now()
     pausedAt = null
     finishedSent = false

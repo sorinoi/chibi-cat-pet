@@ -8,6 +8,8 @@ interface PetDebug {
   state(): PetState
   scene(): { clip: string; frame: number; facing: string }
   playClip(clip: ClipName): void
+  mood(): string | null
+  wanderNow(): void
   setUserIdle(idle: boolean): void
 }
 

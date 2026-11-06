@@ -45,3 +45,40 @@ describe('pet state machine', () => {
     expect(transition('land', 'wander')).toBeNull()
   })
 })
+
+describe('pet state machine: v2 care', () => {
+  it('feeds, pets and refuses food from idle, walk and sleep (feeding wakes it)', () => {
+    for (const state of ['idle', 'walk', 'sleep'] as const) {
+      expect(transition(state, 'feed')).toBe('eat')
+      expect(transition(state, 'pet')).toBe('pet')
+      expect(transition(state, 'refuseFood')).toBe('click')
+      expect(transition(state, 'clickHappy')).toBe('happy')
+    }
+  })
+
+  it('plays the hungry reminder only from idle', () => {
+    expect(transition('idle', 'hungryReminder')).toBe('hungry')
+    expect(transition('walk', 'hungryReminder')).toBeNull()
+    expect(transition('sleep', 'hungryReminder')).toBeNull()
+  })
+
+  it('returns to idle after every care reaction and lets a drag interrupt it', () => {
+    for (const state of ['eat', 'happy', 'hungry', 'pet'] as const) {
+      expect(transition(state, 'clipFinished')).toBe('idle')
+      expect(transition(state, 'dragStart')).toBe('drag')
+    }
+  })
+
+  it('ignores care actions and clicks during another care animation', () => {
+    for (const state of ['eat', 'happy', 'hungry', 'pet'] as const) {
+      for (const event of ['feed', 'pet', 'click', 'clickHappy', 'wander', 'sleep'] as const) {
+        expect(transition(state, event)).toBeNull()
+      }
+    }
+  })
+
+  it('does not feed or pet while dragged or landing', () => {
+    expect(transition('drag', 'feed')).toBeNull()
+    expect(transition('land', 'pet')).toBeNull()
+  })
+})

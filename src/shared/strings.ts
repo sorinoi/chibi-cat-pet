@@ -3,6 +3,7 @@ export const STRINGS = {
   appName: 'Desktop Pet',
   tray: {
     tooltip: 'Desktop Pet',
+    feed: 'Feed',
     show: 'Show pet',
     hide: 'Hide pet',
     settings: 'Settings…',
@@ -10,6 +11,8 @@ export const STRINGS = {
     quit: 'Quit'
   },
   contextMenu: {
+    feed: 'Feed',
+    pet: 'Pet',
     hide: 'Hide',
     settings: 'Settings…',
     quit: 'Quit'
@@ -17,7 +20,7 @@ export const STRINGS = {
   about: {
     title: 'About Desktop Pet',
     detail: (version: string): string =>
-      `Version ${version}\nA 3D cat for your desktop. Runs fully offline.`
+      `Version ${version}\nA cat for your desktop. Runs fully offline.`
   },
   settings: {
     title: 'Desktop Pet Settings',

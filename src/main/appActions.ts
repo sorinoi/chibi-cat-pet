@@ -11,6 +11,18 @@ export interface AppActions {
   openSettings(): void
   showAbout(): void
   quit(): void
+  /** v2 care: false until a pet is adopted, so the menus hide Feed and Pet. */
+  hasPet(): boolean
+  /** FR-17. */
+  feed(): void
+  /** FR-19. */
+  pet(): void
+}
+
+export interface CareActions {
+  hasPet(): boolean
+  feed(): void
+  pet(): void
 }
 
 export function resourcePath(relative: string): string {
@@ -20,9 +32,11 @@ export function resourcePath(relative: string): string {
 export function createAppActions(
   getPetWindow: () => BrowserWindow | null,
   openSettings: () => void,
-  onPetHidden: () => void
+  onPetHidden: () => void,
+  care: CareActions
 ): AppActions {
   return {
+    ...care,
     isPetVisible() {
       return getPetWindow()?.isVisible() ?? false
     },

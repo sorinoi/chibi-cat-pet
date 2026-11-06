@@ -1,26 +1,35 @@
 import { onBeforeUnmount, onMounted, readonly, ref, type Ref } from 'vue'
 import { BEHAVIOR } from '../config'
+import { clickReaction, idleAction, wanderDelayMs, type CareMood } from '../lib/careBehavior'
 import { transition, type PetEvent, type PetState } from '../lib/petMachine'
 import type { PetScene } from './usePetScene'
 import type { ClipName } from '../../shared/modelConfig'
+import type { CareRequest } from '../../shared/ipc'
 
 export interface PetBehavior {
   state: Readonly<Ref<PetState>>
   dispatch(event: PetEvent): void
+  /** A click on the cat (FR-03, FR-20): reaction depends on the mood; counts the bonus. */
+  click(): void
+  /** A recognized stroke (FR-18): plays pet and counts the bonus. */
+  stroke(): void
 }
 
 const randomBetween = (min: number, max: number): number => min + Math.random() * (max - min)
 
 /**
  * Drives the pet state machine: plays the matching clip on every state change,
- * schedules wandering (FR-06), sleeps while the user is away (FR-07), and asks
- * the main process to move the window for walk and drag.
+ * schedules wandering (FR-06), sleeps while the user is away (FR-07), asks the main
+ * process to move the window for walk and drag, and reacts to care (requirement-v2.md
+ * sections 5-6). The care mood comes from main; null means no pet is adopted yet.
  */
 export function usePetBehavior(scene: PetScene): PetBehavior {
   const api = window.petApi
   const state = ref<PetState>('idle')
   let wanderTimer: ReturnType<typeof setTimeout> | null = null
   let userIdle = false
+  let mood: CareMood = null
+  let lastHungryReminderAt: number | null = null
   const unsubscribers: Array<() => void> = []
 
   function clearWander(): void {
@@ -28,12 +37,28 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     wanderTimer = null
   }
 
+  /** The wander timer: walk, or show the hungry reminder instead (section 5). */
+  function onWanderTimer(): void {
+    // Do not walk or nag while hidden from the tray or by a fullscreen app.
+    if (document.hidden) {
+      scheduleWander()
+      return
+    }
+    const now = Date.now()
+    if (idleAction(mood, now, lastHungryReminderAt) === 'hungry') {
+      lastHungryReminderAt = now
+      dispatch('hungryReminder')
+    } else {
+      dispatch('wander')
+    }
+  }
+
   function scheduleWander(): void {
     clearWander()
-    const { min, max } = BEHAVIOR.wanderDelaySeconds
-    // Do not walk while hidden from the tray: try again later instead.
-    const fire = (): void => (document.hidden ? scheduleWander() : dispatch('wander'))
-    wanderTimer = setTimeout(fire, randomBetween(min, max) * 1000)
+    wanderTimer = setTimeout(
+      onWanderTimer,
+      wanderDelayMs(mood, BEHAVIOR.wanderDelaySeconds, Math.random())
+    )
   }
 
   async function startWalk(): Promise<void> {
@@ -58,7 +83,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   }
 
   function enter(to: PetState): void {
-    scene.play(to)
+    // The hungry reminder is a looping clip; play it once (intro + one loop).
+    scene.play(to, to === 'hungry' ? { once: true } : undefined)
 
     switch (to) {
       case 'idle':
@@ -75,8 +101,7 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
       case 'land':
         api.endDrag()
         break
-      case 'click':
-      case 'sleep':
+      default:
         break
     }
   }
@@ -96,6 +121,33 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     else scene.play(state.value)
   })
 
+  function click(): void {
+    const event: PetEvent = clickReaction(mood, Math.random()) === 'happy' ? 'clickHappy' : 'click'
+    // The bonus counts only when the click reaction actually plays.
+    const plays = transition(state.value, event) !== null
+    dispatch(event)
+    if (plays && mood !== null) void api.careAct('click')
+  }
+
+  /** Petting (stroke or menu): only for an adopted pet, and not during another reaction. */
+  function petNow(): void {
+    if (mood === null || !transition(state.value, 'pet')) return
+    dispatch('pet')
+    void api.careAct('pet')
+  }
+
+  /** Feeding from a menu: main says whether the pet ate or was too full (FR-17). */
+  async function feedNow(): Promise<void> {
+    if (mood === null || !transition(state.value, 'feed')) return
+    const result = await api.careAct('feed')
+    if (result) dispatch(result.refused ? 'refuseFood' : 'feed')
+  }
+
+  function onCareRequest(request: CareRequest): void {
+    if (request === 'feed') void feedNow()
+    else petNow()
+  }
+
   onMounted(() => {
     unsubscribers.push(
       api.onWalkEnded(() => {
@@ -104,7 +156,11 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
       api.onUserIdleChanged((idle) => {
         userIdle = idle
         dispatch(idle ? 'sleep' : 'wake')
-      })
+      }),
+      api.onCareState((view) => {
+        mood = view ? view.mood : null
+      }),
+      api.onCareRequest(onCareRequest)
     )
     enter(state.value)
 
@@ -119,6 +175,11 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
         setUserIdle: (idle: boolean) => {
           userIdle = idle
           dispatch(idle ? 'sleep' : 'wake')
+        },
+        mood: () => mood,
+        // Fire the wander timer now (walk or hungry reminder, as the mood decides).
+        wanderNow: () => {
+          if (state.value === 'idle') onWanderTimer()
         }
       }
     }
@@ -132,5 +193,5 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     if (import.meta.env.DEV) delete window.__petDebug
   })
 
-  return { state: readonly(state), dispatch }
+  return { state: readonly(state), dispatch, click, stroke: petNow }
 }
