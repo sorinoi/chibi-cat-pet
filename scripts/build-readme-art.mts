@@ -197,7 +197,11 @@ const PREVIEW_CLIPS: ClipName[] = [
   'focusStart',
   'focusDone',
   'longBreak',
-  'breakOver'
+  'breakOver',
+  'sad',
+  'look',
+  'stretch',
+  'yawn'
 ]
 const previews = PREVIEW_CLIPS.filter((name) => model.clips[name]).map((name) => ({
   name,

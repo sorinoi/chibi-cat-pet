@@ -7,7 +7,7 @@
 **A little cat that lives on your Windows desktop, wants you to look after it, and cheers on your focus sessions.**<br>
 **แมวน้อยที่มาอยู่บนเดสก์ท็อป Windows ของคุณ รอให้คุณดูแล และคอยเชียร์ตอนคุณโฟกัสทำงาน**
 
-![version](https://img.shields.io/badge/version-3.0.0-f4a261)
+![version](https://img.shields.io/badge/version-4.0.0-f4a261)
 ![platform](https://img.shields.io/badge/platform-Windows%20x64-2a9d8f)
 ![offline](https://img.shields.io/badge/works-100%25%20offline-264653)
 ![stack](https://img.shields.io/badge/Electron%20%2B%20Vue%203-TypeScript-6c757d)
@@ -43,6 +43,13 @@ Every animation below is rendered straight from the app's sprite sheets.<br>
     <td align="center"><img src="docs/images/clip-focusDone.png" width="128" alt="focusDone"><br><sub><b>focus done</b><br>โฟกัสครบ</sub></td>
     <td align="center"><img src="docs/images/clip-longBreak.png" width="128" alt="longBreak"><br><sub><b>long break</b><br>พักยาว</sub></td>
     <td align="center"><img src="docs/images/clip-breakOver.png" width="128" alt="breakOver"><br><sub><b>break over</b><br>หมดเวลาพัก</sub></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/clip-sad.png" width="128" alt="sad"><br><sub><b>sad</b><br>เหงาจัง</sub></td>
+    <td align="center"><img src="docs/images/clip-look.png" width="128" alt="look"><br><sub><b>look</b><br>มองตามเมาส์</sub></td>
+    <td align="center"><img src="docs/images/clip-stretch.png" width="128" alt="stretch"><br><sub><b>stretch</b><br>บิดขี้เกียจ</sub></td>
+    <td align="center"><img src="docs/images/clip-yawn.png" width="128" alt="yawn"><br><sub><b>yawn</b><br>หาวง่วง</sub></td>
     <td></td>
   </tr>
 </table>
@@ -92,15 +99,27 @@ Every animation below is rendered straight from the app's sprite sheets.<br>
   count in the tooltips and settings.
 - 🌏 **Thai or English**: pick the language in Settings; everything switches at once.
 
+**A livelier cat (v4)**
+
+- 👀 Turns to look at your mouse when it comes near, on either side, then goes back to
+  what it was doing. Clicks still pass through the empty space around it.
+- 🌅 Stretches when it wakes up in the morning, 🥱 yawns at night and falls asleep sooner.
+- 😿 A sad cat now and then shows it, as a gentle hint to pet it.
+- 📊 The last 7 days of focus sessions as small bars in Settings.
+- 🍬 **Treats** (optional, off by default): each finished focus session earns one (up to 5).
+  Give one from the menu for a little boost of hunger and happiness.
+- 🔔 **Hungry reminder** (optional, off by default): one Windows notification when the cat is
+  very hungry, at most every 4 hours.
+
 ### Install
 
-Build the installer (see Development) and run `dist/desktop-pet-setup-3.0.0.exe`. It
+Build the installer (see Development) and run `dist/desktop-pet-setup-4.0.0.exe`. It
 installs for your user only (no admin rights) and adds Start menu and desktop shortcuts.
 Installing over an older version keeps your settings.
 
 | | |
 | --- | --- |
-| Your data | `%APPDATA%\desktop-pet` (`settings.json`, `pet.json`, `focus.json` with today's count), removed on uninstall |
+| Your data | `%APPDATA%\desktop-pet` (`settings.json`, `pet.json`, `focus.json` with your focus count for the last 30 days), removed on uninstall |
 | Open settings | `"Desktop Pet.exe" --settings`, also while the app is running |
 | Privacy | No network, no telemetry, no account. Nothing leaves your PC |
 | Tested on | Windows 11, one monitor. Windows 10 is the target but untested |
@@ -191,14 +210,23 @@ Pet-care tuning lives in `src/shared/careConfig.ts`, focus timer defaults in
 - 🔔 แจ้งเตือน Windows ตอนจบแต่ละช่วง (ปิดได้) และดูจำนวน 🍅 ของวันนี้ได้ใน tooltip และหน้าตั้งค่า
 - 🌏 **ภาษาไทยหรืออังกฤษ**: เลือกได้ในหน้าตั้งค่า เปลี่ยนแล้วมีผลทันที
 
+**น้องแมวมีชีวิตชีวาขึ้น (v4)**
+
+- 👀 หันมามองเมาส์เมื่อเมาส์เข้ามาใกล้ ได้ทั้งซ้ายและขวา แล้วกลับไปทำอย่างเดิมต่อ พื้นที่ว่างรอบตัวน้องยังคลิกทะลุได้เหมือนเดิม
+- 🌅 ตื่นเช้ามาจะบิดขี้เกียจ 🥱 ตอนกลางคืนจะหาวและหลับเร็วขึ้น
+- 😿 ถ้าน้องเหงา จะแสดงท่าเศร้าให้เห็นเป็นระยะ เหมือนบอกเบา ๆ ว่าอยากให้ลูบหัว
+- 📊 ดูจำนวนรอบโฟกัสย้อนหลัง 7 วันเป็นกราฟแท่งเล็ก ๆ ในหน้าตั้งค่า
+- 🍬 **ขนม** (เปิดเองได้ ค่าเริ่มต้นปิด): โฟกัสครบหนึ่งรอบได้ขนมหนึ่งชิ้น (เก็บได้สูงสุด 5) ให้น้องจากเมนูได้ ช่วยเพิ่มความอิ่มและความสุขนิดหน่อย
+- 🔔 **เตือนเมื่อหิว** (เปิดเองได้ ค่าเริ่มต้นปิด): แจ้งเตือน Windows หนึ่งครั้งเมื่อน้องหิวมาก ไม่เกินทุก 4 ชั่วโมง
+
 ### ติดตั้ง
 
-build installer ก่อน (ดูหัวข้อพัฒนาต่อ) แล้วรัน `dist/desktop-pet-setup-3.0.0.exe` ติดตั้งเฉพาะผู้ใช้ปัจจุบัน
+build installer ก่อน (ดูหัวข้อพัฒนาต่อ) แล้วรัน `dist/desktop-pet-setup-4.0.0.exe` ติดตั้งเฉพาะผู้ใช้ปัจจุบัน
 ไม่ต้องใช้สิทธิ์ admin และสร้าง shortcut ให้ทั้งใน Start menu และบนเดสก์ท็อป ติดตั้งทับเวอร์ชันเก่าได้โดยการตั้งค่าเดิมยังอยู่
 
 | | |
 | --- | --- |
-| ข้อมูลของคุณ | `%APPDATA%\desktop-pet` (`settings.json`, `pet.json`, `focus.json` ที่เก็บจำนวนรอบของวันนี้) ลบออกเมื่อถอนการติดตั้ง |
+| ข้อมูลของคุณ | `%APPDATA%\desktop-pet` (`settings.json`, `pet.json`, `focus.json` ที่เก็บจำนวนรอบโฟกัสย้อนหลัง 30 วัน) ลบออกเมื่อถอนการติดตั้ง |
 | เปิดหน้าตั้งค่า | `"Desktop Pet.exe" --settings` ใช้ได้แม้แอปเปิดอยู่ |
 | ความเป็นส่วนตัว | ไม่ใช้เน็ต ไม่เก็บสถิติ ไม่มีบัญชี ข้อมูลไม่ออกจากเครื่อง |
 | ทดสอบแล้วบน | Windows 11 จอเดียว (Windows 10 เป็นเป้าหมาย แต่ยังไม่ได้ทดสอบ) |
@@ -224,6 +252,7 @@ npm run dev
 | [requirement.md](requirement.md) | v1 requirements, architecture, measurements |
 | [requirement-v2.md](requirement-v2.md) | Pet-care system, acceptance criteria, open questions |
 | [requirement-v3.md](requirement-v3.md) | Focus timer and Thai/English UI |
+| [requirement-v4.md](requirement-v4.md) | Livelier cat, focus history and treats, hungry reminder |
 | [WORK-LOG.md](WORK-LOG.md) | Progress log and where to resume |
 | [CLAUDE.md](CLAUDE.md) · [AGENTS.md](AGENTS.md) | Working rules for coding agents |
 
@@ -234,5 +263,5 @@ artwork is included. See [cat-sprite.LICENSE.txt](assets/models/cat-sprite.LICEN
 ภาพแมวสร้างโดยเจ้าของโปรเจกต์ด้วย Claude (claude.ai) ไม่มีภาพจากบุคคลอื่น
 
 <div align="center">
-<sub>v3.0.0 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
+<sub>v4.0.0 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
 </div>

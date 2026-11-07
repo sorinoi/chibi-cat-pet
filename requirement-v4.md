@@ -1,6 +1,6 @@
 # Requirement v4: A livelier cat and a friendlier focus timer
 
-Status: APPROVED by the user on 2026-11-06. Not built yet; implementation starts with V4-M1 only after the user says go. Open questions (section 13) use the defaults written here until decided. v3.0 (requirement-v3.md) stays the base: everything in v1, v2 and v3 keeps working.
+Status: APPROVED by the user on 2026-11-06. Released as 4.0.0; accepted by the user on 2026-11-07 with the 8-hour run (NFR-22) deferred. Open questions (section 13) use the defaults written here until decided. v3.0 (requirement-v3.md) stays the base: everything in v1, v2 and v3 keeps working.
 
 ## 1. Overview
 
@@ -117,19 +117,19 @@ Same phase approval rule as before. The first two phases need no art.
 | V4-M2 | Focus treats (setting, stock in pet.json, menu item, notification text) | Earn, give, cap, wipe and setting-off rules unit tested and checked in the app | Done 2026-11-06, approved |
 | V4-M3 | Art import (`cat-life.png`), sad reminder, morning stretch, night sleepiness | Each clip plays at the right moment; feet steady; time windows unit tested | Done 2026-11-06, approved |
 | V4-M4 | Look at the mouse (cursor polling, mirroring) | Looks toward the cursor on both sides; never blocks clicks; polling stops when not idle or hidden | Done 2026-11-06, approved |
-| V4-M5 | Polish: tuning review, NFR-01/21 measurement, installer 4.0.0, upgrade from 3.0.0, 8-hour memory run | Acceptance criteria below pass | - |
+| V4-M5 | Polish: tuning review, NFR-01/21 measurement, installer 4.0.0, upgrade from 3.0.0, 8-hour memory run | Acceptance criteria below pass | Done 2026-11-07, accepted (8-hour run deferred) |
 
 ## 12. Acceptance criteria (v4)
 
-- [ ] With the setting on, a hungry cat triggers at most one notification per 4 hours; off by default.
-- [ ] The last 7 days of focus sessions show in settings and survive restart; a v3 focus.json upgrades.
-- [ ] With treats on, a completed focus earns a treat (max 5); giving one plays the reaction and changes the needs; adopting a new cat clears them; off by default.
-- [ ] A sad cat shows the sad animation now and then.
-- [ ] The cat looks toward a nearby cursor on either side and returns to idle; clicks still pass through empty areas.
-- [ ] Morning stretch and night sleepiness happen in their time windows.
-- [ ] Idle CPU and RAM still meet NFR-01; cursor polling only while idle and visible.
-- [ ] 8-hour run on the installed app: no continuous memory growth (NFR-22).
-- [ ] Upgrading from 3.0.0 keeps settings, pet and focus data.
+- [x] With the setting on, a hungry cat triggers at most one notification per 4 hours; off by default.
+- [x] The last 7 days of focus sessions show in settings and survive restart; a v3 focus.json upgrades.
+- [x] With treats on, a completed focus earns a treat (max 5); giving one plays the reaction and changes the needs; adopting a new cat clears them; off by default.
+- [x] A sad cat shows the sad animation now and then.
+- [x] The cat looks toward a nearby cursor on either side and returns to idle; clicks still pass through empty areas.
+- [ ] Morning stretch and night sleepiness happen in their time windows. (time rules unit tested; clips checked via the dev hook; waiting for a real morning)
+- [x] Idle CPU and RAM still meet NFR-01; cursor polling only while idle and visible. (0.041 % CPU, 201 MB, 2026-11-06)
+- [ ] 8-hour run on the installed app: no continuous memory growth (NFR-22). (deferred by the user 2026-11-07: the first run stopped after 10 min, 234.4 -> 224.2 MB private; a later run was not started)
+- [x] Upgrading from 3.0.0 keeps settings, pet and focus data. (installed over 3.0.0 on 2026-11-06; files byte-identical. Note 2026-11-07: checked from a Claude session, whose sandbox redirects %APPDATA%, so this was the sandboxed copy of the data folder)
 
 ## 13. Open questions
 
