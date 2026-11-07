@@ -9,7 +9,8 @@ Communicate with the user in Thai, casual and friendly, no rude or vulgar langua
 
 - v1: one sprite cat on a transparent, frameless, always-on-top window. Click, drag, drop, idle/walk/sleep behaviors, system tray menu, settings, NSIS installer.
 - v2.0 (done and accepted 2026-11-06): pet-care system, see `requirement-v2.md`. Only ONE pet at a time. Adopting a different pet means starting over and wiping the old pet's data immediately.
-- v4 (in progress; V4-M1..M4 approved, V4-M5 left): hungry notification, focus history, optional focus treats, sad/look/stretch/yawn clips (art: cat-life.png from the user), 8-hour memory run; see `requirement-v4.md`.
+- v4.0 (done and accepted 2026-11-07; the 8-hour memory run NFR-22 is deferred): hungry notification, focus history, optional focus treats, sad/look/stretch/yawn clips (art: cat-life.png from the user), 8-hour memory run; see `requirement-v4.md`.
+- v5 (not started; starts after v4.0 is accepted): gravity (a dropped cat falls to the taskbar) and window perches (sits and walks on other windows' top edges), no new art; jump and climb (art: cat-move.png from the user); all approved 2026-11-07; see `requirement-v5.md`.
 - v3.0 (done and accepted 2026-11-06): Pomodoro focus timer + Thai/English UI, see `requirement-v3.md`. The timer is not linked to pet care; the cat keeps living as usual and only reacts at phase changes.
 - Out of scope: macOS/Linux, multiple pets at once, cloud sync/accounts, shop/marketplace/plugins.
 - Requirement IDs (FR-xx, NFR-xx) come from the requirement doc. Reference them in commits and PRs when relevant.
@@ -124,6 +125,8 @@ v2 (pet-care system) requirements are in `requirement-v2.md` (hunger + happiness
 v3 (focus timer + Thai/English UI) requirements are in `requirement-v3.md` (V3-M1..M5, language first). Approved by the user on 2026-11-06, released as 3.0.0. Same phase approval rule.
 
 v4 requirements are in `requirement-v4.md` (V4-M1..M5; M1-M2 need no art). Approved by the user on 2026-11-06. Same phase approval rule.
+
+v5 requirements are in `requirement-v5.md` (V5-M1..M6; M1-M3 need no art). Approved by the user on 2026-11-07. Same phase approval rule.
 
 ## Source of truth: requirement.md
 
