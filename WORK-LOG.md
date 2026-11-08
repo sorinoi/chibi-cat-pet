@@ -89,6 +89,9 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V6-M3 | Dashboard | done | 26 server tests; login, overview (7/30 days), events (filter, Thai), dark mode, logout, Refresh checked in the browser; approved 2026-11-08 |
 | V6-M4 | Build and deploy (VPS, pm2) | todo | needs the domain name from the user |
 | V6-M5 | Polish, release v6.0 | todo | |
+| V7-M1 | Looks, recolor tool | todo | after v6 is accepted |
+| V7-M2 | Look picker | todo | |
+| V7-M3 | Final looks, release v7.0 | todo | |
 
 ## Phase approvals
 
@@ -336,3 +339,5 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-08: User approved V6-M3. Committed V6-M3 (not pushed). The user's own server (npm start, port 3000) and dev app may still be running with their dev data in desktop_pet. V6-M4 waits for the user's go.
 - 2026-11-08: User asked to commit and push: everything was already committed; pushed main (v6 docs, V6-M1, V6-M2, V6-M3) to origin; this log update committed and pushed after. No tag (v6 is not released).
 - 2026-11-08: User asked for a downloadable .exe and a README link. The GitHub repo is private (anonymous 404) and gh is not installed. User chose: offer 5.0.0 now (dist/desktop-pet-setup-5.0.0.exe, built from the v5.0.0 code, SHA-256 3c6669b9624b0d3f2c489efe309765d156c88ab18dec4d2cf15fce5360b9c2f1, 112.2 MB) as GitHub Release v5.0.0, uploaded by the user on the web; 6.0.0 joins at V6-M5. README: Download badge and install text (EN/TH) link to releases/latest, SmartScreen note. Release notes for the user in dist/release-notes-5.0.0.md (not tracked). An installer never goes into git (over GitHub's 100 MB file limit).
+- 2026-11-08: User asked whether a new cat look can be one sprite file (yes: 8 x 22 cells, but 5 files like today are easier to draw, fix and prepare) and asked for a draft: requirement-v7.md (choose the cat's look: looks share the current layout, only image files differ; picker at adoption and in Settings; pet.json look; sprite:recolor tool with user approval per variant; FR-100..108, NFR-40..44, V7-M1..M3; open questions on colors, recolor vs new art, timing vs v6). DRAFT, waiting for the user. Not committed.
+- 2026-11-08: User approved requirement-v7.md as written (status APPROVED; open questions on their defaults: orange, gray tabby, black, white; recolor first; change in Settings; look not sent to the server; after v6). CLAUDE.md, AGENTS.md (v7 product and milestone lines), requirement.md (v7 line; v6 line brought up to date) and the task table updated. Committed the v7 docs (not pushed).
