@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { findLanding, isCover, isPerch, type DesktopWindow, type LandingQuery } from './ledges'
+import {
+  findLanding,
+  followPerch,
+  isCover,
+  isPerch,
+  perchWalkArea,
+  type DesktopWindow,
+  type LandingQuery,
+  type PerchQuery
+} from './ledges'
 
 const display = { x: 0, y: 0, width: 2000, height: 1200 }
 // Work area 2000 x 1150 (taskbar below); window 160 x 160 hangs 12 DIP past the bottom.
@@ -100,12 +109,12 @@ describe('isCover', () => {
 
 describe('findLanding (FR-66)', () => {
   it('falls to the floor when nothing is below', () => {
-    expect(land(100, [])).toEqual({ y: 1002, perchId: null })
+    expect(land(100, [])).toMatchObject({ y: 1002, perchId: null })
   })
 
   it('lands on the top edge of a window under the cat', () => {
     const w = win({ x: 500, y: 600, width: 800, height: 400 })
-    expect(land(100, [w])).toEqual({ y: 600 - 148, perchId: w.id })
+    expect(land(100, [w])).toMatchObject({ y: 600 - 148, perchId: w.id })
   })
 
   it('takes the first edge on the way down', () => {
@@ -117,13 +126,13 @@ describe('findLanding (FR-66)', () => {
   it('ignores edges above the feet and windows beside the cat', () => {
     const above = win({ x: 500, y: 200, width: 800, height: 900 }) // feet at 248 are past it
     const beside = win({ x: 1100, y: 600, width: 600, height: 300 }) // centre 980 not over it
-    expect(land(100, [above, beside])).toEqual({ y: 1002, perchId: null })
+    expect(land(100, [above, beside])).toMatchObject({ y: 1002, perchId: null })
   })
 
   it('a cat already standing on an edge stays there', () => {
     const w = win({ x: 500, y: 600, width: 800, height: 400 })
-    expect(land(452, [w])).toEqual({ y: 452, perchId: w.id })
-    expect(land(453, [w])).toEqual({ y: 452, perchId: w.id }) // within the tolerance
+    expect(land(452, [w])).toMatchObject({ y: 452, perchId: w.id })
+    expect(land(453, [w])).toMatchObject({ y: 452, perchId: w.id }) // within the tolerance
   })
 
   it('skips an edge covered by a window in front, but not one only nearby', () => {
@@ -149,6 +158,90 @@ describe('findLanding (FR-66)', () => {
 
   it('skips edges at or below the floor', () => {
     const w = win({ x: 500, y: 1150, width: 800, height: 400 })
-    expect(land(100, [w])).toEqual({ y: 1002, perchId: null })
+    expect(land(100, [w])).toMatchObject({ y: 1002, perchId: null })
+  })
+})
+
+describe('perchWalkArea (FR-68)', () => {
+  const size = { width: 160, height: 160 }
+
+  it('keeps the centre a margin inside the window', () => {
+    const a = perchWalkArea(area, { x: 500, y: 600, width: 800, height: 300 }, size, 32)
+    expect(a.minX).toBe(500 + 32 - 80)
+    expect(a.maxX).toBe(1300 - 32 - 80)
+    expect(a.minY).toBe(area.minY)
+  })
+
+  it('stays inside the screen area for a window partly off screen', () => {
+    const a = perchWalkArea(area, { x: -400, y: 600, width: 800, height: 300 }, size, 32)
+    expect(a.minX).toBe(area.minX)
+    expect(a.maxX).toBe(400 - 32 - 80)
+  })
+
+  it('a window narrower than the margins leaves only its middle', () => {
+    const a = perchWalkArea(area, { x: 500, y: 600, width: 40, height: 300 }, size, 32)
+    expect(a.minX).toBe(a.maxX)
+    expect(a.minX + 80).toBe(520)
+  })
+})
+
+describe('followPerch (FR-69, FR-70)', () => {
+  const perch = win({ x: 500, y: 600, width: 800, height: 300 })
+  const q = (offsetX: number): PerchQuery => ({
+    size: { width: 160, height: 160 },
+    feetOffset: 148,
+    footHalfWidth: 32,
+    minPerchWidth: 320,
+    edgeMargin: 32,
+    offsetX,
+    areaAt: () => area
+  })
+  const follow = (
+    offsetX: number,
+    target: DesktopWindow | null,
+    front: DesktopWindow[] = []
+  ): ReturnType<typeof followPerch> => followPerch(q(offsetX), target, front, [display])
+
+  it('rides along when the window moves', () => {
+    expect(follow(300, perch)).toEqual({ lost: false, x: 800, y: 452 })
+    const moved = { ...perch, rect: { ...perch.rect, x: 650, y: 400 } }
+    expect(follow(300, moved)).toEqual({ lost: false, x: 950, y: 252 })
+  })
+
+  it('moves inward when the window gets narrower', () => {
+    const narrower = { ...perch, rect: { ...perch.rect, width: 400 } }
+    // Centre may go up to 900 - 32 = 868, so x up to 788.
+    expect(follow(500, narrower)).toEqual({ lost: false, x: 788, y: 452 })
+  })
+
+  it('is lost when the window is gone, minimized, maximized, cloaked or too narrow', () => {
+    expect(follow(300, null)).toEqual({ lost: true })
+    for (const extra of [
+      { minimized: true },
+      { maximized: true },
+      { cloaked: true },
+      { visible: false },
+      { rect: { ...perch.rect, width: 300 } }
+    ]) {
+      expect(follow(300, { ...perch, ...extra })).toEqual({ lost: true })
+    }
+  })
+
+  it('is lost when the window goes fullscreen', () => {
+    expect(follow(300, { ...perch, rect: { x: 0, y: 0, width: 2000, height: 1200 } })).toEqual({
+      lost: true
+    })
+  })
+
+  it('is lost when a window in front covers the spot under the feet, not when it is beside', () => {
+    const over = win({ x: 850, y: 550, width: 200, height: 200 }, { title: '' })
+    const beside = win({ x: 1100, y: 550, width: 200, height: 200 })
+    expect(follow(300, perch, [over])).toEqual({ lost: true })
+    expect(follow(300, perch, [beside]).lost).toBe(false)
+  })
+
+  it('is lost when the edge leaves the area: too high for the cat, or below the floor', () => {
+    expect(follow(300, { ...perch, rect: { ...perch.rect, y: 100 } })).toEqual({ lost: true })
+    expect(follow(300, { ...perch, rect: { ...perch.rect, y: 1160 } })).toEqual({ lost: true })
   })
 })

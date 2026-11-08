@@ -1,12 +1,22 @@
 import koffi from 'koffi'
 import { screen } from 'electron'
 import type { DesktopWindow } from './lib/ledges'
+import type { Rect } from './lib/placement'
 
 /**
  * requirement-v5.md FR-72: the top-level windows, front-most first, read through koffi
- * (user32, dwmapi). Read only when a fall starts (NFR-25); nothing is stored or sent.
+ * (user32, dwmapi). Nothing is stored or sent.
  */
-export type ListWindows = () => DesktopWindow[]
+export interface WindowList {
+  /** Every visible top-level window; read only when a fall starts (NFR-25). */
+  list(): DesktopWindow[]
+  /**
+   * FR-69, FR-70: one perch window and the visible windows in front of it. `target` is
+   * null when the window is gone; a hidden one comes back with visible false. Windows in
+   * front that do not overlap `probe` (DIP) are left out, which saves most native calls.
+   */
+  inspect(id: number, probe: Rect): { target: DesktopWindow | null; front: DesktopWindow[] }
+}
 
 const GW_HWNDNEXT = 2
 const GWL_EXSTYLE = -20
@@ -69,9 +79,9 @@ function bind(): Native | null {
   }
 }
 
-export function createWindowList(): ListWindows {
+export function createWindowList(): WindowList {
   const native = bind()
-  if (!native) return () => []
+  if (!native) return { list: () => [], inspect: () => ({ target: null, front: [] }) }
   const n = native
   const text = Buffer.alloc(TEXT_CHARS * 2)
   const rect = Buffer.alloc(16)
@@ -91,36 +101,61 @@ export function createWindowList(): ListWindows {
     return { x: left, y: top, width: right - left, height: bottom - top }
   }
 
-  return () => {
-    const windows: DesktopWindow[] = []
+  const overlaps = (a: Rect, b: Rect): boolean =>
+    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
+
+  const read = (hwnd: number, rectDip?: Rect): DesktopWindow => {
+    const ex = n.GetWindowLongW(hwnd, GWL_EXSTYLE)
+    n.GetWindowThreadProcessId(hwnd, pid)
+    const cloaked =
+      n.DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, cloak, 4) === 0 && cloak.readUInt32LE(0) !== 0
+    return {
+      id: hwnd,
+      rect: rectDip ?? screen.screenToDipRect(null, frame(hwnd)),
+      title: readText(n.GetWindowTextW, hwnd),
+      className: readText(n.GetClassNameW, hwnd),
+      visible: true,
+      minimized: n.IsIconic(hwnd),
+      maximized: n.IsZoomed(hwnd),
+      cloaked,
+      own: pid[0] === process.pid,
+      toolWindow: (ex & WS_EX_TOOLWINDOW) !== 0,
+      noActivate: (ex & WS_EX_NOACTIVATE) !== 0,
+      appWindow: (ex & WS_EX_APPWINDOW) !== 0,
+      clickThrough: (ex & WS_EX_TRANSPARENT) !== 0
+    }
+  }
+
+  /** Walks the z-order front to back; hidden windows are skipped (they hide nothing). */
+  const walk = (
+    stopAt: number | null,
+    probe: Rect | null
+  ): { target: DesktopWindow | null; front: DesktopWindow[] } => {
+    const front: DesktopWindow[] = []
+    // NFR-25: only windows over the spot under the cat can cover it. Compare in screen pixels
+    // (one conversion) and read the rest only for those.
+    const probePx = probe ? screen.dipToScreenRect(null, probe) : null
     let hwnd = n.GetTopWindow(0)
-    while (hwnd && windows.length < MAX_WINDOWS) {
+    for (let seen = 0; hwnd && seen < MAX_WINDOWS; seen++) {
       const visible = n.IsWindowVisible(hwnd)
-      // Hidden windows can neither carry the cat nor cover an edge: skip the slow calls.
+      if (hwnd === stopAt) {
+        const target = visible ? read(hwnd) : { ...read(hwnd), visible: false }
+        return { target, front }
+      }
       if (visible) {
-        const ex = n.GetWindowLongW(hwnd, GWL_EXSTYLE)
-        n.GetWindowThreadProcessId(hwnd, pid)
-        const cloaked =
-          n.DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, cloak, 4) === 0 &&
-          cloak.readUInt32LE(0) !== 0
-        windows.push({
-          id: hwnd,
-          rect: screen.screenToDipRect(null, frame(hwnd)),
-          title: readText(n.GetWindowTextW, hwnd),
-          className: readText(n.GetClassNameW, hwnd),
-          visible,
-          minimized: n.IsIconic(hwnd),
-          maximized: n.IsZoomed(hwnd),
-          cloaked,
-          own: pid[0] === process.pid,
-          toolWindow: (ex & WS_EX_TOOLWINDOW) !== 0,
-          noActivate: (ex & WS_EX_NOACTIVATE) !== 0,
-          appWindow: (ex & WS_EX_APPWINDOW) !== 0,
-          clickThrough: (ex & WS_EX_TRANSPARENT) !== 0
-        })
+        if (!probePx) front.push(read(hwnd))
+        else {
+          const px = frame(hwnd)
+          if (overlaps(px, probePx)) front.push(read(hwnd, screen.screenToDipRect(null, px)))
+        }
       }
       hwnd = n.GetWindow(hwnd, GW_HWNDNEXT)
     }
-    return windows
+    return { target: null, front }
+  }
+
+  return {
+    list: () => walk(null, null).front,
+    inspect: (id, probe) => walk(id, probe)
   }
 }

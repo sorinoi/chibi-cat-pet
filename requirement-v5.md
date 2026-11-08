@@ -126,7 +126,7 @@ Same phase approval rule as before. v5 starts only after the user accepts v4.0 (
 | --- | --- | --- | --- |
 | V5-M1 | Gravity: fall state, fall motion in main, floor per display, catch in the air, Gravity setting, settle on start and display change | Falls and lands on the floor; can be caught mid-air; setting off behaves like v4; click-through during the fall; fall rules unit tested | Done 2026-11-08, approved |
 | V5-M2 | Window perches: native window list (koffi), ledge search, landing on an edge, Sit on windows setting | Lands on the right window; skips minimized, maximized, cloaked, too narrow, covered and own windows; ledge search unit tested | Done 2026-11-08, approved |
-| V5-M3 | Riding and losing the perch: follow moves, walk within the edge, fall on every loss case, poll tiers | Rides a moving test window; falls on minimize, close, maximize, cover; no polling on the floor (measured) | - |
+| V5-M3 | Riding and losing the perch: follow moves, walk within the edge, fall on every loss case, poll tiers | Rides a moving test window; falls on minimize, close, maximize, cover; no polling on the floor (measured) | Done 2026-11-08, approved |
 | V5-M4 | Art import (`cat-move.png`), jump up and jump down, Jump and climb setting | Jumps onto a test window in reach and not out of reach; lost target falls; jumps down at an edge; feet steady; jump rules unit tested | - |
 | V5-M5 | Climb: wall anchor, climb wander, hold and let go | Climbs both screen edges, holds, falls (onto a perch when one is below); never crosses to another monitor; click-through while climbing | - |
 | V5-M6 | Polish: tuning, NFR-01/25 measurement, installer 5.0.0, upgrade from 4.0.0 | Acceptance criteria below pass | - |

@@ -39,7 +39,14 @@ export const MOTION = {
     /** Narrower windows are not perches. */
     minWidthFactor: 2,
     /** Half the part of the edge under the cat that must be visible (not covered). */
-    footHalfWidthFactor: 0.2
+    footHalfWidthFactor: 0.2,
+    /** FR-68: the cat's centre stays this far inside the window's side edges when walking. */
+    edgeMarginFactor: 0.2,
+    /** NFR-25: checks of the perch window while it is still (4 Hz). */
+    pollMs: 250,
+    /** NFR-26: checks while it moves (~30 Hz), for fastForMs after the last change. */
+    fastPollMs: 33,
+    fastForMs: 1000
   },
   /**
    * How far the window may hang past the work area edge at pet size 1.0: the cell's

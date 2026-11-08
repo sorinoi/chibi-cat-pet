@@ -76,7 +76,7 @@ function start(): void {
     if (!win.isDestroyed()) win.webContents.send(channel, payload)
   }
 
-  const listWindows = createWindowList()
+  const windowList = createWindowList()
   const motion = createPetMotion(
     win,
     store.settings.petSize,
@@ -89,7 +89,8 @@ function start(): void {
     {
       gravity: () => store.settings.gravity,
       // FR-71, FR-72: other apps' windows, read only when a fall starts.
-      windows: () => (store.settings.sitOnWindows ? listWindows() : [])
+      windows: () => (store.settings.sitOnWindows ? windowList.list() : []),
+      inspectWindow: (id, probe) => windowList.inspect(id, probe)
     }
   )
 
