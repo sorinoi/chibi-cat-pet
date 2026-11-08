@@ -48,6 +48,28 @@ export const MOTION = {
     fastPollMs: 33,
     fastForMs: 1000
   },
+  /** requirement-v5.md FR-73..75: jumping; sizes in pet window heights/widths. */
+  jump: {
+    /** Crouch and push off before the window moves (the jump clip's first two frames). */
+    takeoffMs: 220,
+    /** Window step in the air (~30 Hz, the NFR-02 cap). */
+    intervalMs: 33,
+    /** Flight time: base plus per DIP of distance, up to a limit. */
+    baseMs: 350,
+    msPerDip: 0.9,
+    maxMs: 900,
+    /** Top of the arc above the higher end. */
+    liftFactor: 0.35,
+    /** A jump up rises at least / at most this much (feet to edge). */
+    minRiseFactor: 0.4,
+    maxRiseFactor: 3,
+    /** ...and lands at most this far sideways. */
+    maxSideFactor: 4,
+    /** A jump down lands this far past the end of the perch (centre), then falls. */
+    downClearanceFactor: 0.6,
+    /** Within this many DIP of an end of the walkable stretch counts as "at the end". */
+    endSlack: 8
+  },
   /**
    * How far the window may hang past the work area edge at pet size 1.0: the cell's
    * always-empty margins, so the cat itself can reach the edges.
@@ -82,7 +104,7 @@ export const STORE = {
 
 export const SETTINGS_WINDOW = {
   width: 820,
-  height: 790
+  height: 820
 } as const
 
 export const ADOPT_WINDOW = {

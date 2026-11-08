@@ -11,6 +11,7 @@ import { createTray, showPetContextMenu } from './menus'
 import { createPetMotion } from './petMotion'
 import { createPetWindow } from './petWindow'
 import { createWindowList } from './windowList'
+import { ACTIVE_MODEL } from '../shared/activeModel'
 import { lockDownWebContents } from './security'
 import { createSettingsStore } from './settingsStore'
 import { createAdoptWindowManager, createSettingsWindowManager } from './settingsWindow'
@@ -90,7 +91,9 @@ function start(): void {
       gravity: () => store.settings.gravity,
       // FR-71, FR-72: other apps' windows, read only when a fall starts.
       windows: () => (store.settings.sitOnWindows ? windowList.list() : []),
-      inspectWindow: (id, probe) => windowList.inspect(id, probe)
+      inspectWindow: (id, probe) => windowList.inspect(id, probe),
+      // FR-78: only with the setting on and the art present.
+      jumps: () => store.settings.jumpAndClimb && ACTIVE_MODEL.clips.jump !== undefined
     }
   )
 

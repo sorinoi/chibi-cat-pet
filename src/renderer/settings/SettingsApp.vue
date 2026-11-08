@@ -107,6 +107,16 @@ function checkedFrom(event: Event): boolean {
           <span class="label">{{ text.sitOnWindows }}</span>
         </label>
 
+        <label class="row check sub" :class="{ disabled: !settings.gravity }">
+          <input
+            type="checkbox"
+            :checked="settings.jumpAndClimb"
+            :disabled="!settings.gravity"
+            @change="set('jumpAndClimb', checkedFrom($event))"
+          />
+          <span class="label">{{ text.jumpAndClimb }}</span>
+        </label>
+
         <label class="row check">
           <input
             type="checkbox"

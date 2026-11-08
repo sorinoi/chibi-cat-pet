@@ -5,6 +5,7 @@ import type { SpriteClip } from '../../shared/modelConfig'
 const clip = (overrides: Partial<SpriteClip>): SpriteClip => ({
   sheet: 'main',
   row: 0,
+  column: 0,
   frames: 3,
   loop: true,
   loopFrom: 0,

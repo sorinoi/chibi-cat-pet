@@ -102,7 +102,7 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
     ctx.setTransform(layout.sign * layout.scale, 0, 0, layout.scale, layout.originX, layout.originY)
     ctx.drawImage(
       sheet.image,
-      shownFrame * cellWidth,
+      (clip.column + shownFrame) * cellWidth,
       clip.row * cellHeight,
       cellWidth,
       cellHeight,
@@ -232,7 +232,7 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
       const cv = Math.floor(v)
       const { cellWidth, cellHeight, columns } = sheet.spec
       if (cu < 0 || cv < 0 || cu >= cellWidth || cv >= cellHeight) return false
-      const sx = shownFrame * cellWidth + cu
+      const sx = (clip.column + shownFrame) * cellWidth + cu
       const sy = clip.row * cellHeight + cv
       return sheet.alpha[sy * columns * cellWidth + sx] > RENDER.hitAlphaThreshold
     },

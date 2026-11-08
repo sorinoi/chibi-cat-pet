@@ -67,7 +67,7 @@ function renderCel(name: ClipName, frame: number, mirror = false): RgbaImage {
   const oy = anchorY - sheet.anchor.y
   for (let y = 0; y < sheet.cellHeight; y++) {
     for (let x = 0; x < sheet.cellWidth; x++) {
-      const sx = frame * sheet.cellWidth + (mirror ? sheet.cellWidth - 1 - x : x)
+      const sx = (clip.column + frame) * sheet.cellWidth + (mirror ? sheet.cellWidth - 1 - x : x)
       const s = ((clip.row * sheet.cellHeight + y) * src.width + sx) * 4
       const d = ((oy + y) * frameW + ox + x) * 4
       out.set(src.data.subarray(s, s + 4), d)

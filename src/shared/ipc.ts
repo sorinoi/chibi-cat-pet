@@ -68,7 +68,11 @@ export const IpcChannel = {
   /** main -> pet: the cat started falling on its own (requirement-v5.md FR-63). */
   PetFallStart: 'pet:fall-start',
   /** main -> pet: the cat is standing again after a drop or fall (FR-60). */
-  PetLanded: 'pet:landed'
+  PetLanded: 'pet:landed',
+  /** pet -> main (invoke): -> JumpStarted | null (no jump fits now) (FR-73, FR-75). */
+  PetJumpStart: 'pet:jump-start',
+  /** pet -> main (send): the pet could not show the jump; end it. */
+  PetJumpStop: 'pet:jump-stop'
 } as const
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
@@ -114,6 +118,12 @@ export interface CursorNear {
   height: number
 }
 
+/** A jump main has started (requirement-v5.md FR-73, FR-75). */
+export interface JumpStarted {
+  /** Sideways distance in DIP; its sign is the direction the cat faces. */
+  dx: number
+}
+
 export interface WalkEnded {
   /** false when the walk was stopped before reaching the target. */
   completed: boolean
@@ -137,6 +147,9 @@ export interface PetApi extends LanguageApi {
   onFallStart(listener: () => void): () => void
   /** Returns an unsubscribe function (FR-60). */
   onLanded(listener: () => void): () => void
+  /** FR-73, FR-75: main jumps if a jump fits; ends with pet:landed or pet:fall-start. */
+  startJump(): Promise<JumpStarted | null>
+  stopJump(): void
   /** Starts walking. Resolves with the distance actually planned after clamping (0 = no room). */
   startWalk(request: WalkRequest): Promise<number>
   stopWalk(): void

@@ -14,5 +14,10 @@ export const BEHAVIOR = {
   /** DIP per second at pet size 1.0, roughly matched to the walk frames' stride. */
   walkSpeed: 45,
   /** Pointer travel (DIP) before a press becomes a drag instead of a click. */
-  dragThreshold: 4
+  dragThreshold: 4,
+  /**
+   * requirement-v5.md FR-73, FR-75, NFR-30: a wander becomes a jump attempt this often, and
+   * not again for cooldownMs after a jump (at most a few per hour).
+   */
+  jump: { chance: 0.2, cooldownMs: 10 * 60 * 1000 }
 } as const

@@ -20,7 +20,16 @@ import {
   type DesktopWindow,
   type Landing
 } from './lib/ledges'
-import type { WalkEnded, WalkRequest } from '../shared/ipc'
+import {
+  arcPoint,
+  atPerchEnd,
+  chooseJump,
+  jumpDownSpot,
+  jumpDurationMs,
+  jumpUpTargets,
+  type JumpQuery
+} from './lib/jumps'
+import type { JumpStarted, WalkEnded, WalkRequest } from '../shared/ipc'
 import type { Position } from '../shared/settings'
 
 export interface PetMotion {
@@ -43,6 +52,14 @@ export interface PetMotion {
    * resumes both later.
    */
   stopFall(): void
+  /**
+   * FR-73, FR-75: jump up onto a window in reach, or down off the perch, if one fits;
+   * null otherwise (or while busy, or with Gravity or Jump and climb off). onLanded or
+   * onFallStart follows when it ends; a lost target turns into a fall (FR-74).
+   */
+  startJump(): JumpStarted | null
+  /** The pet could not show the jump after all: end it (falling if in the air). */
+  stopJump(): void
   /** Returns the planned signed distance (0 = no room or currently dragging). */
   startWalk(request: WalkRequest): number
   stopWalk(): void
@@ -66,6 +83,8 @@ export interface PetMotionOptions {
   gravity(): boolean
   /** Windows the cat may land on, front-most first; empty when Sit on windows is off (FR-71). */
   windows(): readonly DesktopWindow[]
+  /** Jump and climb setting on and the model has the jump clip (FR-78). */
+  jumps(): boolean
   /**
    * FR-69, FR-70: the perch window now (null when gone) and the windows in front of it that
    * overlap `probe`, the spot under the cat's feet (DIP).
@@ -131,6 +150,7 @@ export function createPetMotion(
   let perchTimer: NodeJS.Timeout | null = null
   /** Fast perch checks until then (the perch window moved recently). */
   let perchFastUntil = 0
+  let jumpTimer: NodeJS.Timeout | null = null
 
   function areaAt(point: Point): Area {
     const { workArea } = screen.getDisplayNearestPoint(point)
@@ -167,6 +187,21 @@ export function createPetMotion(
     clearInterval(dragTimer)
     dragTimer = null
     settled()
+  }
+
+  /** Returns true if a jump was running (the cat may be in the air). */
+  function cancelJump(): boolean {
+    if (!jumpTimer) return false
+    clearInterval(jumpTimer)
+    jumpTimer = null
+    settled()
+    return true
+  }
+
+  /** Falls from where the cat is, or tells the pet it stands. */
+  function fallOrLand(): void {
+    if (startFall()) events.onFallStart()
+    else events.onLanded()
   }
 
   /** Returns true if a fall was running. */
@@ -304,9 +339,87 @@ export function createPetMotion(
     return true
   }
 
+  /** FR-73..75: plans and starts a jump; see PetMotion.startJump. */
+  function startJump(): JumpStarted | null {
+    if (dragTimer || walkTimer || fallTimer || jumpTimer || win.isDestroyed()) return null
+    if (!options.gravity() || !options.jumps()) return null
+    const bounds = win.getBounds()
+    const g = geometry()
+    const j = MOTION.jump
+    const q: JumpQuery = {
+      ...g,
+      x: bounds.x,
+      y: bounds.y,
+      area: areaAt(centerOf(bounds)),
+      minRise: g.size.height * j.minRiseFactor,
+      maxRise: g.size.height * j.maxRiseFactor,
+      maxSide: g.size.width * j.maxSideFactor
+    }
+    const up = jumpUpTargets(q, options.windows(), displays())
+    const down = perch ? jumpDownSpot(q, perch.rect, g.size.width * j.downClearanceFactor) : null
+    const atEnd = perch ? atPerchEnd(q, perch.rect, j.endSlack) : false
+    const plan = chooseJump(up, down, atEnd, Math.random)
+    if (!plan) return null
+
+    clearPerch()
+    const from = { x: bounds.x, y: bounds.y }
+    let to = plan.to
+    let rect = plan.kind === 'up' ? plan.perchRect : null
+    const lift = g.size.height * j.liftFactor
+    const flightMs = jumpDurationMs(from, to, j)
+    const startedAt = Date.now()
+    let checked = plan.kind !== 'up'
+    jumpTimer = setInterval(() => {
+      const t = (Date.now() - startedAt - j.takeoffMs) / flightMs
+      if (t < 0) return // crouch and push off first
+      if (!checked && rect && plan.kind === 'up' && t >= 0.5) {
+        checked = true
+        // FR-74: at the top of the arc, is the edge still there and free?
+        const probe = {
+          x: to.x + g.size.width / 2 - g.footHalfWidth,
+          y: rect.y - 1,
+          width: g.footHalfWidth * 2,
+          height: 2
+        }
+        const { target, front } = options.inspectWindow(plan.perchId, probe)
+        const result = followPerch(
+          { ...g, offsetX: to.x - rect.x, areaAt },
+          target,
+          front,
+          displays()
+        )
+        if (result.lost || !target) {
+          cancelJump()
+          fallOrLand()
+          return
+        }
+        to = { x: result.x, y: result.y }
+        rect = target.rect
+      }
+      const p = arcPoint(from, to, lift, t)
+      moveTo(p.x, p.y)
+      if (t < 1) return
+      cancelJump()
+      if (plan.kind === 'up' && rect) {
+        sitOn({ y: to.y, perchId: plan.perchId, perchRect: rect }, to.x)
+        events.onLanded()
+      } else {
+        fallOrLand() // FR-75: off the end of the perch, then down
+      }
+    }, j.intervalMs)
+    return { dx: to.x - from.x }
+  }
+
   return {
+    startJump,
+
+    stopJump() {
+      if (cancelJump()) fallOrLand()
+    },
+
     startDrag() {
       finishWalk(false)
+      cancelJump() // caught mid-jump
       stopFall() // FR-62: caught in the air
       clearPerch() // picked up off a perch
       endDrag()
@@ -330,7 +443,7 @@ export function createPetMotion(
     },
 
     settle() {
-      if (dragTimer || walkTimer || fallTimer) return
+      if (dragTimer || walkTimer || fallTimer || jumpTimer) return
       if (startFall()) events.onFallStart()
       // A fall stopped by hiding may have nothing left to do: the pet must not stay falling.
       else events.onLanded()
@@ -338,12 +451,13 @@ export function createPetMotion(
 
     stopFall() {
       stopFall()
+      cancelJump() // settle() picks it up again when shown
       clearPerch()
     },
 
     startWalk({ dx, speed }) {
-      if (dragTimer || fallTimer || !Number.isFinite(dx) || !Number.isFinite(speed) || speed <= 0)
-        return 0
+      if (dragTimer || fallTimer || jumpTimer) return 0
+      if (!Number.isFinite(dx) || !Number.isFinite(speed) || speed <= 0) return 0
       finishWalk(false)
       const bounds = win.getBounds()
       const area = areaAt(centerOf(bounds))
@@ -377,13 +491,14 @@ export function createPetMotion(
       if (next === scale || win.isDestroyed()) return
       finishWalk(false)
       const wasFalling = stopFall()
+      const wasJumping = cancelJump()
       const resized = resizeKeepingFeet(win.getBounds(), petWindowSize(next))
       scale = next
       const pos = clampPosition(resized.x, resized.y, areaAt(centerOf(resized)))
       moveTo(pos.x, pos.y)
       settled()
-      // The pet is still in its fall state: carry on from the new size, or it just landed.
-      if (wasFalling && !startFall()) events.onLanded()
+      // The pet is still falling or jumping: carry on falling from the new size, or land.
+      if (wasFalling || wasJumping) fallOrLand()
     },
 
     dispose() {
@@ -393,6 +508,8 @@ export function createPetMotion(
       walkTimer = null
       if (fallTimer) clearInterval(fallTimer)
       fallTimer = null
+      if (jumpTimer) clearInterval(jumpTimer)
+      jumpTimer = null
       clearPerch()
     }
   }

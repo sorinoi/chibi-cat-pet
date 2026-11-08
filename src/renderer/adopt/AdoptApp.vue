@@ -49,7 +49,7 @@ onMounted(async () => {
   ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(
     img,
-    0,
+    clip.column * sheet.cellWidth,
     clip.row * sheet.cellHeight,
     sheet.cellWidth,
     sheet.cellHeight,

@@ -29,6 +29,8 @@ export interface Settings extends FocusSettings {
   gravity: boolean
   /** A falling cat may land on other windows (FR-71); only while gravity is on. On by default. */
   sitOnWindows: boolean
+  /** Jumps now and then, and later climbs (FR-78); only while gravity is on. On by default. */
+  jumpAndClimb: boolean
 }
 
 export const SETTINGS_LIMITS = {
@@ -50,7 +52,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   hungerReminder: false,
   focusTreats: false,
   gravity: true,
-  sitOnWindows: true
+  sitOnWindows: true,
+  jumpAndClimb: true
 }
 
 export interface Position {
@@ -122,7 +125,8 @@ export function sanitizeSettings(raw: unknown, base: Settings = DEFAULT_SETTINGS
     hungerReminder: bool(r['hungerReminder'], base.hungerReminder),
     focusTreats: bool(r['focusTreats'], base.focusTreats),
     gravity: bool(r['gravity'], base.gravity),
-    sitOnWindows: bool(r['sitOnWindows'], base.sitOnWindows)
+    sitOnWindows: bool(r['sitOnWindows'], base.sitOnWindows),
+    jumpAndClimb: bool(r['jumpAndClimb'], base.jumpAndClimb)
   }
 }
 

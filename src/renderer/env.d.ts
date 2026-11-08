@@ -10,6 +10,8 @@ interface PetDebug {
   playClip(clip: ClipName): void
   mood(): string | null
   wanderNow(): void
+  /** Try a jump now (requirement-v5.md FR-73). */
+  jumpNow(): void
   setUserIdle(idle: boolean): void
   /** Feed a cursor position as if main sent it (look at the mouse). */
   cursor(position: CursorNear): void

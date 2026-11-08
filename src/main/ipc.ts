@@ -77,6 +77,9 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
   ipcMain.on(IpcChannel.PetWalkStop, (event) => {
     if (fromPet(event)) motion.stopWalk()
   })
+  ipcMain.on(IpcChannel.PetJumpStop, (event) => {
+    if (fromPet(event)) motion.stopJump()
+  })
   ipcMain.on(IpcChannel.PetLookWatch, (event, on: unknown) => {
     if (fromPet(event) && typeof on === 'boolean') ctx.setLookWatch(on)
   })
@@ -87,6 +90,7 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
     if (!fromPet(event) || !isWalkRequest(request)) return 0
     return motion.startWalk(request)
   })
+  ipcMain.handle(IpcChannel.PetJumpStart, (event) => (fromPet(event) ? motion.startJump() : null))
 
   ipcMain.handle(IpcChannel.CareAct, (event, act: unknown) => {
     if (!fromPet(event) || !isCareAct(act)) return null
@@ -146,6 +150,7 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
       IpcChannel.PetDragStart,
       IpcChannel.PetDragEnd,
       IpcChannel.PetWalkStop,
+      IpcChannel.PetJumpStop,
       IpcChannel.PetShowContextMenu,
       IpcChannel.PetLookWatch,
       IpcChannel.CareOpenAdopt
@@ -154,6 +159,7 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
     }
     for (const channel of [
       IpcChannel.PetWalkStart,
+      IpcChannel.PetJumpStart,
       IpcChannel.CareAct,
       IpcChannel.CareAdopt,
       IpcChannel.CareGet,

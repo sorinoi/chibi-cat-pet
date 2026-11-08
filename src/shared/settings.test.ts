@@ -129,6 +129,18 @@ describe('gravity setting (requirement-v5.md FR-64)', () => {
   })
 })
 
+describe('jump and climb setting (requirement-v5.md FR-78)', () => {
+  it('is on by default, also for an older settings file', () => {
+    expect(DEFAULT_SETTINGS.jumpAndClimb).toBe(true)
+    expect(parsePersistedState({ settings: { gravity: true } }).settings.jumpAndClimb).toBe(true)
+  })
+
+  it('keeps a saved choice and ignores bad values', () => {
+    expect(sanitizeSettings({ jumpAndClimb: false }).jumpAndClimb).toBe(false)
+    expect(sanitizeSettings({ jumpAndClimb: 'yes' }).jumpAndClimb).toBe(true)
+  })
+})
+
 describe('sit on windows setting (requirement-v5.md FR-71)', () => {
   it('is on by default, also for an older settings file', () => {
     expect(DEFAULT_SETTINGS.sitOnWindows).toBe(true)

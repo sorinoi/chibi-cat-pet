@@ -55,6 +55,8 @@ export type PetEvent =
   | 'fallStart'
   /** Main says the cat stands again after a drop or fall (FR-60). */
   | 'landed'
+  /** Main started a jump chosen instead of a wander (FR-73, FR-75). */
+  | 'jump'
 
 /** FR-63: any cat at rest or in a reaction may be found in the air and fall (wakes it too). */
 const canFall = { fallStart: 'fall' } as const
@@ -92,6 +94,7 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
     nightYawn: 'yawn',
     cursorNear: 'look',
     sleep: 'sleep',
+    jump: 'jump',
     ...canFall,
     ...careActions,
     ...focusCues
@@ -112,6 +115,9 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
   drag: { dragEnd: 'fall' },
   // FR-62: only a catch interrupts a fall; clicks, care, wanders and sleep wait for the landing.
   fall: { landed: 'land', dragStart: 'drag' },
+  // FR-73..75, FR-77: a jump ends standing (land) or falling (off a perch, or the target was
+  // lost, FR-74); only a catch interrupts it.
+  jump: { landed: 'land', fallStart: 'fall', dragStart: 'drag' },
   land: {
     clipFinished: 'idle',
     ...canFall,

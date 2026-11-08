@@ -93,7 +93,7 @@ export interface Landing {
 }
 
 /** True when a window in `front` hides the edge at `edgeY` between `left` and `right`. */
-function edgeCovered(
+export function edgeCovered(
   front: readonly DesktopWindow[],
   edgeY: number,
   spanLeft: number,

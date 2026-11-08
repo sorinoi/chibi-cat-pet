@@ -59,8 +59,10 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   let careInFlight: ReturnType<typeof api.careAct> | null = null
   /** A focus reaction that arrived during another reaction; plays on the next idle. */
   let queuedCue: PetEvent | null = null
-  /** A menu care request that arrived mid-fall; handled once the cat stands (FR-62). */
+  /** A menu care request that arrived mid-fall or mid-jump; handled once the cat stands. */
   let pendingCare: CareRequest | null = null
+  /** Last jump (requirement-v5.md NFR-30 cooldown). */
+  let lastJumpAt: number | null = null
   const unsubscribers: Array<() => void> = []
 
   function clearWander(): void {
@@ -85,7 +87,33 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     if (action === 'hungry') dispatch('hungryReminder')
     else if (action === 'sad') dispatch('sadReminder')
     else if (action === 'yawn') dispatch('nightYawn')
+    else if (jumpDue(now)) void tryJump()
     else dispatch('wander')
+  }
+
+  /** FR-73, FR-75, NFR-30: now and then a wander becomes a jump attempt, with a cooldown. */
+  function jumpDue(now: number): boolean {
+    const { chance, cooldownMs } = BEHAVIOR.jump
+    if (!hasClip('jump')) return false
+    if (lastJumpAt !== null && now - lastJumpAt < cooldownMs) return false
+    return Math.random() < chance
+  }
+
+  /** Main jumps if one fits; otherwise the cat wanders as usual. */
+  async function tryJump(): Promise<void> {
+    const started = await api.startJump()
+    if (state.value !== 'idle') {
+      // Clicked, dragged or put to sleep while main was planning.
+      if (started) api.stopJump()
+      return
+    }
+    if (!started) {
+      dispatch('wander')
+      return
+    }
+    lastJumpAt = Date.now()
+    if (started.dx !== 0) scene.setFacing(started.dx > 0 ? 'right' : 'left')
+    dispatch('jump')
   }
 
   function scheduleWander(): void {
@@ -266,8 +294,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   }
 
   function onCareRequest(request: CareRequest): void {
-    // FR-62: care waits for the landing (the welcome scene after adoption too).
-    if (state.value === 'fall') {
+    // FR-62, FR-77: care waits for the landing (the welcome scene after adoption too).
+    if (state.value === 'fall' || state.value === 'jump') {
       pendingCare = request
       return
     }
@@ -323,6 +351,10 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
         // Fire the wander timer now (walk or hungry reminder, as the mood decides).
         wanderNow: () => {
           if (state.value === 'idle') onWanderTimer()
+        },
+        // Try a jump now, without the chance or the cooldown (requirement-v5.md FR-73).
+        jumpNow: () => {
+          if (state.value === 'idle') void tryJump()
         },
         // Look at the mouse without moving the real cursor.
         cursor: onCursor,

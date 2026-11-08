@@ -43,6 +43,7 @@ describe('parseModelConfig', () => {
     expect(config.clips.idle).toEqual({
       sheet: 'main',
       row: 0,
+      column: 0,
       frames: 4,
       loop: true,
       loopFrom: 0,
@@ -77,6 +78,13 @@ describe('parseModelConfig', () => {
     expect(() => parseModelConfig(withClips(idleClip({ sheet: 'care' })))).toThrow(/unknown sheet/)
   })
 
+  it('lets a clip start in the middle of a row, inside the sheet (requirement-v5.md)', () => {
+    expect(parseModelConfig(withClips(idleClip({ column: 2 }))).clips.idle.column).toBe(2)
+    expect(() => parseModelConfig(withClips(idleClip({ column: 7 })))).toThrow(/column/)
+    expect(() => parseModelConfig(withClips(idleClip({ column: -1 })))).toThrow(/column/)
+    expect(() => parseModelConfig(withClips(idleClip({ column: 1.5 })))).toThrow(/column/)
+  })
+
   it('rejects bad sheets and missing strings', () => {
     const bad = (s: Record<string, unknown>): unknown => ({
       ...valid,
@@ -89,11 +97,11 @@ describe('parseModelConfig', () => {
     expect(() => parseModelConfig(null)).toThrow(/object/)
   })
 
-  it('accepts the shipped cat model with every v1 to v4 clip', () => {
+  it('accepts the shipped cat model with every clip', () => {
     const config = parseModelConfig(shipped)
-    // The v5 move clips wait for cat-move.png (requirement-v5.md section 9).
-    const withArt = CLIP_NAMES.filter((name) => !(MOVE_CLIPS as readonly string[]).includes(name))
-    expect(Object.keys(config.clips).sort()).toEqual([...withArt].sort())
+    expect(Object.keys(config.clips).sort()).toEqual([...CLIP_NAMES].sort())
+    for (const clip of MOVE_CLIPS) expect(config.clips[clip]?.sheet).toBe('move')
+    expect(config.clips.fall?.column).toBe(3)
     for (const clip of ['focusStart', 'focusDone', 'breakOver', 'longBreak'] as const) {
       expect(config.clips[clip]?.sheet).toBe('focus')
     }

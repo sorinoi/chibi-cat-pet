@@ -14,8 +14,11 @@ export type FocusClip = (typeof FOCUS_CLIPS)[number]
 export const LIFE_CLIPS = ['sad', 'look', 'stretch', 'yawn'] as const
 export type LifeClip = (typeof LIFE_CLIPS)[number]
 
-/** Optional v5 movement clips (requirement-v5.md section 9); `fall` plays `drag` until art exists. */
-export const MOVE_CLIPS = ['fall'] as const
+/**
+ * Optional v5 movement clips (requirement-v5.md section 9): `fall` plays `drag` until art
+ * exists; without `jump` the cat does not jump (FR-73, FR-75).
+ */
+export const MOVE_CLIPS = ['fall', 'jump'] as const
 export type MoveClip = (typeof MOVE_CLIPS)[number]
 
 export const CLIP_NAMES = [
@@ -67,11 +70,13 @@ export interface SpriteSheet {
   scale: number
 }
 
-/** One animation: a run of frames in one row of one sheet, starting at column 0. */
+/** One animation: a run of frames in one row of one sheet. */
 export interface SpriteClip {
   /** Key into ModelConfig.sheets. */
   sheet: string
   row: number
+  /** First column of the run (requirement-v5.md: a clip may use the middle of a row). Default 0. */
+  column: number
   frames: number
   loop: boolean
   /** Frame to restart from when looping (an intro plays once before it). Default 0. */
@@ -195,8 +200,12 @@ function parseClip(
   if (!sheet) fail(`"${where}.sheet" names an unknown sheet "${sheetName}"`)
   const row = requireNumber(raw, 'row', where, { integer: true })
   if (row >= sheet.rows) fail(`"${where}.row" is outside the sheet`)
+  const column =
+    raw['column'] === undefined ? 0 : requireNumber(raw, 'column', where, { min: 0, integer: true })
   const frames = requireNumber(raw, 'frames', where, { min: 1, integer: true })
-  if (frames > sheet.columns) fail(`"${where}.frames" is more than the sheet has columns`)
+  if (column + frames > sheet.columns) {
+    fail(`"${where}.column" + "frames" is more than the sheet has columns`)
+  }
   if (typeof raw['loop'] !== 'boolean') fail(`"${where}.loop" must be true or false`)
   const loopFrom =
     raw['loopFrom'] === undefined ? 0 : requireNumber(raw, 'loopFrom', where, { integer: true })
@@ -218,7 +227,7 @@ function parseClip(
     const fps = requireNumber(raw, 'fps', where, { min: 0.1 })
     frameMs = Array.from({ length: frames }, () => Math.max(1000 / fps, minFrameMs))
   }
-  return { sheet: sheetName, row, frames, loop: raw['loop'], loopFrom, frameMs }
+  return { sheet: sheetName, row, column, frames, loop: raw['loop'], loopFrom, frameMs }
 }
 
 /** Validates raw JSON. Throws with a readable reason when the config is unusable. */

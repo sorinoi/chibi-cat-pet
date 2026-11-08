@@ -190,6 +190,27 @@ describe('look at the mouse (requirement-v4.md FR-56)', () => {
   })
 })
 
+describe('jumping (requirement-v5.md section 10)', () => {
+  it('jumps from idle and ends standing or falling', () => {
+    expect(transition('idle', 'jump')).toBe('jump')
+    expect(transition('jump', 'landed')).toBe('land')
+    expect(transition('jump', 'fallStart')).toBe('fall')
+    expect(run('idle', ['jump', 'fallStart', 'landed', 'clipFinished'])).toBe('idle')
+  })
+
+  it('can be caught mid-jump and ignores everything else (FR-77)', () => {
+    expect(transition('jump', 'dragStart')).toBe('drag')
+    const events: PetEvent[] = ['click', 'feed', 'pet', 'wander', 'sleep', 'cueFocusDone', 'jump']
+    for (const event of events) expect(transition('jump', event)).toBeNull()
+  })
+
+  it('only an idle cat starts a jump', () => {
+    for (const state of ['walk', 'sleep', 'look', 'drag', 'fall', 'land'] as const) {
+      expect(transition(state, 'jump')).toBeNull()
+    }
+  })
+})
+
 describe('falling (requirement-v5.md section 10)', () => {
   it('can be caught again in the air (FR-62)', () => {
     expect(transition('fall', 'dragStart')).toBe('drag')
