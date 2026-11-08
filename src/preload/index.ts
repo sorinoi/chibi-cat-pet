@@ -21,6 +21,8 @@ const petApi: PetApi = {
   setIgnoreMouseEvents: (ignore) => ipcRenderer.send(IpcChannel.WindowSetIgnoreMouse, ignore),
   startDrag: () => ipcRenderer.send(IpcChannel.PetDragStart),
   endDrag: () => ipcRenderer.send(IpcChannel.PetDragEnd),
+  onFallStart: (listener) => subscribe<void>(IpcChannel.PetFallStart, () => listener()),
+  onLanded: (listener) => subscribe<void>(IpcChannel.PetLanded, () => listener()),
   startWalk: (request) => ipcRenderer.invoke(IpcChannel.PetWalkStart, request),
   stopWalk: () => ipcRenderer.send(IpcChannel.PetWalkStop),
   onWalkEnded: (listener) => subscribe<WalkEnded>(IpcChannel.PetWalkEnded, listener),

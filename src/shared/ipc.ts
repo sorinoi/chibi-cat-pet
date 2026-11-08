@@ -64,7 +64,11 @@ export const IpcChannel = {
   /** main -> pet: CursorNear, while watching and only when the cursor moved. */
   PetCursor: 'pet:cursor',
   /** main -> pet: FocusReaction to play at a phase change (FR-38). */
-  FocusReaction: 'focus:reaction'
+  FocusReaction: 'focus:reaction',
+  /** main -> pet: the cat started falling on its own (requirement-v5.md FR-63). */
+  PetFallStart: 'pet:fall-start',
+  /** main -> pet: the cat is standing again after a drop or fall (FR-60). */
+  PetLanded: 'pet:landed'
 } as const
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
@@ -127,7 +131,12 @@ export interface PetApi extends LanguageApi {
   /** true: mouse passes through the window. false: the window receives mouse input. */
   setIgnoreMouseEvents(ignore: boolean): void
   startDrag(): void
+  /** Drops the cat: main lets it fall (Gravity on, in the air) and then sends pet:landed. */
   endDrag(): void
+  /** Returns an unsubscribe function (requirement-v5.md FR-63). */
+  onFallStart(listener: () => void): () => void
+  /** Returns an unsubscribe function (FR-60). */
+  onLanded(listener: () => void): () => void
   /** Starts walking. Resolves with the distance actually planned after clamping (0 = no room). */
   startWalk(request: WalkRequest): Promise<number>
   stopWalk(): void

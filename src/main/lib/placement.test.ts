@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   allowedArea,
   clampPosition,
+  fallDistance,
+  floorY,
+  isAboveFloor,
   planWalk,
   resizeKeepingFeet,
   scaledOverflow,
@@ -98,5 +101,31 @@ describe('snapToGrid', () => {
 
   it('still keeps the window inside the area', () => {
     expect(snapToGrid(5000, -50, area)).toEqual({ x: 1680, y: 0 })
+  })
+})
+
+describe('falling (requirement-v5.md FR-60, FR-61)', () => {
+  const area = { minX: -60, maxX: 1680, minY: 0, maxY: 780 }
+
+  it('stands on the lowest allowed position', () => {
+    expect(floorY(area)).toBe(780)
+    expect(isAboveFloor(780, area, 2)).toBe(false)
+    expect(isAboveFloor(779, area, 2)).toBe(false)
+    expect(isAboveFloor(700, area, 2)).toBe(true)
+  })
+
+  it('speeds up, then keeps the top speed', () => {
+    expect(fallDistance(0, 2000, 2400)).toBe(0)
+    expect(fallDistance(-50, 2000, 2400)).toBe(0)
+    expect(fallDistance(500, 2000, 2400)).toBeCloseTo(250)
+    expect(fallDistance(1000, 2000, 2400)).toBeCloseTo(1000)
+    // Top speed after 1.2 s (1440 DIP), then 2400 DIP/s.
+    expect(fallDistance(1200, 2000, 2400)).toBeCloseTo(1440)
+    expect(fallDistance(1700, 2000, 2400)).toBeCloseTo(2640)
+  })
+
+  it('crosses a 1080p screen in about a second (NFR-26)', () => {
+    expect(fallDistance(1000, 2000, 2400)).toBeLessThan(1080)
+    expect(fallDistance(1100, 2000, 2400)).toBeGreaterThan(1080)
   })
 })

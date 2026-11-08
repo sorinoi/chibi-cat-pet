@@ -4,11 +4,11 @@ Read this first in every new session. Keep entries short.
 
 ## Current state
 
-- Current phase: v4.0 accepted by the user on 2026-11-07 (8 h run NFR-22 deferred). v5 (requirement-v5.md: gravity, window perches, jump and climb) approved 2026-11-07, not started.
-- Next step: V5-M1 (gravity) after the user says go; cat-move.png art is needed only from V5-M4. NFR-22 later: the user plugs in and runs %LOCALAPPDATA%\Temp\desktop-pet-8h\start-run.ps1 from their own Windows Terminal (copies sOrinOi, starts the app and logger), then check memory.csv after 8 h 10 min.
-- Git (check `git status` and `git log` first; this line can lag): main is pushed to origin/main with c7b7df8 (release 4.0.0) and the v5 docs commit after it. Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea, v3.0.0 -> 3f00e6b, v4.0.0 -> c7b7df8. Remote: github.com/sorinoi/chibi-cat-pet. Push and tag only when the user asks.
+- Current phase: v4.0 accepted by the user on 2026-11-07 (8 h run NFR-22 deferred). v5 (requirement-v5.md: gravity, window perches, jump and climb) approved 2026-11-07. V5-M1 (gravity) done and approved 2026-11-08, committed (not pushed). V5-M2 waits for the user's go.
+- Next step: V5-M2 (window perches) after the user says go; cat-move.png art is needed only from V5-M4. NFR-22 later: the user plugs in and runs %LOCALAPPDATA%\Temp\desktop-pet-8h\start-run.ps1 from their own Windows Terminal (copies sOrinOi, starts the app and logger), then check memory.csv after 8 h 10 min.
+- Git (check `git status` and `git log` first; this line can lag): origin/main = 7da53b8 (v5 docs); the V5-M1 commit after it is local, not pushed. Tags (annotated, pushed): v1.0.0 -> 171ec84, v2.0.0 -> f52d0ea, v3.0.0 -> 3f00e6b, v4.0.0 -> c7b7df8. Remote: github.com/sorinoi/chibi-cat-pet. Push and tag only when the user asks.
 - Machine state: Desktop Pet 4.0.0 is installed per-user (over 3.0.0); NOT running since about 00:05 on 2026-11-07, and the logger is gone too (data in %APPDATA%\desktop-pet: settings.json, pet.json with the user's cat sOrinOi; focus.json appears after the first focus). Logger script: %LOCALAPPDATA%\Temp\desktop-pet-8h\log-memory.ps1 (overwrites memory.csv when started). Idle sleep is off, but the PC still enters Modern Standby when the screen turns off (00:37 and 04:35 on 2026-11-07). The user's own `npm run dev` run (electron.exe `.`, PID 23588 started 23:37 at the last check; earlier 34732) holds the dev lock and uses %APPDATA%\desktop-pet-dev (the user's dev cat in pet.json, plus focus.json and settings.json): do not kill it or overwrite that data; test with an isolated --user-data-dir instead (see How to test). dist/ has the 1.0.0 to 4.0.0 installers.
-- Waiting on: the user's go for V5-M1.
+- Waiting on: the user's go for V5-M2.
 - Open items: the real 8 h memory run (NFR-05, now NFR-22) is deferred (first try failed after 10 min; memory.csv columns: private MB, working set, handles, CPU s, on_ac, gap_s); the installed app's real %APPDATA%\desktop-pet is not visible from a Claude session (sandbox redirect, see 2026-11-07 log), so hand checks of the installed app are the user's; the morning stretch and the shorter night sleep were only unit tested (need a real morning / real idle time); Windows 10 and multi-monitor checks need hardware; open questions in requirement-v2.md section 15, requirement-v3.md section 13 and requirement-v4.md section 13 use the written defaults.
 - Testing rule (user, 2026-11-06): do not inject keyboard or move the real mouse system-wide. Use CDP events into the app's own pages and messages posted to the app's own windows; leave real-input checks (tray, real clicks, fullscreen) to the user.
 
@@ -27,11 +27,12 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - Strokes: send the mouse moves from one CDP connection about 25 ms apart; one process per move is too slow to count as a stroke.
 - Startup timing: performance mark `pet:first-frame` vs the process StartTime.
 - Isolated test runs (do not disturb the user's own dev run or data): the app appends `-dev` to userData when unpacked, so `--user-data-dir=<scratch>/ud` makes it use `<scratch>/ud-dev` and its own single-instance lock. Production build: `node_modules/electron/dist/electron.exe . --user-data-dir=<scratch>/ud --remote-debugging-port=9224 [--settings]`. Dev build with the debug hook: `npx electron-vite dev --remoteDebuggingPort 9223 -- --user-data-dir=<scratch>/ud`. Write pet.json/settings.json into `<scratch>/ud-dev` first. Stop it by its own PID tree only (match the command line; it may use forward slashes), then delete the folder.
+- Falls (V5-M1): put the cat in the air with SetWindowPos on the test run's own window (find it by PID from the command line with the scratch user-data-dir; physical px = DIP x DPI/96), then `__petDebug.dispatch('dragStart')` and `dispatch('dragEnd')`: main follows the real cursor, so an unmoved mouse leaves the window in place and the drop falls. Sample `window.screenY` from CDP. A settings.json position in the air makes it fall at start.
 - Dev hook additions: `__petDebug.cursor({x, y, width, height})` feeds a cursor position as if main sent it (looking without moving the real mouse); `lookWatching()` says whether main is polling.
 - pet.json now also has `treats` (0..5); focus.json is version 2 `{ version: 2, days: { "YYYY-MM-DD": count } }` (version 1 is upgraded). Settings keys added in v3/v4: language, focusMinutes, shortBreakMinutes, longBreakMinutes, longBreakEvery, autoStartBreaks, autoStartFocus, focusNotifications, hungerReminder, focusTreats.
 - Cat right-click menu order (for keys posted to the app's own menu window): Feed, Pet, [Give a treat (N) when on and stocked], Focus > (status line, then the actions that apply: Start focus / Pause, Skip, Stop / Resume, Skip, Stop / Start break, Skip break, Stop), Hide, Settings, Quit. Down skips the disabled status line.
 - Windows notifications cannot be seen from here: leave them to a hand check. Time-of-day behavior uses the real clock: test the rules in timeOfDay.test.ts, and the reactions with `__petDebug.dispatch('morningStretch' | 'nightYawn')`.
-- Settings window is two columns, 820 x 730 DIP; check `document.documentElement.scrollHeight === window.innerHeight` after adding rows.
+- Settings window is two columns, 820 x 760 DIP (since V5-M1); check `document.documentElement.scrollHeight === window.innerHeight` after adding rows.
 
 ## Task status
 
@@ -70,7 +71,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V4-M4 | Look at the mouse | done | 224 tests; fake cursor in the app; real mouse checked by the user |
 | V4-M5 | Polish, 8 h run, release v4.0 | done | 4.0.0 installed; accepted 2026-11-07; 8 h run deferred by the user |
 | v5 | Requirements (requirement-v5.md) | done | A, B, C approved by the user 2026-11-07 |
-| V5-M1 | Gravity | todo | waits for the user's go |
+| V5-M1 | Gravity | done | 235 tests; start fall, drop, catch, care waits, Gravity off/on checked in the app; approved 2026-11-08 |
 | V5-M2 | Window perches | todo | |
 | V5-M3 | Riding and losing the perch | todo | |
 | V5-M4 | cat-move.png, jump up and down | blocked | needs cat-move.png from the user |
@@ -101,6 +102,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 | V4-M3 | 2026-11-06 | yes, 2026-11-06 |
 | V4-M4 | 2026-11-06 | yes, 2026-11-06 (user checked with the real mouse) |
 | V4-M5 | 2026-11-07 | yes, 2026-11-07 (v4.0 accepted; 8 h run NFR-22 deferred) |
+| V5-M1 | 2026-11-08 | yes, 2026-11-08 |
 
 ## Log
 
@@ -264,3 +266,7 @@ The helper scripts used so far lived in a session scratchpad and are gone; rebui
 - 2026-11-07: User approved option C. requirement-v5.md fully approved (A, B, C); status synced in requirement.md, CLAUDE.md, AGENTS.md. Not committed.
 - 2026-11-07: User accepted v4.0 with NFR-22 deferred. requirement-v4.md status, V4-M5 row and acceptance notes (8 h deferred; upgrade check was on the sandboxed data); requirement.md, CLAUDE.md, AGENTS.md, task and approval tables updated (v5 rows added). Not committed.
 - 2026-11-07: User asked to commit, push and tag. Committed c7b7df8 "chore: release 4.0.0 (V4-M5)" and a docs commit (v5 requirements, v4.0 accepted, logs); annotated tag v4.0.0 -> c7b7df8; pushed main and the tag.
+- 2026-11-08: User said go: started V5-M1 (gravity, FR-60..65).
+- 2026-11-08: V5-M1 code: placement.ts floorY/isAboveFloor/fallDistance (tests); MOTION.fall (gravity 2000 DIP/s², top 2400 DIP/s, 33 ms, rest tolerance 2); petMotion drop()/settle()/stopFall(), fall per display under the cat, catch stops the fall, setScale keeps falling; IPC pet:fall-start and pet:landed; index settles when the pet page loads, the window is shown, displays change or Gravity is turned on, stops a fall on hide, fullscreen and re-adopt. Pet: optional clip fall (falls back to drag, MOVE_CLIPS), state fall (drag -> fall -> land; fallStart from rest and reactions; only a catch interrupts), the drag clip keeps running into fall, endDrag on leaving drag, menu care waits for the landing. Setting gravity (on by default) with a checkbox; settings window 730 -> 760 tall (page 722 > 695). Tests 235.
+- 2026-11-08: App check (electron-vite dev, isolated --user-data-dir in the scratchpad, CDP + __petDebug; the user's dev run PID 23588 left alone; window moved only with SetWindowPos on the test run's own window; screen 2048 x 1280 DIP, taskbar at 1232): saved position y 100 -> fell to 1083 at start, saved; feet's lowest pixel 1233.4 vs taskbar 1232; drop from 200: speeds up, lands in ~1 s, land -> idle; click during a fall ignored; caught mid-air stops at 249, drop falls again; Feed from the cat menu during a fall: fall -> land -> eat -> idle; settings row 'Fall down when dropped (gravity)', page fits (723 = 723); Gravity off: drop stays at 200 with land at once; Gravity on again: the waiting cat fell to 1083; click-through and topmost on mid-fall. No errors in the log. Test run stopped by PID, data removed, port closed. Not checked: multi-monitor (one screen) and real mouse drags (hand check). V5-M1 gate passed; waiting for approval.
+- 2026-11-08: User approved V5-M1. Committed V5-M1 (not pushed).

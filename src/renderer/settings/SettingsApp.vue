@@ -91,6 +91,15 @@ function checkedFrom(event: Event): boolean {
         <label class="row check">
           <input
             type="checkbox"
+            :checked="settings.gravity"
+            @change="set('gravity', checkedFrom($event))"
+          />
+          <span class="label">{{ text.gravity }}</span>
+        </label>
+
+        <label class="row check">
+          <input
+            type="checkbox"
             :checked="settings.startWithWindows"
             @change="set('startWithWindows', checkedFrom($event))"
           />

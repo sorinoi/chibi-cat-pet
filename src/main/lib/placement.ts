@@ -88,6 +88,31 @@ export function resizeKeepingFeet(bounds: Rect, size: Size): Rect {
 }
 
 /**
+ * requirement-v5.md FR-61: the window's top-left y where the cat stands on the floor. The
+ * area's lowest position already lets the window hang its empty bottom margin past the
+ * work area, so the feet touch the bottom of the work area (the top of the taskbar).
+ */
+export function floorY(area: Area): number {
+  return area.maxY
+}
+
+/** True when the window is more than `tolerance` DIP above the floor (FR-60). */
+export function isAboveFloor(y: number, area: Area, tolerance: number): boolean {
+  return y < floorY(area) - tolerance
+}
+
+/**
+ * FR-60: distance fallen after `elapsedMs`, with constant acceleration `gravity` (DIP/s²)
+ * until `maxSpeed` (DIP/s), then at that speed.
+ */
+export function fallDistance(elapsedMs: number, gravity: number, maxSpeed: number): number {
+  const t = Math.max(0, elapsedMs) / 1000
+  const tTop = maxSpeed / gravity
+  if (t <= tTop) return (gravity * t * t) / 2
+  return (gravity * tTop * tTop) / 2 + maxSpeed * (t - tTop)
+}
+
+/**
  * Plans a horizontal walk from `x`. Tries the requested direction first, then the
  * opposite one. Returns the clamped signed distance, or 0 when neither has room.
  */

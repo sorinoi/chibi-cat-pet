@@ -11,9 +11,10 @@ describe('pet state machine', () => {
     expect(transition('click', 'clipFinished')).toBe('idle')
   })
 
-  it('goes drag -> land -> idle', () => {
-    expect(run('idle', ['dragStart', 'dragEnd', 'clipFinished'])).toBe('idle')
-    expect(run('idle', ['dragStart', 'dragEnd'])).toBe('land')
+  it('goes drag -> fall -> land -> idle (requirement-v5.md FR-60)', () => {
+    expect(run('idle', ['dragStart', 'dragEnd'])).toBe('fall')
+    expect(run('idle', ['dragStart', 'dragEnd', 'landed'])).toBe('land')
+    expect(run('idle', ['dragStart', 'dragEnd', 'landed', 'clipFinished'])).toBe('idle')
   })
 
   it('can be picked up from any resting or moving state', () => {
@@ -186,5 +187,61 @@ describe('look at the mouse (requirement-v4.md FR-56)', () => {
   it('the look clip loops, so it never finishes by itself', () => {
     expect(transition('look', 'clipFinished')).toBeNull()
     expect(transition('look', 'wander')).toBeNull()
+  })
+})
+
+describe('falling (requirement-v5.md section 10)', () => {
+  it('can be caught again in the air (FR-62)', () => {
+    expect(transition('fall', 'dragStart')).toBe('drag')
+    expect(run('fall', ['dragStart', 'dragEnd', 'landed'])).toBe('land')
+  })
+
+  it('ignores clicks, care, wanders, sleep and focus cues until it lands (FR-62)', () => {
+    const events: PetEvent[] = [
+      'click',
+      'clickHappy',
+      'feed',
+      'pet',
+      'treat',
+      'welcome',
+      'wander',
+      'sleep',
+      'wake',
+      'clipFinished',
+      'cueFocusDone',
+      'cursorNear',
+      'fallStart',
+      'dragEnd'
+    ]
+    for (const event of events) expect(transition('fall', event)).toBeNull()
+  })
+
+  it('a cat found in the air falls from rest or a reaction, and wakes up (FR-63)', () => {
+    const states: PetState[] = [
+      'idle',
+      'walk',
+      'sleep',
+      'look',
+      'click',
+      'land',
+      'eat',
+      'happy',
+      'focusDone',
+      'sad',
+      'stretch',
+      'welcome'
+    ]
+    for (const state of states) expect(transition(state, 'fallStart')).toBe('fall')
+  })
+
+  it('a carried cat does not start a second fall; landed means nothing outside a fall', () => {
+    expect(transition('drag', 'fallStart')).toBeNull()
+    for (const state of ['idle', 'land', 'sleep', 'walk', 'drag'] as const) {
+      expect(transition(state, 'landed')).toBeNull()
+    }
+  })
+
+  it('plays the fall clip (drag until the art exists)', () => {
+    expect(clipFor('fall')).toBe('fall')
   })
 })

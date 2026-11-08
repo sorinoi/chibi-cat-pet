@@ -3,6 +3,9 @@ import { MOTION, PET_WINDOW } from './config'
 import {
   allowedArea,
   clampPosition,
+  fallDistance,
+  floorY,
+  isAboveFloor,
   planWalk,
   resizeKeepingFeet,
   scaledOverflow,
@@ -16,7 +19,21 @@ import type { Position } from '../shared/settings'
 
 export interface PetMotion {
   startDrag(): void
+  /** Stops following the cursor where it is (no fall). */
   endDrag(): void
+  /**
+   * requirement-v5.md FR-60: the user let go. Falls when Gravity is on and the cat is in
+   * the air; otherwise it is standing right away. Either way onLanded follows.
+   */
+  drop(): void
+  /**
+   * FR-63: a cat at rest in the air (start, shown again, displays changed, Gravity turned
+   * on) falls; onFallStart tells the pet. Otherwise onLanded (the pet ignores it unless it
+   * was left falling). Does nothing while dragged, walking or falling.
+   */
+  settle(): void
+  /** Stops a fall where it is (the window is being hidden); settle() resumes it later. */
+  stopFall(): void
   /** Returns the planned signed distance (0 = no room or currently dragging). */
   startWalk(request: WalkRequest): number
   stopWalk(): void
@@ -27,8 +44,17 @@ export interface PetMotion {
 
 export interface PetMotionEvents {
   onWalkEnded(event: WalkEnded): void
-  /** The window came to rest at a new position (after a drag, walk or resize). */
+  /** The window came to rest at a new position (after a drag, walk, fall or resize). */
   onSettled(position: Position): void
+  /** A fall started without a drop (settle). */
+  onFallStart(): void
+  /** The cat stands again after a drop or a fall (FR-60). */
+  onLanded(): void
+}
+
+export interface PetMotionOptions {
+  /** The Gravity setting (FR-64). */
+  gravity(): boolean
 }
 
 export function petWindowSize(scale: number): Size {
@@ -54,19 +80,22 @@ export function initialPosition(scale: number, preferred: Position | null): Posi
 }
 
 /**
- * Moves the pet window: follows the cursor while dragging (FR-04) and walks it
- * horizontally (FR-06). Positions are clamped to the work area of the display
- * under the cursor (drag) or under the window (walk), so multi-monitor works.
+ * Moves the pet window: follows the cursor while dragging (FR-04), walks it
+ * horizontally (FR-06) and lets it fall to the floor (requirement-v5.md FR-60). Positions
+ * are clamped to the work area of the display under the cursor (drag) or under the window
+ * (walk, fall), so multi-monitor works and a fall never crosses to another display (FR-61).
  */
 export function createPetMotion(
   win: BrowserWindow,
   initialScale: number,
-  events: PetMotionEvents
+  events: PetMotionEvents,
+  options: PetMotionOptions
 ): PetMotion {
   let scale = initialScale
   let dragTimer: NodeJS.Timeout | null = null
   let dragOffset: Point = { x: 0, y: 0 }
   let walkTimer: NodeJS.Timeout | null = null
+  let fallTimer: NodeJS.Timeout | null = null
 
   function areaAt(point: Point): Area {
     const { workArea } = screen.getDisplayNearestPoint(point)
@@ -105,9 +134,40 @@ export function createPetMotion(
     settled()
   }
 
+  /** Returns true if a fall was running. */
+  function stopFall(): boolean {
+    if (!fallTimer) return false
+    clearInterval(fallTimer)
+    fallTimer = null
+    settled()
+    return true
+  }
+
+  /** Starts falling from where the window is if it is in the air; true when it falls. */
+  function startFall(): boolean {
+    if (win.isDestroyed() || !options.gravity()) return false
+    const bounds = win.getBounds()
+    const area = areaAt(centerOf(bounds))
+    const { restTolerance, gravity, maxSpeed, intervalMs } = MOTION.fall
+    if (!isAboveFloor(bounds.y, area, restTolerance)) return false
+
+    const { x, y: startY } = bounds
+    const floor = floorY(area)
+    const startedAt = Date.now()
+    fallTimer = setInterval(() => {
+      const y = Math.min(floor, startY + fallDistance(Date.now() - startedAt, gravity, maxSpeed))
+      moveTo(x, y)
+      if (y < floor) return
+      stopFall()
+      events.onLanded()
+    }, intervalMs)
+    return true
+  }
+
   return {
     startDrag() {
       finishWalk(false)
+      stopFall() // FR-62: caught in the air
       endDrag()
       const cursor = screen.getCursorScreenPoint()
       const bounds = win.getBounds()
@@ -122,8 +182,26 @@ export function createPetMotion(
 
     endDrag,
 
+    drop() {
+      endDrag()
+      stopFall()
+      if (!startFall()) events.onLanded()
+    },
+
+    settle() {
+      if (dragTimer || walkTimer || fallTimer) return
+      if (startFall()) events.onFallStart()
+      // A fall stopped by hiding may have nothing left to do: the pet must not stay falling.
+      else events.onLanded()
+    },
+
+    stopFall() {
+      stopFall()
+    },
+
     startWalk({ dx, speed }) {
-      if (dragTimer || !Number.isFinite(dx) || !Number.isFinite(speed) || speed <= 0) return 0
+      if (dragTimer || fallTimer || !Number.isFinite(dx) || !Number.isFinite(speed) || speed <= 0)
+        return 0
       finishWalk(false)
       const bounds = win.getBounds()
       // Walk distance and speed are in "cat units", so they scale with the pet.
@@ -157,11 +235,14 @@ export function createPetMotion(
     setScale(next) {
       if (next === scale || win.isDestroyed()) return
       finishWalk(false)
+      const wasFalling = stopFall()
       const resized = resizeKeepingFeet(win.getBounds(), petWindowSize(next))
       scale = next
       const pos = clampPosition(resized.x, resized.y, areaAt(centerOf(resized)))
       moveTo(pos.x, pos.y)
       settled()
+      // The pet is still in its fall state: carry on from the new size, or it just landed.
+      if (wasFalling && !startFall()) events.onLanded()
     },
 
     dispose() {
@@ -169,6 +250,8 @@ export function createPetMotion(
       dragTimer = null
       if (walkTimer) clearInterval(walkTimer)
       walkTimer = null
+      if (fallTimer) clearInterval(fallTimer)
+      fallTimer = null
     }
   }
 }

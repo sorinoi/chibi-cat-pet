@@ -23,6 +23,17 @@ export const MOTION = {
   maxWalkSpeed: 400,
   /** Walks shorter than this are not worth starting. */
   minWalkDistance: 40,
+  /** requirement-v5.md FR-60 / NFR-26: a fall from the top of a 1080p screen takes ~1 s. */
+  fall: {
+    /** Window step while falling (~30 Hz, the NFR-02 cap). */
+    intervalMs: 33,
+    /** DIP per second squared. */
+    gravity: 2000,
+    /** DIP per second. */
+    maxSpeed: 2400,
+    /** A cat this close above the floor counts as standing (start positions snap to 4 DIP). */
+    restTolerance: 2
+  },
   /**
    * How far the window may hang past the work area edge at pet size 1.0: the cell's
    * always-empty margins, so the cat itself can reach the edges.
@@ -57,7 +68,7 @@ export const STORE = {
 
 export const SETTINGS_WINDOW = {
   width: 820,
-  height: 730
+  height: 760
 } as const
 
 export const ADOPT_WINDOW = {

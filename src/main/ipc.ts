@@ -71,7 +71,8 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
     if (fromPet(event)) motion.startDrag()
   })
   ipcMain.on(IpcChannel.PetDragEnd, (event) => {
-    if (fromPet(event)) motion.endDrag()
+    // requirement-v5.md FR-60: a drop, not just the end of following the cursor.
+    if (fromPet(event)) motion.drop()
   })
   ipcMain.on(IpcChannel.PetWalkStop, (event) => {
     if (fromPet(event)) motion.stopWalk()

@@ -50,9 +50,17 @@ export type PetEvent =
   | 'cursorNear'
   /** The cursor left the area around the cat. */
   | 'cursorAway'
+  // v5 movement (requirement-v5.md section 10)
+  /** Main started a fall on its own: start, shown again, displays changed (FR-63). */
+  | 'fallStart'
+  /** Main says the cat stands again after a drop or fall (FR-60). */
+  | 'landed'
+
+/** FR-63: any cat at rest or in a reaction may be found in the air and fall (wakes it too). */
+const canFall = { fallStart: 'fall' } as const
 
 /** Reactions that end in idle; a drag can still interrupt them. */
-const careReaction = { clipFinished: 'idle', dragStart: 'drag' } as const
+const careReaction = { clipFinished: 'idle', dragStart: 'drag', ...canFall } as const
 
 /** Care actions that may start from a resting or moving pet (also wakes it: FR-21). */
 const careActions = {
@@ -84,6 +92,7 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
     nightYawn: 'yawn',
     cursorNear: 'look',
     sleep: 'sleep',
+    ...canFall,
     ...careActions,
     ...focusCues
   },
@@ -93,13 +102,19 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
     dragStart: 'drag',
     arrived: 'idle',
     sleep: 'sleep',
+    ...canFall,
     ...careActions,
     ...focusCues
   },
-  click: { clipFinished: 'idle', dragStart: 'drag' },
-  drag: { dragEnd: 'land' },
+  click: { clipFinished: 'idle', dragStart: 'drag', ...canFall },
+  // FR-60: a drop always passes through fall; main answers landed at once when the cat is
+  // already standing (or Gravity is off), so the v4 drag -> land feel stays.
+  drag: { dragEnd: 'fall' },
+  // FR-62: only a catch interrupts a fall; clicks, care, wanders and sleep wait for the landing.
+  fall: { landed: 'land', dragStart: 'drag' },
   land: {
     clipFinished: 'idle',
+    ...canFall,
     dragStart: 'drag',
     click: 'click',
     clickHappy: 'happy',
@@ -111,6 +126,7 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
     clickHappy: 'happy',
     dragStart: 'drag',
     wake: 'idle',
+    ...canFall,
     ...careActions,
     ...focusCues
   },
@@ -119,7 +135,7 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
   happy: careReaction,
   hungry: careReaction,
   pet: careReaction,
-  welcome: { clipFinished: 'happy', dragStart: 'drag' },
+  welcome: { clipFinished: 'happy', dragStart: 'drag', ...canFall },
   // Focus reactions behave like care reactions; another reaction during one waits (queued).
   focusStart: careReaction,
   focusDone: careReaction,
@@ -137,6 +153,7 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
     clickHappy: 'happy',
     dragStart: 'drag',
     sleep: 'sleep',
+    ...canFall,
     ...careActions,
     ...focusCues
   }

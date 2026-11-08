@@ -1,4 +1,4 @@
-import { Notification, app, dialog, nativeImage, powerMonitor, type Tray } from 'electron'
+import { Notification, app, dialog, nativeImage, powerMonitor, screen, type Tray } from 'electron'
 import { join } from 'node:path'
 import { createAppActions, resourcePath } from './appActions'
 import { createCareEngine, type CareSnapshot } from './careEngine'
@@ -75,10 +75,38 @@ function start(): void {
     if (!win.isDestroyed()) win.webContents.send(channel, payload)
   }
 
-  const motion = createPetMotion(win, store.settings.petSize, {
-    onWalkEnded: (event) => sendToPet(IpcChannel.PetWalkEnded, event),
-    onSettled: (position) => store.setPosition(position) // FR-04
+  const motion = createPetMotion(
+    win,
+    store.settings.petSize,
+    {
+      onWalkEnded: (event) => sendToPet(IpcChannel.PetWalkEnded, event),
+      onSettled: (position) => store.setPosition(position), // FR-04, FR-63
+      onFallStart: () => sendToPet(IpcChannel.PetFallStart),
+      onLanded: () => sendToPet(IpcChannel.PetLanded)
+    },
+    { gravity: () => store.settings.gravity }
+  )
+
+  /**
+   * requirement-v5.md FR-63: a visible cat at rest in the air falls once (start, shown again,
+   * displays changed, Gravity turned on). Only once the page can hear about it.
+   */
+  let petPageReady = false
+  const settlePet = (): void => {
+    if (petPageReady && !win.isDestroyed() && win.isVisible() && hasPet()) motion.settle()
+  }
+  win.webContents.on('did-start-loading', () => {
+    petPageReady = false
   })
+  win.webContents.on('did-finish-load', () => {
+    petPageReady = true
+    settlePet()
+  })
+  win.on('show', settlePet)
+  const onDisplaysChanged = (): void => settlePet()
+  screen.on('display-added', onDisplaysChanged)
+  screen.on('display-removed', onDisplaysChanged)
+  screen.on('display-metrics-changed', onDisplaysChanged)
 
   /** Care status everywhere it is shown: pet (mood, tooltip), settings, tray (FR-27, FR-28). */
   const publishCare = (): void => {
@@ -176,6 +204,7 @@ function start(): void {
       // FR-25/32: the old cat and its data are gone immediately.
       motion.stopWalk()
       motion.endDrag()
+      motion.stopFall()
       care.wipe()
       win.hide()
       adoptWindow.open()
@@ -187,7 +216,10 @@ function start(): void {
   const actions = createAppActions(
     () => (win.isDestroyed() ? null : win),
     () => settingsWindow.open(),
-    () => motion.stopWalk(),
+    () => {
+      motion.stopWalk()
+      motion.stopFall() // resumes when shown again (FR-63)
+    },
     {
       hasPet,
       feed: () => request('feed'),
@@ -243,6 +275,7 @@ function start(): void {
       hiddenForFullscreen = true
       motion.stopWalk()
       motion.endDrag()
+      motion.stopFall()
       win.hide()
     } else if (!isFullscreen && hiddenForFullscreen) {
       hiddenForFullscreen = false
@@ -276,6 +309,8 @@ function start(): void {
   store.onChange((next, previous) => {
     applySettings(win, motion, next, previous)
     settingsWindow.get()?.webContents.send(IpcChannel.SettingsChanged, next)
+    // FR-64: turning Gravity on drops a cat that was left in the air.
+    if (next.gravity && !previous.gravity) settlePet()
     if (next.language !== previous.language) {
       // FR-44: open windows switch at once; menus and dialogs read the language when shown.
       sendToPet(IpcChannel.AppLanguageChanged, next.language)
@@ -307,6 +342,9 @@ function start(): void {
     powerMonitor.off('resume', onResume)
     focus.dispose()
     cursor.dispose()
+    screen.off('display-added', onDisplaysChanged)
+    screen.off('display-removed', onDisplaysChanged)
+    screen.off('display-metrics-changed', onDisplaysChanged)
     unregister()
   })
 }

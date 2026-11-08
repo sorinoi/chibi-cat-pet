@@ -3,7 +3,7 @@ import { BEHAVIOR } from '../config'
 import { clickReaction, idleAction, wanderDelayMs, type CareMood } from '../lib/careBehavior'
 import { clipFor, transition, type PetEvent, type PetState } from '../lib/petMachine'
 import type { PetScene } from './usePetScene'
-import type { ClipName } from '../../shared/modelConfig'
+import { resolveClip, type ClipName } from '../../shared/modelConfig'
 import type { CareRequest, CareView } from '../../shared/ipc'
 import type { FocusReaction } from '../../shared/focusText'
 import { ACTIVE_MODEL } from '../../shared/activeModel'
@@ -59,6 +59,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   let careInFlight: ReturnType<typeof api.careAct> | null = null
   /** A focus reaction that arrived during another reaction; plays on the next idle. */
   let queuedCue: PetEvent | null = null
+  /** A menu care request that arrived mid-fall; handled once the cat stands (FR-62). */
+  let pendingCare: CareRequest | null = null
   const unsubscribers: Array<() => void> = []
 
   function clearWander(): void {
@@ -113,14 +115,28 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   function exit(from: PetState, to: PetState): void {
     if (from === 'idle') clearWander()
     if (from === 'walk' && to !== 'idle') api.stopWalk()
+    // requirement-v5.md FR-60: letting go is a drop; main falls or answers landed at once.
+    if (from === 'drag') api.endDrag()
   }
 
-  function enter(to: PetState): void {
+  /** Same picture before and after (drag -> fall without fall art): keep the clip running. */
+  const sameClip = (a: PetState, b: PetState): boolean =>
+    resolveClip(clipFor(a), ACTIVE_MODEL.clips) === resolveClip(clipFor(b), ACTIVE_MODEL.clips)
+
+  function enter(to: PetState, from?: PetState): void {
     // The hungry reminder is a looping clip; play it once (intro + one loop).
-    scene.play(clipFor(to), to === 'hungry' ? { once: true } : undefined)
+    if (!(from === 'drag' && to === 'fall' && sameClip(from, to))) {
+      scene.play(clipFor(to), to === 'hungry' ? { once: true } : undefined)
+    }
 
     switch (to) {
       case 'idle':
+        if (pendingCare) {
+          const request = pendingCare
+          pendingCare = null
+          onCareRequest(request)
+          if (state.value !== 'idle') break
+        }
         if (queuedCue) {
           const cue = queuedCue
           queuedCue = null
@@ -137,9 +153,6 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
       case 'drag':
         api.startDrag()
         break
-      case 'land':
-        api.endDrag()
-        break
       default:
         break
     }
@@ -151,7 +164,7 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     if (!to) return
     state.value = to
     exit(from, to)
-    enter(to)
+    enter(to, from)
     syncLookWatch()
   }
 
@@ -253,6 +266,11 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   }
 
   function onCareRequest(request: CareRequest): void {
+    // FR-62: care waits for the landing (the welcome scene after adoption too).
+    if (state.value === 'fall') {
+      pendingCare = request
+      return
+    }
     if (request === 'treat') void treatNow()
     else if (request === 'feed') void feedNow()
     else if (request === 'pet') petNow()
@@ -264,6 +282,9 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
       api.onWalkEnded(() => {
         if (state.value === 'walk') dispatch('arrived')
       }),
+      // requirement-v5.md FR-60, FR-63: main moves the window; the pet only shows it.
+      api.onFallStart(() => dispatch('fallStart')),
+      api.onLanded(() => dispatch('landed')),
       api.onUserIdleChanged((idle) => {
         userIdle = idle
         dispatch(idle ? 'sleep' : 'wake')

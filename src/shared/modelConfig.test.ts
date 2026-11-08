@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   CLIP_NAMES,
+  MOVE_CLIPS,
   modelFrame,
   parseModelConfig,
   resolveClip,
@@ -88,9 +89,11 @@ describe('parseModelConfig', () => {
     expect(() => parseModelConfig(null)).toThrow(/object/)
   })
 
-  it('accepts the shipped cat model with every v1, v2 and v3 clip', () => {
+  it('accepts the shipped cat model with every v1 to v4 clip', () => {
     const config = parseModelConfig(shipped)
-    expect(Object.keys(config.clips).sort()).toEqual([...CLIP_NAMES].sort())
+    // The v5 move clips wait for cat-move.png (requirement-v5.md section 9).
+    const withArt = CLIP_NAMES.filter((name) => !(MOVE_CLIPS as readonly string[]).includes(name))
+    expect(Object.keys(config.clips).sort()).toEqual([...withArt].sort())
     for (const clip of ['focusStart', 'focusDone', 'breakOver', 'longBreak'] as const) {
       expect(config.clips[clip]?.sheet).toBe('focus')
     }
@@ -143,5 +146,10 @@ describe('resolveClip (requirement-v3.md section 5 fallbacks)', () => {
   it('a v1-style model without happy uses click; anything else ends at idle', () => {
     expect(resolveClip('focusDone', { idle: 1, click: 1 })).toBe('click')
     expect(resolveClip('eat', { idle: 1 })).toBe('idle')
+  })
+
+  it('a falling cat plays drag until a fall clip exists (requirement-v5.md FR-60)', () => {
+    expect(resolveClip('fall', { idle: 1, drag: 1 })).toBe('drag')
+    expect(resolveClip('fall', { idle: 1, drag: 1, fall: 1 })).toBe('fall')
   })
 })

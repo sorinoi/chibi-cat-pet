@@ -116,3 +116,15 @@ describe('focus timer settings (requirement-v3.md section 4)', () => {
     expect(state.settings.petSize).toBe(0.7)
   })
 })
+
+describe('gravity setting (requirement-v5.md FR-64)', () => {
+  it('is on by default, also for a v4 settings file', () => {
+    expect(DEFAULT_SETTINGS.gravity).toBe(true)
+    expect(parsePersistedState({ settings: { petSize: 0.7 } }).settings.gravity).toBe(true)
+  })
+
+  it('keeps a saved choice and ignores bad values', () => {
+    expect(sanitizeSettings({ gravity: false }).gravity).toBe(false)
+    expect(sanitizeSettings({ gravity: 'no' }).gravity).toBe(true)
+  })
+})
