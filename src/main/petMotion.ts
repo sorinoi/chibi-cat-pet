@@ -5,6 +5,7 @@ import {
   clampPosition,
   fallDistance,
   isAboveFloor,
+  patrolDirection,
   planWalk,
   resizeKeepingFeet,
   scaledOverflow,
@@ -159,6 +160,8 @@ export function createPetMotion(
   let dragTimer: NodeJS.Timeout | null = null
   let dragOffset: Point = { x: 0, y: 0 }
   let walkTimer: NodeJS.Timeout | null = null
+  /** requirement-v8.md FR-111: the way the last walk went (0 before the first). */
+  let lastWalkDirection: 1 | -1 | 0 = 0
   let fallTimer: NodeJS.Timeout | null = null
   let perch: Perch | null = null
   let perchTimer: NodeJS.Timeout | null = null
@@ -565,7 +568,7 @@ export function createPetMotion(
       clearPerch()
     },
 
-    startWalk({ dx, speed }) {
+    startWalk({ dx, speed, roll }) {
       if (dragTimer || fallTimer || jumpTimer || climbTimer) return 0
       if (!Number.isFinite(dx) || !Number.isFinite(speed) || speed <= 0) return 0
       finishWalk(false)
@@ -575,7 +578,23 @@ export function createPetMotion(
       const { size, edgeMargin } = geometry()
       const walkArea = perch ? perchWalkArea(area, perch.rect, size, edgeMargin) : area
       // Walk distance and speed are in "cat units", so they scale with the pet.
-      const planned = planWalk(bounds.x, dx * scale, walkArea, MOTION.minWalkDistance)
+      // requirement-v8.md FR-111: when the pet leaves the direction to main, patrol: keep going
+      // the same way until the room ahead runs out, then turn.
+      const wantedDistance = Math.abs(dx) * scale
+      const wanted =
+        roll === undefined
+          ? dx * scale
+          : wantedDistance *
+            patrolDirection(
+              bounds.x,
+              walkArea,
+              wantedDistance,
+              lastWalkDirection,
+              roll,
+              MOTION.patrolKeepChance
+            )
+      const planned = planWalk(bounds.x, wanted, walkArea, MOTION.minWalkDistance)
+      if (planned !== 0) lastWalkDirection = planned > 0 ? 1 : -1
       if (planned === 0) return 0
 
       const startX = bounds.x

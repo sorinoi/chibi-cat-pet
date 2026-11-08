@@ -25,8 +25,12 @@ const isCareAct = (value: unknown): value is CareAct =>
 
 function isWalkRequest(value: unknown): value is WalkRequest {
   if (typeof value !== 'object' || value === null) return false
-  const { dx, speed } = value as Record<string, unknown>
-  return typeof dx === 'number' && typeof speed === 'number'
+  const { dx, speed, roll } = value as Record<string, unknown>
+  return (
+    typeof dx === 'number' &&
+    typeof speed === 'number' &&
+    (roll === undefined || (typeof roll === 'number' && roll >= 0 && roll <= 1))
+  )
 }
 
 export interface IpcContext {
@@ -145,6 +149,10 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
   })
 
   // FR-43: the pet and adoption windows ask for the UI language (settings reads it itself).
+  // requirement-v8.md FR-117: the pet asks how busy to be.
+  ipcMain.handle(IpcChannel.PetGetActivity, (event) =>
+    fromPet(event) ? store.settings.activity : 'normal'
+  )
   ipcMain.handle(IpcChannel.AppGetLanguage, (event) =>
     fromPet(event) || fromAdopt(event) ? store.settings.language : 'en'
   )
@@ -207,6 +215,7 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
       IpcChannel.SettingsGet,
       IpcChannel.SettingsUpdate,
       IpcChannel.AppGetLanguage,
+      IpcChannel.PetGetActivity,
       IpcChannel.FocusGet,
       IpcChannel.ActivityGet,
       IpcChannel.ActivitySetKey,

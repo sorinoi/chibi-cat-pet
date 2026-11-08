@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   allowedArea,
+  directionTowardRoom,
+  patrolDirection,
   clampPosition,
   fallDistance,
   floorY,
@@ -127,5 +129,64 @@ describe('falling (requirement-v5.md FR-60, FR-61)', () => {
   it('crosses a 1080p screen in about a second (NFR-26)', () => {
     expect(fallDistance(1000, 2000, 2400)).toBeLessThan(1080)
     expect(fallDistance(1100, 2000, 2400)).toBeGreaterThan(1080)
+  })
+})
+
+describe('directionTowardRoom (requirement-v8.md FR-111)', () => {
+  const area = { minX: 0, maxX: 1000, minY: 0, maxY: 500 }
+
+  it('goes 50/50 in the middle and almost always toward the open side near an edge', () => {
+    expect(directionTowardRoom(500, area, 0.49)).toBe(1)
+    expect(directionTowardRoom(500, area, 0.51)).toBe(-1)
+    expect(directionTowardRoom(50, area, 0.94)).toBe(1) // 95 % of the room is to the right
+    expect(directionTowardRoom(50, area, 0.96)).toBe(-1)
+    expect(directionTowardRoom(950, area, 0.06)).toBe(-1)
+  })
+
+  it('at an edge, or with no room at all, it still answers', () => {
+    expect(directionTowardRoom(0, area, 0.999)).toBe(1)
+    expect(directionTowardRoom(1000, area, 0)).toBe(-1)
+    expect(directionTowardRoom(5, { ...area, minX: 5, maxX: 5 }, 0.5)).toBe(1)
+  })
+
+  it('over many walks the cat drifts toward open space', () => {
+    let rights = 0
+    for (let i = 0; i < 1000; i++) if (directionTowardRoom(200, area, i / 1000) === 1) rights++
+    expect(rights).toBe(800)
+  })
+})
+
+describe('patrolDirection (requirement-v8.md FR-111, patrol)', () => {
+  const area = { minX: 0, maxX: 1000, minY: 0, maxY: 500 }
+
+  it('keeps going the same way 3 in 4 walks while there is room ahead', () => {
+    expect(patrolDirection(300, area, 200, 1, 0.74, 0.75)).toBe(1)
+    expect(patrolDirection(300, area, 200, 1, 0.76, 0.75)).toBe(-1)
+    expect(patrolDirection(700, area, 200, -1, 0.1, 0.75)).toBe(-1)
+  })
+
+  it('turns when the room ahead is shorter than the walk', () => {
+    expect(patrolDirection(900, area, 200, 1, 0, 0.75)).toBe(-1)
+    expect(patrolDirection(100, area, 200, -1, 0, 0.75)).toBe(1)
+  })
+
+  it('the first walk heads toward the side with more room', () => {
+    expect(patrolDirection(100, area, 200, 0, 0.5, 0.75)).toBe(1)
+  })
+
+  it('sweeps the whole floor: a run of walks reaches both ends', () => {
+    let x = 500
+    let last: 1 | -1 | 0 = 0
+    let seenMin = x
+    let seenMax = x
+    for (let i = 0; i < 40; i++) {
+      const d = patrolDirection(x, area, 250, last, (i * 0.37) % 1, 0.75)
+      x = Math.min(area.maxX, Math.max(area.minX, x + d * 250))
+      last = d
+      seenMin = Math.min(seenMin, x)
+      seenMax = Math.max(seenMax, x)
+    }
+    expect(seenMin).toBeLessThan(250)
+    expect(seenMax).toBeGreaterThan(750)
   })
 })

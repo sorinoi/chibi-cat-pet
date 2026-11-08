@@ -8,6 +8,7 @@ import {
   type PetApi,
   type WalkEnded
 } from '../shared/ipc'
+import type { ActivityLevel } from '../shared/settings'
 import type { Language } from '../shared/strings'
 import type { FocusReaction, FocusView } from '../shared/focusText'
 
@@ -38,6 +39,9 @@ const petApi: PetApi = {
   onCareRequest: (listener) => subscribe<CareRequest>(IpcChannel.CareRequest, listener),
   careAct: (act) => ipcRenderer.invoke(IpcChannel.CareAct, act),
   getLanguage: () => ipcRenderer.invoke(IpcChannel.AppGetLanguage),
+  getActivity: () => ipcRenderer.invoke(IpcChannel.PetGetActivity),
+  onActivityChanged: (listener) =>
+    subscribe<ActivityLevel>(IpcChannel.PetActivityChanged, listener),
   onLanguageChanged: (listener) => subscribe<Language>(IpcChannel.AppLanguageChanged, listener),
   getFocus: () => ipcRenderer.invoke(IpcChannel.FocusGet),
   onFocusState: (listener) => subscribe<FocusView>(IpcChannel.FocusState, listener),

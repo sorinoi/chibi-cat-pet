@@ -174,3 +174,16 @@ describe('activity log settings (requirement-v6.md FR-83, FR-87)', () => {
     expect(sanitizeSettings({ activityServerUrl: 42 }).activityServerUrl).toBe('')
   })
 })
+
+describe('activity setting (requirement-v8.md FR-117, FR-118)', () => {
+  it('is Normal by default, also for an older settings file', () => {
+    expect(DEFAULT_SETTINGS.activity).toBe('normal')
+    expect(parsePersistedState({ settings: { gravity: true } }).settings.activity).toBe('normal')
+  })
+
+  it('keeps a known level and ignores anything else', () => {
+    expect(sanitizeSettings({ activity: 'calm' }).activity).toBe('calm')
+    expect(sanitizeSettings({ activity: 'lively' }).activity).toBe('lively')
+    expect(sanitizeSettings({ activity: 'crazy' }).activity).toBe('normal')
+  })
+})

@@ -37,6 +37,8 @@ export const MOTION = {
   maxWalkSpeed: 400,
   /** Walks shorter than this are not worth starting. */
   minWalkDistance: 40,
+  /** requirement-v8.md FR-111: chance a walk keeps the last walk's direction (patrol). */
+  patrolKeepChance: 0.75,
   /** requirement-v5.md FR-60 / NFR-26: a fall from the top of a 1080p screen takes ~1 s. */
   fall: {
     /** Window step while falling (~30 Hz, the NFR-02 cap). */
@@ -133,7 +135,7 @@ export const STORE = {
 
 export const SETTINGS_WINDOW = {
   width: 820,
-  height: 880
+  height: 920
 } as const
 
 export const ADOPT_WINDOW = {

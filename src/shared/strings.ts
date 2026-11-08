@@ -55,6 +55,9 @@ const EN = {
   settings: {
     title: 'Desktop Pet Settings',
     language: 'Language',
+    /** requirement-v8.md FR-117. */
+    activityLevel: 'Activity level',
+    activityLevels: { calm: 'Calm', normal: 'Normal', lively: 'Lively' },
     petSize: 'Pet size',
     opacity: 'Opacity',
     alwaysOnTop: 'Always on top',
@@ -235,6 +238,8 @@ const TH: Strings = {
   settings: {
     title: 'ตั้งค่า Desktop Pet',
     language: 'ภาษา',
+    activityLevel: 'ความซน',
+    activityLevels: { calm: 'สงบ', normal: 'ปกติ', lively: 'ซน' },
     petSize: 'ขนาดน้องแมว',
     opacity: 'ความทึบ',
     alwaysOnTop: 'อยู่บนสุดเสมอ',

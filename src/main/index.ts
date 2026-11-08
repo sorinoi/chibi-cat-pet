@@ -390,6 +390,8 @@ function start(): void {
       (next.sitOnWindows !== previous.sitOnWindows && next.gravity)
     )
       settlePet()
+    // requirement-v8.md FR-118: the pet uses the new level from its next wander.
+    if (next.activity !== previous.activity) sendToPet(IpcChannel.PetActivityChanged, next.activity)
     if (next.language !== previous.language) {
       // FR-44: open windows switch at once; menus and dialogs read the language when shown.
       sendToPet(IpcChannel.AppLanguageChanged, next.language)

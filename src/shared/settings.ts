@@ -2,6 +2,12 @@ import { FOCUS } from './focusConfig'
 import type { FocusSettings } from './focusTimer'
 import { isLanguage, type Language } from './strings'
 
+/** requirement-v8.md FR-117: how busy the cat is. */
+export const ACTIVITY_LEVELS = ['calm', 'normal', 'lively'] as const
+export type ActivityLevel = (typeof ACTIVITY_LEVELS)[number]
+export const isActivityLevel = (value: unknown): value is ActivityLevel =>
+  (ACTIVITY_LEVELS as readonly unknown[]).includes(value)
+
 /**
  * User settings (requirement.md section 8; requirement-v3.md FR-39 focus timer, FR-42 language).
  * Shared by main and the settings UI.
@@ -35,6 +41,8 @@ export interface Settings extends FocusSettings {
   activityLog: boolean
   /** The server's base URL as typed; checked with checkServerUrl when used (section 7). */
   activityServerUrl: string
+  /** requirement-v8.md FR-117, FR-118: Calm, Normal (default) or Lively. */
+  activity: ActivityLevel
 }
 
 export const SETTINGS_LIMITS = {
@@ -61,7 +69,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   sitOnWindows: true,
   jumpAndClimb: true,
   activityLog: false,
-  activityServerUrl: ''
+  activityServerUrl: '',
+  activity: 'normal'
 }
 
 export interface Position {
@@ -143,7 +152,8 @@ export function sanitizeSettings(raw: unknown, base: Settings = DEFAULT_SETTINGS
       r['activityServerUrl'],
       SETTINGS_LIMITS.activityServerUrl.maxLength,
       base.activityServerUrl
-    )
+    ),
+    activity: isActivityLevel(r['activity']) ? r['activity'] : base.activity
   }
 }
 

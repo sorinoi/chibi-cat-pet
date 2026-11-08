@@ -3,7 +3,7 @@
  * Channel names follow the `domain:action` convention.
  */
 import type { Mood, Needs } from './needs'
-import type { Settings } from './settings'
+import type { ActivityLevel, Settings } from './settings'
 import type { Language } from './strings'
 import type { FocusReaction, FocusView } from './focusText'
 
@@ -47,6 +47,10 @@ export const IpcChannel = {
   CareChanged: 'care:changed',
   /** settings -> main (invoke): name -> CareView | null (null = name not usable). */
   CareRename: 'care:rename',
+  /** pet -> main (invoke): -> ActivityLevel (requirement-v8.md FR-117). */
+  PetGetActivity: 'pet:get-activity',
+  /** main -> pet: ActivityLevel, after it changes in Settings (FR-118). */
+  PetActivityChanged: 'pet:activity-changed',
   /** settings -> main (invoke): look id -> CareView | null (requirement-v7.md FR-107). */
   CareSetLook: 'care:set-look',
   /** settings -> main (invoke): confirm, wipe, open adoption -> boolean (wiped). */
@@ -96,8 +100,13 @@ export const IpcChannel = {
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
 
 export interface WalkRequest {
-  /** Desired horizontal distance in DIP; the sign is the direction. */
+  /** Desired horizontal distance in DIP; the sign is the direction unless `roll` is given. */
   dx: number
+  /**
+   * requirement-v8.md FR-111: a random 0..1; when given, main picks the direction toward the
+   * side with more room and uses |dx| as the distance.
+   */
+  roll?: number
   /** DIP per second. */
   speed: number
 }
@@ -166,6 +175,10 @@ export interface LanguageApi {
 
 /** API exposed to the renderer as `window.petApi` via contextBridge. */
 export interface PetApi extends LanguageApi {
+  /** requirement-v8.md FR-117: how busy the cat is. */
+  getActivity(): Promise<ActivityLevel>
+  /** Returns an unsubscribe function. */
+  onActivityChanged(listener: (level: ActivityLevel) => void): () => void
   /** true: mouse passes through the window. false: the window receives mouse input. */
   setIgnoreMouseEvents(ignore: boolean): void
   startDrag(): void

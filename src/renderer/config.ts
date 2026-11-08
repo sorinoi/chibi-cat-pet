@@ -7,10 +7,28 @@ export const RENDER = {
 } as const
 
 export const BEHAVIOR = {
-  /** Idle time before the cat wanders off on its own (FR-06), seconds. */
-  wanderDelaySeconds: { min: 20, max: 60 },
-  /** Walk distance in DIP at pet size 1.0; the direction is random. */
-  walkDistance: { min: 80, max: 300 },
+  /**
+   * requirement-v8.md FR-110, FR-117: per Activity level, the idle time before the cat wanders
+   * (FR-06, seconds), the walk distance (DIP at pet size 1.0; main picks the direction toward
+   * the room, FR-111) and how often a wander becomes a hop run (V8-M3). Calm is the v7 cat.
+   */
+  activity: {
+    calm: {
+      wanderDelaySeconds: { min: 20, max: 60 },
+      walkDistance: { min: 80, max: 300 },
+      hopChance: 0
+    },
+    normal: {
+      wanderDelaySeconds: { min: 8, max: 25 },
+      walkDistance: { min: 150, max: 500 },
+      hopChance: 0.25
+    },
+    lively: {
+      wanderDelaySeconds: { min: 4, max: 12 },
+      walkDistance: { min: 200, max: 700 },
+      hopChance: 1 / 3
+    }
+  },
   /** DIP per second at pet size 1.0, roughly matched to the walk frames' stride. */
   walkSpeed: 45,
   /** Pointer travel (DIP) before a press becomes a drag instead of a click. */

@@ -3,7 +3,7 @@ import PetSection from './PetSection.vue'
 import FocusSection from './FocusSection.vue'
 import ActivitySection from './ActivitySection.vue'
 import { useSettings } from '../composables/useSettings'
-import { SETTINGS_LIMITS } from '../../shared/settings'
+import { ACTIVITY_LEVELS, isActivityLevel, SETTINGS_LIMITS } from '../../shared/settings'
 import { computed } from 'vue'
 import { LANGUAGES, LANGUAGE_NAMES, isLanguage, stringsFor } from '../../shared/strings'
 import { useDocumentLanguage } from '../composables/useLanguage'
@@ -20,6 +20,11 @@ const percent = (value: number): string => `${Math.round(value * 100)}%`
 
 function numberFrom(event: Event): number {
   return Number((event.target as HTMLInputElement).value)
+}
+/** requirement-v8.md FR-117. */
+function activityFrom(event: Event): void {
+  const value = (event.target as HTMLSelectElement).value
+  if (isActivityLevel(value)) void set('activity', value)
 }
 function languageFrom(event: Event): void {
   const value = (event.target as HTMLSelectElement).value
@@ -50,6 +55,15 @@ function checkedFrom(event: Event): boolean {
           <select class="language" :value="settings.language" @change="languageFrom">
             <option v-for="code in LANGUAGES" :key="code" :value="code">
               {{ LANGUAGE_NAMES[code] }}
+            </option>
+          </select>
+        </label>
+
+        <label class="row">
+          <span class="label">{{ text.activityLevel }}</span>
+          <select class="language" :value="settings.activity" @change="activityFrom">
+            <option v-for="level in ACTIVITY_LEVELS" :key="level" :value="level">
+              {{ text.activityLevels[level] }}
             </option>
           </select>
         </label>

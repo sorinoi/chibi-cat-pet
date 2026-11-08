@@ -7,6 +7,7 @@ import { resolveClip, type ClipName } from '../../shared/modelConfig'
 import type { CareRequest, CareView } from '../../shared/ipc'
 import type { FocusReaction } from '../../shared/focusText'
 import { ACTIVE_MODEL } from '../../shared/activeModel'
+import type { ActivityLevel } from '../../shared/settings'
 import { localDate } from '../../shared/focusTimer'
 import { isNight, morningStretchDue } from '../../shared/timeOfDay'
 import { lookSide } from '../lib/lookLogic'
@@ -67,6 +68,9 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   /** Last jump or climb (requirement-v5.md NFR-30 cooldown, shared). */
   let lastMoveAt: number | null = null
   const unsubscribers: Array<() => void> = []
+  /** requirement-v8.md FR-117: Calm, Normal or Lively (main tells; Normal until then). */
+  let activity: ActivityLevel = 'normal'
+  const level = (): (typeof BEHAVIOR.activity)[ActivityLevel] => BEHAVIOR.activity[activity]
 
   function clearWander(): void {
     if (wanderTimer) clearTimeout(wanderTimer)
@@ -143,14 +147,18 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     clearWander()
     wanderTimer = setTimeout(
       onWanderTimer,
-      wanderDelayMs(mood, BEHAVIOR.wanderDelaySeconds, Math.random())
+      wanderDelayMs(mood, level().wanderDelaySeconds, Math.random())
     )
   }
 
   async function startWalk(): Promise<void> {
-    const { min, max } = BEHAVIOR.walkDistance
-    const dx = randomBetween(min, max) * (Math.random() < 0.5 ? -1 : 1)
-    const planned = await api.startWalk({ dx, speed: BEHAVIOR.walkSpeed })
+    const { min, max } = level().walkDistance
+    // FR-111: main picks the direction toward the side with more room.
+    const planned = await api.startWalk({
+      dx: randomBetween(min, max),
+      speed: BEHAVIOR.walkSpeed,
+      roll: Math.random()
+    })
     if (state.value !== 'walk') {
       // Interrupted (click, drag, sleep) while the request was in flight.
       if (planned !== 0) api.stopWalk()
@@ -329,7 +337,15 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   }
 
   onMounted(() => {
+    void api.getActivity().then((next) => {
+      activity = next
+    })
     unsubscribers.push(
+      // FR-118: from the next wander; an idle cat waits by the new level's timing now.
+      api.onActivityChanged((next) => {
+        activity = next
+        if (state.value === 'idle' && wanderTimer) scheduleWander()
+      }),
       api.onWalkEnded(() => {
         if (state.value === 'walk') dispatch('arrived')
       }),

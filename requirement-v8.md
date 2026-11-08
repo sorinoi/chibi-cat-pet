@@ -31,7 +31,7 @@ Out of scope for v8.0: new clips other than `hop`, chasing the mouse, hopping on
 | ID | Requirement |
 | --- | --- |
 | FR-110 | Normal activity: the cat waits 8 to 25 s between wanders (was 20 to 60) and walks 150 to 500 DIP at pet size 1 (was 80 to 300). The walk speed stays the same (it matches the walk frames). |
-| FR-111 | Direction: the cat walks toward the side with more room with a chance equal to that side's share of the room (in the middle: 50/50; near the left edge: almost always right). A walk never goes past the area it may walk in (floor, or the perch's walk area, unchanged from v5). |
+| FR-111 | Direction, patrol (changed by the user on 2026-11-08 after the first app check: "toward the room" alone kept the cat in the middle): the cat keeps walking the way its last walk went in 3 of 4 walks, and turns when the room ahead is shorter than the walk; the first walk heads toward the side with more room. So it sweeps from end to end of the floor or the perch. A walk never goes past the area it may walk in (floor, or the perch's walk area, unchanged from v5). |
 | FR-112 | Unchanged rules keep their meaning: a sad cat waits twice as long (FR-21), the cat sleeps after the user is away (FR-07), jumps and climbs keep their chance and 10 min cooldown (v5). |
 
 ## 5. Hopping
@@ -76,7 +76,7 @@ Same phase approval rule as before.
 
 | Phase | Work | Gate | Status |
 | --- | --- | --- | --- |
-| V8-M1 | Walking more: timing, distance, direction toward room; Activity setting (TH/EN) | Unit tests; in the app the cat roams the whole floor; Calm behaves like v7 | - |
+| V8-M1 | Walking more: timing, distance, direction toward room; Activity setting (TH/EN) | Unit tests; in the app the cat roams the whole floor; Calm behaves like v7 | Done 2026-11-08, approved |
 | V8-M2 | Hop art: `--drop-shadows`, hop sheet for all four looks (previews approved by the user) | Hop frames fit the cell with feet on one line, no shadows; layout test passes | - |
 | V8-M3 | Hop runs: hop state, main motion, planning, interruptions | Hops on the floor and on a perch; catch and lost perch handled; click-through | - |
 | V8-M4 | Polish: tuning, NFR-01/45 measurement, README, installer 8.0.0, upgrade from 7.0.0 | Acceptance criteria below pass | - |

@@ -116,6 +116,37 @@ export function fallDistance(elapsedMs: number, gravity: number, maxSpeed: numbe
  * Plans a horizontal walk from `x`. Tries the requested direction first, then the
  * opposite one. Returns the clamped signed distance, or 0 when neither has room.
  */
+/**
+ * requirement-v8.md FR-111: the walk direction toward the side with more room. `roll` (0..1)
+ * picks right with a chance equal to the right side's share of the room. Returns +1 or -1.
+ */
+export function directionTowardRoom(x: number, area: Area, roll: number): 1 | -1 {
+  const right = Math.max(0, area.maxX - x)
+  const left = Math.max(0, x - area.minX)
+  const total = right + left
+  if (total <= 0) return 1
+  return roll < right / total ? 1 : -1
+}
+
+/**
+ * requirement-v8.md FR-111 (patrol, user 2026-11-08): keep walking the way the last walk went
+ * with chance `keepChance`, unless the room ahead is shorter than `distance`; then turn. With
+ * no earlier walk, head toward the side with more room. Returns +1 or -1.
+ */
+export function patrolDirection(
+  x: number,
+  area: Area,
+  distance: number,
+  last: 1 | -1 | 0,
+  roll: number,
+  keepChance: number
+): 1 | -1 {
+  if (last === 0) return directionTowardRoom(x, area, roll)
+  const ahead = last > 0 ? area.maxX - x : x - area.minX
+  if (ahead < distance) return last > 0 ? -1 : 1
+  return roll < keepChance ? last : last > 0 ? -1 : 1
+}
+
 export function planWalk(x: number, dx: number, area: Area, minDistance: number): number {
   for (const candidate of [dx, -dx]) {
     const planned = clamp(x + candidate, area.minX, area.maxX) - x
