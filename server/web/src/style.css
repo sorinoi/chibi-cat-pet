@@ -1,0 +1,118 @@
+/* Dashboard tokens: light and dark (FR-96). Series colors from the validated chart palette. */
+:root {
+  color-scheme: light;
+  --page: #f6f4f1;
+  --surface: #fcfcfb;
+  --surface-raised: #ffffff;
+  --border: #e2ddd6;
+  --grid: #ebe8e3;
+  --axis: #b9b4ab;
+  --text-primary: #1d1c1a;
+  --text-secondary: #52514e;
+  --text-muted: #7a7873;
+  --accent: #e8893a;
+  --accent-ink: #ffffff;
+  --danger: #b3261e;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --page: #121211;
+    --surface: #1a1a19;
+    --surface-raised: #242422;
+    --border: #34332f;
+    --grid: #2b2a27;
+    --axis: #5a5852;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #96948c;
+    --accent: #e8893a;
+    --accent-ink: #1a1a19;
+    --danger: #f2a49c;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --page: #121211;
+  --surface: #1a1a19;
+  --surface-raised: #242422;
+  --border: #34332f;
+  --grid: #2b2a27;
+  --axis: #5a5852;
+  --text-primary: #f0efec;
+  --text-secondary: #c3c2b7;
+  --text-muted: #96948c;
+  --accent: #e8893a;
+  --accent-ink: #1a1a19;
+  --danger: #f2a49c;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--text-primary);
+  font-family: 'Segoe UI', 'Leelawadee UI', 'Noto Sans Thai', system-ui, sans-serif;
+  font-size: 14px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  cursor: pointer;
+}
+
+button.primary {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+input,
+select {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-raised);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.muted {
+  color: var(--text-secondary);
+}
+
+.error {
+  color: var(--danger);
+}

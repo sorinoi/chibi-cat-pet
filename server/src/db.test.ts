@@ -30,7 +30,15 @@ describe.skipIf(!url)('database (requirement-v6.md FR-86, FR-91..FR-94)', () => 
   it('migrations run once', async () => {
     expect(await migrate(db, MIGRATIONS_DIR)).toEqual([])
     const tables = (await rows('SHOW TABLES')).map((r) => String(Object.values(r)[0]))
-    expect(tables.sort()).toEqual(['api_keys', 'devices', 'events', 'pets', 'schema_migrations'])
+    expect(tables.sort()).toEqual([
+      'api_keys',
+      'devices',
+      'events',
+      'pets',
+      'schema_migrations',
+      'sessions',
+      'users'
+    ])
   })
 
   it('stores a batch, keeps each event id once, and tracks the pet and device', async () => {

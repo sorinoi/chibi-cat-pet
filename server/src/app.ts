@@ -9,9 +9,11 @@ import {
   parseActivityEvent,
   type ActivityEvent
 } from '../../src/shared/activity.ts'
+import { registerDashboard, type DashboardOptions } from './dashboard.ts'
 import type { Db } from './db.ts'
 import { bearerKey } from './keys.ts'
 import { createRateLimiter } from './rateLimit.ts'
+import { addSecurityHeaders, serveDashboard } from './staticFiles.ts'
 import { checkApiKey, storeEvents } from './store.ts'
 
 export interface AppOptions {
@@ -21,6 +23,10 @@ export interface AppOptions {
   bodyLimitBytes: number
   /** Fastify logging (off in tests). */
   logger?: boolean
+  /** FR-95..FR-98: login and the dashboard API (left out in API-only tests). */
+  dashboard?: Omit<DashboardOptions, 'db'>
+  /** The built dashboard pages to serve. */
+  webDir?: string
 }
 
 type BatchCheck = { ok: true; events: ActivityEvent[] } | { ok: false; reason: string }
@@ -55,10 +61,13 @@ export function buildApp(options: AppOptions): FastifyInstance {
   const app = Fastify({
     bodyLimit: options.bodyLimitBytes,
     trustProxy: true, // behind nginx on the VPS
-    logger: options.logger ? { redact: ['req.headers.authorization'], level: 'info' } : false
+    logger: options.logger
+      ? { redact: ['req.headers.authorization', 'req.headers.cookie'], level: 'info' }
+      : false
   })
   const limiter = createRateLimiter(options.rateLimitPerMinute)
   app.decorateRequest('apiKeyId', null)
+  addSecurityHeaders(app)
 
   /** NFR-35: every API call needs a good key and stays under the rate limit. */
   async function requireKey(
@@ -85,6 +94,9 @@ export function buildApp(options: AppOptions): FastifyInstance {
     if (!checked.ok) return reply.code(400).send({ error: checked.reason })
     return storeEvents(options.db, checked.events, request.apiKeyId ?? 0)
   })
+
+  if (options.dashboard) registerDashboard(app, { db: options.db, ...options.dashboard })
+  if (options.webDir) serveDashboard(app, options.webDir)
 
   return app
 }

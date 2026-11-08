@@ -11,7 +11,14 @@ const app = buildApp({
   version: SERVER_VERSION,
   rateLimitPerMinute: config.rateLimitPerMinute,
   bodyLimitBytes: config.bodyLimitBytes,
-  logger: true
+  logger: true,
+  dashboard: {
+    timeZone: config.timeZone,
+    sessionDays: config.sessionDays,
+    cookieSecure: config.cookieSecure,
+    loginsPerMinute: config.loginsPerMinute
+  },
+  webDir: config.webDir
 })
 
 async function stop(): Promise<void> {

@@ -90,9 +90,9 @@ Approved 2026-11-08; CLAUDE.md, AGENTS.md and requirement.md carry this text.
 | FR-92 | `GET /api/v1/health`: answers 200 with the server version when the key is good (401 when not). Used by "Test connection". |
 | FR-93 | API keys: made with a server command (`npm run key:create -- <label>`), shown once, stored only as a hash; can be listed and revoked by command. |
 | FR-94 | MySQL tables: `devices`, `pets` (id, name, adopted at, replaced at), `events` (event id unique, type, pet, device, time, UTC offset, needs, type fields as JSON), `api_keys`, `users`, `sessions`. Plain SQL migration files in `server/migrations`, applied in order by `npm run migrate`. |
-| FR-95 | Dashboard login: one or more users made by command (`npm run user:create -- <name>`); password hashed with Node's built-in scrypt; session cookie (HttpOnly, Secure, SameSite=Strict); log out. |
+| FR-95 | Dashboard login: one or more users made by command (`npm run user:create -- <name>`, which makes a random password and shows it once; `user:password` makes a new one and ends that user's sessions); password hashed with Node's built-in scrypt; session cookie (HttpOnly, Secure, SameSite=Strict; `COOKIE_SECURE=false` only for plain http on the dev PC), 30 days; at most 10 login tries per minute per address; log out. |
 | FR-96 | Overview page: the current pet (name, age, last hunger and happiness), hunger and happiness over time (line chart, last 7 or 30 days), feeds, pets and treats per day (bars), focus sessions per day and week, current focus streak. Earlier pets can be picked from a list. |
-| FR-97 | Events page: a table of events, newest first, filter by type, pet and date range, paged. |
+| FR-97 | A Refresh button (user, 2026-11-08) reloads the open page. Events page: a table of events, newest first, filter by type, pet and date range, paged. |
 | FR-98 | Dashboard text in Thai and English (a language switch, remembered in the browser), times shown in the time zone set on the server (default Asia/Bangkok). |
 | FR-99 | Built to grow: dashboard pages are separate routes, the API is versioned (`/api/v1`), the event schema has a version field so new event types can be added without breaking older apps. |
 
@@ -148,7 +148,7 @@ Same phase approval rule as before. v6 starts only after the user approves this 
 | --- | --- | --- | --- |
 | V6-M1 | Contract and client: `activity.ts`, pet and device ids, event recording, outbox, sender, Settings group (EN/TH) | Unit tests; an isolated app run sends to a small local test endpoint; offline queue fills, drains, no duplicates; switch off sends nothing | Done 2026-11-08, approved |
 | V6-M2 | Server API: `server/` package, MySQL migrations, keys, events and health endpoints, tests | App -> local server -> rows in MySQL; duplicates skipped; bad key and bad data refused | Done 2026-11-08, approved |
-| V6-M3 | Dashboard: login, overview charts, events page, TH/EN | Pages show the data from M2; login required; page check in a browser | - |
+| V6-M3 | Dashboard: login, overview charts, events page, TH/EN | Pages show the data from M2; login required; page check in a browser | Done 2026-11-08, approved |
 | V6-M4 | Build and deploy: server bundle, pm2 config, nginx example, deploy README; installer unchanged in size | Server-only build runs from a clean folder; the user deploys to the VPS and the app sends over HTTPS | - |
 | V6-M5 | Polish: NFR-01/31/32 measurement, installer 6.0.0, upgrade from 5.0.0 | Acceptance criteria below pass | - |
 

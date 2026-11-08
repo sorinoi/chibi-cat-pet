@@ -11,7 +11,7 @@ export function testDatabaseUrl(): string | null {
   return process.env['TEST_DATABASE_URL']?.trim() || null
 }
 
-const TABLES = ['events', 'pets', 'devices', 'api_keys', 'schema_migrations']
+const TABLES = ['sessions', 'users', 'events', 'pets', 'devices', 'api_keys', 'schema_migrations']
 
 /** Drops every table and runs the migrations. Refuses any database not named *_test. */
 export async function freshTestDb(url: string): Promise<Db> {
