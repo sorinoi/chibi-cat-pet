@@ -11,8 +11,9 @@ Communicate with the user in Thai, casual and friendly, no rude or vulgar langua
 - v2.0 (done and accepted 2026-11-06): pet-care system, see `requirement-v2.md`. Only ONE pet at a time. Adopting a different pet means starting over and wiping the old pet's data immediately.
 - v4.0 (done and accepted 2026-11-07; the 8-hour memory run NFR-22 is deferred): hungry notification, focus history, optional focus treats, sad/look/stretch/yawn clips (art: cat-life.png from the user), 8-hour memory run; see `requirement-v4.md`.
 - v5.0 (done and accepted 2026-11-08): gravity (a dropped cat falls to the taskbar) and window perches (sits and walks on other windows' top edges), no new art; jump and climb (art: cat-move.png from the user); all approved 2026-11-07; see `requirement-v5.md`.
+- v6 (approved 2026-11-08, not started; starts when the user says go for V6-M1): activity log. With "Send activity to my server" on (off by default) the app sends care and focus events to the user's own server; offline they wait in an outbox file. The server (`server/`, Node + Fastify + MySQL, pm2 on the user's VPS) stores them and serves a dashboard. Built and deployed apart from the desktop app; see `requirement-v6.md`.
 - v3.0 (done and accepted 2026-11-06): Pomodoro focus timer + Thai/English UI, see `requirement-v3.md`. The timer is not linked to pet care; the cat keeps living as usual and only reacts at phase changes.
-- Out of scope: macOS/Linux, multiple pets at once, cloud sync/accounts, shop/marketplace/plugins.
+- Out of scope: macOS/Linux, multiple pets at once, cloud sync back to the app, accounts for other people, shop/marketplace/plugins.
 - Requirement IDs (FR-xx, NFR-xx) come from the requirement doc. Reference them in commits and PRs when relevant.
 
 ## Tech stack
@@ -67,7 +68,9 @@ scripts/         icon generator, sprite prep and regrid tools, README image rend
 Security (NFR-06, NFR-07)
 - `contextIsolation: true`, `nodeIntegration: false`, `sandbox` on where possible.
 - Renderer never imports Node/Electron APIs directly. Everything goes through the typed preload API.
-- Never load remote content. No network calls, no telemetry. The app must work fully offline.
+- Never load remote content. No telemetry. The app must work fully offline.
+- The only network call allowed (v6, requirement-v6.md section 7): main sends activity events to the server URL the user typed in Settings, only while "Send activity to my server" is on (off by default), plus its Test connection check. `https://` only, except localhost and private LAN addresses. Renderers never touch the network. The app works the same with the switch off, no network or the server down. Never log the API key; store it with safeStorage.
+- Server code lives only in `server/` (own package.json; its deps never go into the root package.json or the installer). Secrets for the server live only in the VPS `.env`.
 
 Window behavior
 - Pet window: `transparent: true`, `frame: false`, `alwaysOnTop: true`, `skipTaskbar: true`, not resizable.
@@ -129,6 +132,8 @@ v3 (focus timer + Thai/English UI) requirements are in `requirement-v3.md` (V3-M
 v4 requirements are in `requirement-v4.md` (V4-M1..M5; M1-M2 need no art). Approved by the user on 2026-11-06. Same phase approval rule.
 
 v5 requirements are in `requirement-v5.md` (V5-M1..M6; M1-M3 need no art). Approved by the user on 2026-11-07. Same phase approval rule.
+
+v6 requirements are in `requirement-v6.md` (V6-M1..M5: client, server API, dashboard, deploy, polish). Approved by the user on 2026-11-08, including the server deps fastify, mysql2 and esbuild (dev). Same phase approval rule.
 
 ## Source of truth: requirement.md
 

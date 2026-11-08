@@ -18,6 +18,7 @@ Decisions made:
 - v3: focus timer (Pomodoro) and Thai/English UI. Requirements: requirement-v3.md (approved 2026-11-06, released as 3.0.0).
 - v4: hungry notification, focus history, optional focus treats, sad/look/stretch/yawn clips, 8-hour memory run. Requirements: requirement-v4.md (approved 2026-11-06, released as 4.0.0, accepted 2026-11-07 with the 8-hour run NFR-22 deferred).
 - v5: gravity (a dropped cat falls to the taskbar), window perches (the cat sits and walks on other windows' top edges), jump and climb (needs cat-move.png). Requirements: requirement-v5.md (approved 2026-11-07; done and accepted 2026-11-08, released as 5.0.0).
+- v6: activity log. Care and focus events go to the user's own server (Node + MySQL on a VPS, pm2) when the user turns it on, with an offline outbox and a web dashboard. This allows one kind of network call (requirement-v6.md section 7) and changes NFR-06/07 as noted there. Requirements: requirement-v6.md (approved 2026-11-08, not started).
 
 ## 2. Scope
 
@@ -31,7 +32,7 @@ v1 out of scope:
 - macOS and Linux.
 - Multiple pets at the same time (never: one pet at a time, also in v2).
 - Pet-care mechanics: hunger and happiness planned for v2 (requirement-v2.md); money and shop moved to a later version.
-- Accounts, online, or cloud sync.
+- Accounts, online, or cloud sync. (v6 adds an optional activity log to the user's own server, requirement-v6.md; still no sync back and no accounts for others.)
 - Model shop or plugin system.
 
 ## 3. Users and environment (assumptions)
@@ -80,7 +81,7 @@ Initial targets. Tune after measuring on the target machine.
 | NFR-04 | Responsiveness | Click animation starts within 100 ms |
 | NFR-05 | Stability | Runs 8 hours with no continuous memory growth (no leaks) |
 | NFR-06 | Security | contextIsolation on, nodeIntegration off, no remote content |
-| NFR-07 | Privacy | No user data collected or sent off the machine |
+| NFR-07 | Privacy | No user data collected or sent off the machine (v6 exception: activity events to the user's own server, only when turned on; requirement-v6.md section 7) |
 | NFR-08 | Installation | Single .exe installer; uninstall leaves no stray files |
 | NFR-09 | Size | Installer at most 200 MB |
 | NFR-10 | Maintainability | TypeScript and ESLint; models and animations driven by config, not hardcoded |
