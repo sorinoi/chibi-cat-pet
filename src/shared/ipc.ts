@@ -109,6 +109,8 @@ export interface CareView {
   adoptedAt: number
   /** Treats in stock (requirement-v4.md FR-53). */
   treats: number
+  /** requirement-v7.md FR-103: the cat's look; null = the model's default. */
+  look: string | null
 }
 
 /** A care action asked for from a menu, or the welcome scene right after adoption. */

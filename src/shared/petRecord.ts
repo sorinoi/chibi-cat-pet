@@ -1,5 +1,6 @@
 /** The adopted pet, as stored in pet.json (requirement-v2.md FR-30). Pure, unit tested. */
 import { CARE, type CareConfig } from './careConfig'
+import { LOOK_ID } from './modelConfig'
 import type { Needs } from './needs'
 
 export const PET_SPECIES = ['cat'] as const
@@ -22,6 +23,11 @@ export interface PetRecord {
   counters: { feeds: number; pets: number }
   /** Treats in stock (requirement-v4.md FR-53). Belongs to this cat; 0 in older files. */
   treats: number
+  /**
+   * The cat's look (requirement-v7.md FR-103); null means the model's default look (older
+   * files, or a look id this version does not know is resolved when drawing).
+   */
+  look: string | null
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -67,7 +73,8 @@ export function createPet(
     needs: { ...c.startNeeds },
     updatedAt: now,
     counters: { feeds: 0, pets: 0 },
-    treats: 0
+    treats: 0,
+    look: null
   }
 }
 
@@ -100,6 +107,7 @@ export function parsePetRecord(
     needs: { hunger: clampNeed(needs['hunger']), happiness: clampNeed(needs['happiness']) },
     updatedAt,
     counters: { feeds: count(counters['feeds']), pets: count(counters['pets']) },
-    treats: Math.min(c.treats.maxStock, count(raw['treats']))
+    treats: Math.min(c.treats.maxStock, count(raw['treats'])),
+    look: typeof raw['look'] === 'string' && LOOK_ID.test(raw['look']) ? raw['look'] : null
   }
 }

@@ -46,6 +46,10 @@
   "displayScale": 1,
   "edgeOverflow": { "x": 30, "top": 0, "bottom": 15 },
   "walkFacing": "right",
+  "defaultLook": "orange",
+  "looks": {
+    "gray": { "main": "cat-sprite-gray.png", "care": "cat-care-gray.png", "focus": "cat-focus-gray.png", "life": "cat-life-gray.png", "move": "cat-move-gray.png" }
+  },
   "clips": {
     "idle": { "sheet": "main", "row": 0, "frames": 8, "loop": true, "frameMs": [1400, 300, 150, 150, 600, 200, 300, 1200] },
     "walk": { "sheet": "main", "row": 1, "frames": 8, "loop": true, "fps": 10 },

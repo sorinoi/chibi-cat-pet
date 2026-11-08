@@ -40,7 +40,14 @@ const SETTINGS_FLAG = '--settings'
 let onSecondInstance: (argv: readonly string[]) => void = () => {}
 
 const toView = (s: CareSnapshot | null): CareView | null =>
-  s && { name: s.name, needs: s.needs, mood: s.mood, adoptedAt: s.adoptedAt, treats: s.treats }
+  s && {
+    name: s.name,
+    needs: s.needs,
+    mood: s.mood,
+    adoptedAt: s.adoptedAt,
+    treats: s.treats,
+    look: s.look
+  }
 
 function start(): void {
   // FR-42/45: without a saved language, follow the Windows display language.

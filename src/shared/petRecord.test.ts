@@ -30,7 +30,8 @@ describe('createPet', () => {
       needs: { hunger: 80, happiness: 80 },
       updatedAt: 1_000,
       counters: { feeds: 0, pets: 0 },
-      treats: 0
+      treats: 0,
+      look: null
     })
   })
 
@@ -101,5 +102,20 @@ describe('treat stock in pet.json (requirement-v4.md FR-53)', () => {
     expect(parsePetRecord({ ...base, treats: 3 })?.treats).toBe(3)
     expect(parsePetRecord({ ...base, treats: 99 })?.treats).toBe(5)
     expect(parsePetRecord({ ...base, treats: -2 })?.treats).toBe(0)
+  })
+})
+
+describe('look in pet.json (requirement-v7.md FR-103)', () => {
+  const base = createPet('Mochi', 1, undefined, PET_ID)
+  it('older files and new pets have no look (the default); a good id is kept', () => {
+    const old: Record<string, unknown> = { ...base }
+    delete old['look']
+    expect(parsePetRecord(old)?.look).toBeNull()
+    expect(base.look).toBeNull()
+    expect(parsePetRecord({ ...base, look: 'gray' })?.look).toBe('gray')
+  })
+  it('a bad look id reads as the default', () => {
+    expect(parsePetRecord({ ...base, look: 'Gray Tabby!' })?.look).toBeNull()
+    expect(parsePetRecord({ ...base, look: 7 })?.look).toBeNull()
   })
 })

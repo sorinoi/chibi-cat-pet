@@ -5,8 +5,10 @@ import { spriteLayout, toCell, type SpriteLayout } from '../lib/spriteLayout'
 import { spriteSheetUrl } from '../models/registry'
 import { ACTIVE_MODEL } from '../../shared/activeModel'
 import {
+  lookOf,
   modelFrame,
   resolveClip,
+  sheetFile,
   type ClipName,
   type SpriteClip,
   type SpriteSheet
@@ -28,8 +30,13 @@ export interface PetScene {
   onClipFinished(listener: (clip: ClipName) => void): void
   /** Called after every drawn frame. */
   onFrame(listener: () => void): void
+  /**
+   * requirement-v7.md FR-107, NFR-40, NFR-42: draws the cat in this look (null = default). The
+   * new sheets load first and replace the old ones in one step; the clip keeps playing.
+   */
+  setLook(look: string | null): void
   /** What is on screen now (for debugging). */
-  current(): { clip: ClipName; frame: number; facing: Facing }
+  current(): { clip: ClipName; frame: number; facing: Facing; look: string }
 }
 
 /** A decoded sheet plus its alpha channel (row-major) for hit tests. */
@@ -39,14 +46,14 @@ interface LoadedSheet {
   alpha: Uint8Array
 }
 
-async function loadSheet(spec: SpriteSheet): Promise<LoadedSheet> {
+async function loadSheet(spec: SpriteSheet, file: string): Promise<LoadedSheet> {
   const image = new Image()
-  image.src = spriteSheetUrl(spec.file)
+  image.src = spriteSheetUrl(file)
   await image.decode()
   const { naturalWidth: w, naturalHeight: h } = image
   if (w !== spec.columns * spec.cellWidth || h !== spec.rows * spec.cellHeight) {
     console.warn(
-      `${spec.file} is ${w}x${h}, config expects ${spec.columns * spec.cellWidth}x${spec.rows * spec.cellHeight}`
+      `${file} is ${w}x${h}, config expects ${spec.columns * spec.cellWidth}x${spec.rows * spec.cellHeight}`
     )
   }
   const scratch = new OffscreenCanvas(w, h)
@@ -70,7 +77,12 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
   const frame = modelFrame(model)
 
   let ctx: CanvasRenderingContext2D | null = null
-  const sheets = new Map<string, LoadedSheet>()
+  let sheets = new Map<string, LoadedSheet>()
+  /** The look on screen, the look asked for, and a counter that drops outdated loads. */
+  let shownLook: string | null = null
+  let wantedLook = lookOf(model, null)
+  let loadSeq = 0
+  let firstFrameMarked = false
   let layout: SpriteLayout | null = null
   let removeDprListener: (() => void) | null = null
   let disposed = false
@@ -184,14 +196,28 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
     removeDprListener = () => mq.removeEventListener('change', onChange)
   }
 
+  /** Loads every sheet of the wanted look, then swaps them in at once (NFR-42: no flicker). */
   async function loadAll(): Promise<void> {
+    const look = wantedLook
+    const seq = ++loadSeq
     const entries = Object.entries(model.sheets)
-    const loaded = await Promise.all(entries.map(([, spec]) => loadSheet(spec)))
-    if (disposed) return
-    entries.forEach(([name], i) => sheets.set(name, loaded[i]))
+    const loaded = await Promise.all(
+      entries.map(([name, spec]) => loadSheet(spec, sheetFile(model, look, name)))
+    )
+    // Disposed, or the look changed again while loading: this set is not wanted any more.
+    if (disposed || seq !== loadSeq) return
+    const old = sheets
+    sheets = new Map(entries.map(([name], i) => [name, loaded[i] as LoadedSheet]))
+    shownLook = look
+    // NFR-40: let the old images and alpha masks go.
+    for (const s of old.values()) s.image.src = ''
+    old.clear()
     draw()
     // NFR-03: one mark per launch, read by the startup measurement (never repeated, no growth).
-    performance.mark('pet:first-frame')
+    if (!firstFrameMarked) {
+      firstFrameMarked = true
+      performance.mark('pet:first-frame')
+    }
   }
 
   onMounted(() => {
@@ -242,6 +268,13 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
       facing = next
       draw()
     },
+    setLook(next) {
+      const look = lookOf(model, next)
+      if (look === wantedLook) return
+      wantedLook = look
+      // Before mount the first load picks it up; after that, load the new set now.
+      if (ctx) loadAll().catch((err: unknown) => console.error('Failed to load the look:', err))
+    },
     onClipFinished(listener) {
       finishedListeners.push(listener)
     },
@@ -249,7 +282,7 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
       frameListeners.push(listener)
     },
     current() {
-      return { clip: clipName, frame: shownFrame, facing }
+      return { clip: clipName, frame: shownFrame, facing, look: shownLook ?? wantedLook }
     }
   }
 }

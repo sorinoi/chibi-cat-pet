@@ -25,6 +25,8 @@ export interface CareSnapshot {
   counters: PetRecord['counters']
   /** Treats in stock (requirement-v4.md FR-51..53). */
   treats: number
+  /** requirement-v7.md FR-103; null = the model's default look. */
+  look: string | null
 }
 
 export interface CareEngine {
@@ -52,6 +54,8 @@ export interface CareEngine {
   earnTreats(count: number): number | null
   /** FR-52: gives one treat; null when there is no cat or no treat. */
   giveTreat(): { full: boolean } | null
+  /** requirement-v7.md FR-107: repaints the cat; nothing else changes. False without a cat. */
+  setLook(look: string | null): boolean
   onChange(listener: (snapshot: CareSnapshot | null) => void): void
   /**
    * requirement-v6.md FR-80: every care action, with the pet right after it (for
@@ -99,7 +103,8 @@ export function createCareEngine({
       mood: moodOf(record.needs, config),
       adoptedAt: record.adoptedAt,
       counters: { ...record.counters },
-      treats: record.treats
+      treats: record.treats,
+      look: record.look
     }
   }
 
@@ -290,6 +295,16 @@ export function createCareEngine({
       emit()
       report({ type: 'care.treat', data: { full: result.full } })
       return { full: result.full }
+    },
+
+    setLook(look) {
+      if (!record) return false
+      if (record.look !== look) {
+        record = { ...record, look }
+        save()
+        emit()
+      }
+      return true
     },
 
     onChange(listener) {

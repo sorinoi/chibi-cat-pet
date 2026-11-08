@@ -12,7 +12,7 @@ Communicate with the user in Thai, casual and friendly, no rude or vulgar langua
 - v4.0 (done and accepted 2026-11-07; the 8-hour memory run NFR-22 is deferred): hungry notification, focus history, optional focus treats, sad/look/stretch/yawn clips (art: cat-life.png from the user), 8-hour memory run; see `requirement-v4.md`.
 - v5.0 (done and accepted 2026-11-08): gravity (a dropped cat falls to the taskbar) and window perches (sits and walks on other windows' top edges), no new art; jump and climb (art: cat-move.png from the user); all approved 2026-11-07; see `requirement-v5.md`.
 - v6 (approved 2026-11-08; V6-M1 client done and approved 2026-11-08; V6-M2 server API done and approved 2026-11-08; V6-M3 dashboard done and approved 2026-11-08; V6-M4 deploy next): activity log. With "Send activity to my server" on (off by default) the app sends care and focus events to the user's own server; offline they wait in an outbox file. The server (`server/`, Node + Fastify + MySQL, pm2 on the user's VPS) stores them and serves a dashboard. Built and deployed apart from the desktop app; see `requirement-v6.md`.
-- v7 (approved 2026-11-08, not started; starts after v6 is accepted): choose the cat's look (coat color). Looks share the current layout, only the image files differ; picker at adoption and in Settings; saved in pet.json; `sprite:recolor` makes variants the user approves; see `requirement-v7.md`.
+- v7 (approved 2026-11-08; started 2026-11-08 before V6-M4/M5 because the VPS is not ready, user decision): choose the cat's look (coat color). Looks share the current layout, only the image files differ; picker at adoption and in Settings; saved in pet.json; `sprite:recolor` makes variants the user approves; see `requirement-v7.md`.
 - v3.0 (done and accepted 2026-11-06): Pomodoro focus timer + Thai/English UI, see `requirement-v3.md`. The timer is not linked to pet care; the cat keeps living as usual and only reacts at phase changes.
 - Out of scope: macOS/Linux, multiple pets at once, cloud sync back to the app, accounts for other people, shop/marketplace/plugins.
 - Requirement IDs (FR-xx, NFR-xx) come from the requirement doc. Reference them in commits and PRs when relevant.
@@ -43,6 +43,7 @@ npm run dist        # build + electron-builder -> dist/desktop-pet-setup-<versio
 npm run icons:build # regenerate resources/*.png and build/icon.ico
 npm run sprite:prepare -- <in.png> <out.png> [cols] [rows]   # clean a sprite sheet, print cell boxes
 npm run sprite:regrid -- <in.png> <out.png> [scale] [cols] [rows] [--painted-background]   # rebuild an off-spec sheet: clear haze, cut frames by their art, 224 px grid, feet on one line; --painted-background first clears a checkerboard painted into an opaque image (art needs a closed dark outline)
+npm run sprite:recolor -- <look-id> [--preset gray|black|white] [--hue H --sat S --lscale K --lshift B]   # v7: a coat-color variant of every sheet (<file>-<look>.png in assets/models) + side-by-side preview dist/look-preview-<look>.png; add the look to cat-sprite.json "looks" only after the user approves
 npm run readme:art  # re-render the animated README previews (APNG) into docs/images/
 ```
 
@@ -126,9 +127,10 @@ Performance (NFR-01 to NFR-05)
   - `cat-focus.png` (sheet `focus`): 8 x 4 cells of 224 px, feet at y = 210; v3 clips focusStart, focusDone, longBreak, breakOver. The inbox original was off-spec (hazy background, 271.5 px cells, frames crossing cells), so it went through `sprite:regrid` (scale 0.8) instead.
   - `cat-life.png` (sheet `life`): 8 x 4 cells of 224 px, feet at y = 210; v4 clips sad, look (frames 0-5, holds 4-5), stretch, yawn. Made with `sprite:regrid` at scale 0.72.
   - `cat-move.png` (sheet `move`): 8 x 4 cells of 224 px, feet at y = 210; rows jump, fall, climb, hang (wall on the right). v5 clips jump (columns 1-4, holds 3-4), fall (columns 3-4), climb (7 frames, intro 0-3, loops 4-6, wallX 172) and hang (8 frames, wallX 166). The inbox original had a checkerboard painted into an opaque image, so it went through `sprite:regrid --painted-background` at scale 0.75.
+  - Looks (requirement-v7.md): `defaultLook` "orange" is the files above; other looks list one file per sheet in `looks` and must keep the same layout (src/main/looks.test.ts checks every file exists with the default's size). `gray` (cat-*-gray.png) was made with `sprite:recolor -- gray` (orange coat only, hue 16-42, chroma 0.16-0.7, soft edges) as the V7-M1 test variant.
 - Sheet rules (requirement.md section 9): real alpha, regular grid, one clip per row (from column 0 unless the clip sets `column`), feet at the same height (anchor), walk frames face one way (`walkFacing`). One model can use several sheets; each clip names its sheet.
 - Required clips: `idle` (loop), `walk` (loop), `click` (once), `drag` (loop, intro via `loopFrom`), `land` (once), `sleep` (loop, intro via `loopFrom`).
-- The active model is set in src/shared/activeModel.ts. `modelFrame()` fits every sheet with all feet anchors on one point; main sizes the pet window from that frame x displayScale x pet size, rounded up to a 4 DIP grid (fractional pixel sizes made Windows grow the window).
+- The active model is set in src/shared/activeModel.ts. The cat's look (pet.json `look`, null = default) picks the image files through `sheetFile(model, look, sheet)`; the pet scene loads a look's sheets and swaps them in one step (`scene.setLook`, from the care state). `modelFrame()` fits every sheet with all feet anchors on one point; main sizes the pet window from that frame x displayScale x pet size, rounded up to a 4 DIP grid (fractional pixel sizes made Windows grow the window).
 - Any third-party art must have a clear license; keep the license note next to the file.
 
 ## Milestones
@@ -153,7 +155,7 @@ v5 requirements are in `requirement-v5.md` (V5-M1..M6; M1-M3 need no art). Appro
 
 v6 requirements are in `requirement-v6.md` (V6-M1..M5: client, server API, dashboard, deploy, polish). Approved by the user on 2026-11-08, including the server deps fastify, mysql2 and esbuild (dev). Same phase approval rule.
 
-v7 requirements are in `requirement-v7.md` (V7-M1..M3: looks and recolor tool, picker, final looks and release). Approved by the user on 2026-11-08 as written (open questions on their defaults). Same phase approval rule.
+v7 requirements are in `requirement-v7.md` (V7-M1..M3: looks and recolor tool, picker, final looks and release). Approved by the user on 2026-11-08 as written (open questions on their defaults). Done before V6-M4 and V6-M5 (user, 2026-11-08: the VPS is not ready). Same phase approval rule.
 
 ## Source of truth: requirement.md
 

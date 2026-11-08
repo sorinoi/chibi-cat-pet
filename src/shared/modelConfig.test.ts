@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   CLIP_NAMES,
+  lookOf,
+  sheetFile,
   MOVE_CLIPS,
   modelFrame,
   parseModelConfig,
@@ -170,5 +172,46 @@ describe('resolveClip (requirement-v3.md section 5 fallbacks)', () => {
   it('a falling cat plays drag until a fall clip exists (requirement-v5.md FR-60)', () => {
     expect(resolveClip('fall', { idle: 1, drag: 1 })).toBe('drag')
     expect(resolveClip('fall', { idle: 1, drag: 1, fall: 1 })).toBe('fall')
+  })
+})
+
+describe('looks (requirement-v7.md FR-100..FR-103)', () => {
+  const twoSheets = { ...valid, sheets: { main: sheet, care: { ...sheet, file: 'cat-care.png' } } }
+
+  it('without "looks" the model has one look, "default", using the sheet files', () => {
+    const m = parseModelConfig(valid)
+    expect(m.defaultLook).toBe('default')
+    expect(m.looks).toEqual({ default: { main: 'cat-test.png' } })
+  })
+
+  it('a look names a file for every sheet; unknown looks fall back to the default', () => {
+    const m = parseModelConfig({
+      ...twoSheets,
+      defaultLook: 'orange',
+      looks: { gray: { main: 'cat-test-gray.png', care: 'cat-care-gray.png' } }
+    })
+    expect(Object.keys(m.looks)).toEqual(['orange', 'gray'])
+    expect(sheetFile(m, 'gray', 'care')).toBe('cat-care-gray.png')
+    expect(sheetFile(m, null, 'care')).toBe('cat-care.png')
+    expect(sheetFile(m, 'pink', 'main')).toBe('cat-test.png')
+    expect(lookOf(m, 'pink')).toBe('orange')
+    expect(lookOf(m, 'gray')).toBe('gray')
+  })
+
+  it('refuses a look that misses a sheet, names an unknown sheet or has a bad id', () => {
+    const bad = (looks: unknown): unknown => ({ ...twoSheets, defaultLook: 'orange', looks })
+    expect(() => parseModelConfig(bad({ gray: { main: 'a.png' } }))).toThrow(/looks.gray.care/)
+    expect(() =>
+      parseModelConfig(bad({ gray: { main: 'a.png', care: 'b.png', move: 'c.png' } }))
+    ).toThrow(/unknown sheet "move"/)
+    expect(() => parseModelConfig(bad({ Gray: { main: 'a.png', care: 'b.png' } }))).toThrow(
+      /lowercase/
+    )
+  })
+
+  it('the shipped model has the default look "orange"', () => {
+    const m = parseModelConfig(shipped)
+    expect(m.defaultLook).toBe('orange')
+    expect(m.looks['orange']?.['main']).toBe('cat-sprite.png')
   })
 })

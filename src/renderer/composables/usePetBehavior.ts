@@ -346,6 +346,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
         const first = mood === null && view !== null
         careView.value = view
         mood = view ? view.mood : null
+        // requirement-v7.md FR-107: the cat is drawn in its look.
+        if (view) scene.setLook(view.look)
         // The app just started with a cat (or one was adopted): maybe a morning stretch.
         if (first) maybeMorningStretch()
         syncLookWatch()
@@ -376,6 +378,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
         wanderNow: () => {
           if (state.value === 'idle') onWanderTimer()
         },
+        // Draw the cat in another look, in this window only (requirement-v7.md FR-107).
+        setLook: (look: string | null) => scene.setLook(look),
         // Try a jump now, without the chance or the cooldown (requirement-v5.md FR-73).
         jumpNow: () => {
           if (state.value === 'idle') void tryJump()

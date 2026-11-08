@@ -19,7 +19,8 @@
     "dist": "npm run build && electron-builder --win --x64",
     "sprite:prepare": "node scripts/prepare-sprite.mts",
     "readme:art": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-readme-art.mts",
-    "sprite:regrid": "node scripts/regrid-sprite.mts"
+    "sprite:regrid": "node scripts/regrid-sprite.mts",
+    "sprite:recolor": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/recolor-sprite.mts"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

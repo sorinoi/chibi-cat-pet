@@ -1,6 +1,6 @@
 # Requirement v7: Choose the cat's look
 
-Status: APPROVED by the user on 2026-11-08 as written (open questions on their defaults). Not built yet; v7 starts only after v6 is accepted and the user says go for V7-M1. Open questions (section 13) use the defaults written here until decided. v6 (requirement-v6.md) stays the base: everything in v1 to v6 keeps working.
+Status: APPROVED by the user on 2026-11-08 as written (open questions on their defaults). Started 2026-11-08 before V6-M4 and V6-M5 (user decision: the VPS is not ready); v6 is finished after v7. Open questions (section 13) use the defaults written here until decided. v6 (requirement-v6.md) stays the base: everything in v1 to v6 keeps working.
 
 ## 1. Overview
 
@@ -81,7 +81,7 @@ Same phase approval rule as before.
 
 | Phase | Work | Gate | Status |
 | --- | --- | --- | --- |
-| V7-M1 | Looks in the model config, pet.json `look`, scene loads a look's sheets, layout test; `sprite:recolor` with one test variant (not shipped until approved) | The cat can be drawn in the test variant with no change in size, feet or wall anchors; tests pass | - |
+| V7-M1 | Looks in the model config, pet.json `look`, scene loads a look's sheets, layout test; `sprite:recolor` with one test variant (not shipped until approved) | The cat can be drawn in the test variant with no change in size, feet or wall anchors; tests pass | Done 2026-11-08, approved |
 | V7-M2 | Look picker in the adoption window and Settings, IPC, strings TH/EN | Adopt with a look, change it later, survives a restart; memory released | - |
 | V7-M3 | Final looks (recolored and approved by the user, or new art from the user), README, installer 7.0.0, upgrade from 6.0.0 (the cat keeps its look `orange`) | Acceptance criteria below pass | - |
 
@@ -106,4 +106,4 @@ Defaults are used until the user decides:
 - Recolor the current art, or new art from the user per look? (default: recolor first; new art can replace a look later.)
 - Can the look change after adoption? (default: yes, in Settings.)
 - Send the look with activity events (needs event schema version 2 and a server change)? (default: no in 7.0.)
-- When: after v6 is accepted (default), or before finishing v6 (V6-M4 deploy, V6-M5 release)?
+- When: decided 2026-11-08: before finishing v6 (V6-M4 deploy, V6-M5 release wait for the VPS).

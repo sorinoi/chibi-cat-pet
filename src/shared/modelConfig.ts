@@ -105,8 +105,36 @@ export interface ModelConfig {
   /** Direction the walk frames face in the sheet; the other direction is mirrored. */
   walkFacing: 'left' | 'right'
   clips: Record<'idle', SpriteClip> & Partial<Record<ClipName, SpriteClip>>
+  /**
+   * requirement-v7.md FR-100..FR-102: coat colors that share this layout. Each look maps every
+   * sheet name to its own image file; the default look uses the sheets' `file`.
+   */
+  looks: Record<string, Record<string, string>>
+  defaultLook: string
   /** License or origin note for the artwork. */
   license: string
+}
+
+/** Look ids: short, lowercase (they are stored in pet.json). */
+export const LOOK_ID = /^[a-z][a-z0-9-]{0,19}$/
+
+/** A look the model has: `id` when it exists, else the default (FR-103). */
+export function lookOf(
+  model: Pick<ModelConfig, 'looks' | 'defaultLook'>,
+  id: string | null
+): string {
+  return id !== null && model.looks[id] ? id : model.defaultLook
+}
+
+/** The image file of `sheet` in `look` (unknown looks use the default). */
+export function sheetFile(
+  model: Pick<ModelConfig, 'looks' | 'defaultLook' | 'sheets'>,
+  look: string | null,
+  sheet: string
+): string {
+  const file = model.looks[lookOf(model, look)]?.[sheet] ?? model.sheets[sheet]?.file
+  if (!file) fail(`no file for sheet "${sheet}"`)
+  return file
 }
 
 /**
@@ -281,6 +309,25 @@ export function parseModelConfig(raw: unknown, maxFps = MAX_FPS): ModelConfig {
   const idle = clips.idle
   if (!idle) fail('"clips.idle" is required')
 
+  // FR-100..FR-102: the default look uses the sheets' files; every other look names a file for
+  // every sheet (no look may lose clips). Without "looks" the model has one look, "default".
+  const defaultLook =
+    raw['defaultLook'] === undefined ? 'default' : requireString(raw, 'defaultLook')
+  if (!LOOK_ID.test(defaultLook)) fail(`"defaultLook" "${defaultLook}" is not a valid look id`)
+  const sheetFiles = Object.fromEntries(Object.entries(sheets).map(([name, s]) => [name, s.file]))
+  const looks: Record<string, Record<string, string>> = { [defaultLook]: sheetFiles }
+  const looksRaw = raw['looks'] === undefined ? {} : requireRecord(raw, 'looks')
+  for (const [id, value] of Object.entries(looksRaw)) {
+    if (!LOOK_ID.test(id)) fail(`look id "${id}" must be lowercase letters, digits or dashes`)
+    if (id === defaultLook) continue
+    if (!isRecord(value)) fail(`look "${id}" must be an object of sheet files`)
+    const files: Record<string, string> = {}
+    for (const name of Object.keys(sheets)) files[name] = requireString(value, name, `looks.${id}`)
+    for (const name of Object.keys(value))
+      if (!sheets[name]) fail(`look "${id}" names an unknown sheet "${name}"`)
+    looks[id] = files
+  }
+
   return {
     id: requireString(raw, 'id'),
     name: requireString(raw, 'name'),
@@ -289,6 +336,8 @@ export function parseModelConfig(raw: unknown, maxFps = MAX_FPS): ModelConfig {
     edgeOverflow,
     walkFacing,
     clips: { ...clips, idle },
+    looks,
+    defaultLook,
     license: requireString(raw, 'license')
   }
 }

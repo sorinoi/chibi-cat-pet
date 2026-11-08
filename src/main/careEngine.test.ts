@@ -323,3 +323,19 @@ describe('care engine: activity (requirement-v6.md FR-80, FR-82)', () => {
     error.mockRestore()
   })
 })
+
+describe('care engine: look (requirement-v7.md FR-103, FR-107)', () => {
+  it('sets the look, saves it, and leaves everything else alone', () => {
+    const e = engine()
+    e.load()
+    expect(e.setLook('gray')).toBe(false) // no cat yet
+    const before = e.adopt('Mochi')
+    expect(before.look).toBeNull()
+    expect(e.setLook('gray')).toBe(true)
+    expect(e.current()).toEqual({ ...before, look: 'gray' })
+    expect(JSON.parse(readFileSync(file, 'utf8')).look).toBe('gray')
+    const again = engine()
+    again.load()
+    expect(again.current()?.look).toBe('gray')
+  })
+})

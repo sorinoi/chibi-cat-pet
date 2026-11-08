@@ -6,10 +6,12 @@ import type { ClipName } from '../shared/modelConfig'
 interface PetDebug {
   dispatch(event: PetEvent): void
   state(): PetState
-  scene(): { clip: string; frame: number; facing: string }
+  scene(): { clip: string; frame: number; facing: string; look: string }
   playClip(clip: ClipName): void
   mood(): string | null
   wanderNow(): void
+  /** Draw the cat in a look, in the pet window only (requirement-v7.md FR-107). */
+  setLook(look: string | null): void
   /** Try a jump now (requirement-v5.md FR-73). */
   jumpNow(): void
   /** Try a climb now (requirement-v5.md FR-76). */
