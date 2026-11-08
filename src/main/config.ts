@@ -34,6 +34,13 @@ export const MOTION = {
     /** A cat this close above the floor counts as standing (start positions snap to 4 DIP). */
     restTolerance: 2
   },
+  /** requirement-v5.md FR-66, FR-67: landing on other apps' windows, in pet window widths. */
+  perch: {
+    /** Narrower windows are not perches. */
+    minWidthFactor: 2,
+    /** Half the part of the edge under the cat that must be visible (not covered). */
+    footHalfWidthFactor: 0.2
+  },
   /**
    * How far the window may hang past the work area edge at pet size 1.0: the cell's
    * always-empty margins, so the cat itself can reach the edges.
@@ -68,7 +75,7 @@ export const STORE = {
 
 export const SETTINGS_WINDOW = {
   width: 820,
-  height: 760
+  height: 790
 } as const
 
 export const ADOPT_WINDOW = {

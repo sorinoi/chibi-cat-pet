@@ -128,3 +128,15 @@ describe('gravity setting (requirement-v5.md FR-64)', () => {
     expect(sanitizeSettings({ gravity: 'no' }).gravity).toBe(true)
   })
 })
+
+describe('sit on windows setting (requirement-v5.md FR-71)', () => {
+  it('is on by default, also for an older settings file', () => {
+    expect(DEFAULT_SETTINGS.sitOnWindows).toBe(true)
+    expect(parsePersistedState({ settings: { gravity: false } }).settings.sitOnWindows).toBe(true)
+  })
+
+  it('keeps a saved choice and ignores bad values', () => {
+    expect(sanitizeSettings({ sitOnWindows: false }).sitOnWindows).toBe(false)
+    expect(sanitizeSettings({ sitOnWindows: 1 }).sitOnWindows).toBe(true)
+  })
+})

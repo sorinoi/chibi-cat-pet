@@ -27,6 +27,8 @@ export interface Settings extends FocusSettings {
   focusTreats: boolean
   /** A dropped cat falls to the floor (requirement-v5.md FR-64). On by default. */
   gravity: boolean
+  /** A falling cat may land on other windows (FR-71); only while gravity is on. On by default. */
+  sitOnWindows: boolean
 }
 
 export const SETTINGS_LIMITS = {
@@ -47,7 +49,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   ...FOCUS.defaults,
   hungerReminder: false,
   focusTreats: false,
-  gravity: true
+  gravity: true,
+  sitOnWindows: true
 }
 
 export interface Position {
@@ -118,7 +121,8 @@ export function sanitizeSettings(raw: unknown, base: Settings = DEFAULT_SETTINGS
     focusNotifications: bool(r['focusNotifications'], base.focusNotifications),
     hungerReminder: bool(r['hungerReminder'], base.hungerReminder),
     focusTreats: bool(r['focusTreats'], base.focusTreats),
-    gravity: bool(r['gravity'], base.gravity)
+    gravity: bool(r['gravity'], base.gravity),
+    sitOnWindows: bool(r['sitOnWindows'], base.sitOnWindows)
   }
 }
 

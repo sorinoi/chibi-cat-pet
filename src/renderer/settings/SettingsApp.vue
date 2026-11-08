@@ -97,6 +97,16 @@ function checkedFrom(event: Event): boolean {
           <span class="label">{{ text.gravity }}</span>
         </label>
 
+        <label class="row check sub" :class="{ disabled: !settings.gravity }">
+          <input
+            type="checkbox"
+            :checked="settings.sitOnWindows"
+            :disabled="!settings.gravity"
+            @change="set('sitOnWindows', checkedFrom($event))"
+          />
+          <span class="label">{{ text.sitOnWindows }}</span>
+        </label>
+
         <label class="row check">
           <input
             type="checkbox"
@@ -175,6 +185,16 @@ h1 {
 
 .row.check {
   grid-template-columns: auto 1fr;
+}
+
+/* An option that only works while the one above it is on (requirement-v5.md FR-71). */
+.row.check.sub {
+  margin-top: -8px;
+  padding-left: 26px;
+}
+
+.row.disabled {
+  color: #999;
 }
 
 .label {

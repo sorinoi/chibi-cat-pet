@@ -4,8 +4,6 @@ import {
   allowedArea,
   clampPosition,
   fallDistance,
-  floorY,
-  isAboveFloor,
   planWalk,
   resizeKeepingFeet,
   scaledOverflow,
@@ -14,6 +12,7 @@ import {
   type Area,
   type Size
 } from './lib/placement'
+import { findLanding, type DesktopWindow } from './lib/ledges'
 import type { WalkEnded, WalkRequest } from '../shared/ipc'
 import type { Position } from '../shared/settings'
 
@@ -55,6 +54,8 @@ export interface PetMotionEvents {
 export interface PetMotionOptions {
   /** The Gravity setting (FR-64). */
   gravity(): boolean
+  /** Windows the cat may land on, front-most first; empty when Sit on windows is off (FR-71). */
+  windows(): readonly DesktopWindow[]
 }
 
 export function petWindowSize(scale: number): Size {
@@ -81,9 +82,10 @@ export function initialPosition(scale: number, preferred: Position | null): Posi
 
 /**
  * Moves the pet window: follows the cursor while dragging (FR-04), walks it
- * horizontally (FR-06) and lets it fall to the floor (requirement-v5.md FR-60). Positions
- * are clamped to the work area of the display under the cursor (drag) or under the window
- * (walk, fall), so multi-monitor works and a fall never crosses to another display (FR-61).
+ * horizontally (FR-06) and lets it fall to the floor or onto another window's top edge
+ * (requirement-v5.md FR-60, FR-66). Positions are clamped to the work area of the display
+ * under the cursor (drag) or under the window (walk, fall), so multi-monitor works and a
+ * fall never crosses to another display (FR-61).
  */
 export function createPetMotion(
   win: BrowserWindow,
@@ -143,21 +145,47 @@ export function createPetMotion(
     return true
   }
 
+  /**
+   * FR-66: where the cat comes to rest falling straight down from `bounds`: the first free
+   * window edge below its feet, or the floor of the display under it. The window list is
+   * read here, once per fall (NFR-25).
+   */
+  function landingFor(bounds: Rectangle): number {
+    const size = petWindowSize(scale)
+    const { minWidthFactor, footHalfWidthFactor } = MOTION.perch
+    const landing = findLanding(
+      {
+        x: bounds.x,
+        y: bounds.y,
+        size,
+        // The window hangs its empty bottom margin below the feet (see allowedArea).
+        feetOffset: size.height - scaledOverflow(MOTION.overflow, scale).bottom,
+        footHalfWidth: size.width * footHalfWidthFactor,
+        area: areaAt(centerOf(bounds)),
+        minPerchWidth: size.width * minWidthFactor,
+        tolerance: MOTION.fall.restTolerance
+      },
+      options.windows(),
+      screen.getAllDisplays().map((d) => d.bounds)
+    )
+    return landing.y
+  }
+
   /** Starts falling from where the window is if it is in the air; true when it falls. */
   function startFall(): boolean {
     if (win.isDestroyed() || !options.gravity()) return false
     const bounds = win.getBounds()
-    const area = areaAt(centerOf(bounds))
     const { restTolerance, gravity, maxSpeed, intervalMs } = MOTION.fall
-    if (!isAboveFloor(bounds.y, area, restTolerance)) return false
+    const target = landingFor(bounds)
+    // Already standing on the floor or an edge (or within the tolerance of it).
+    if (target - bounds.y <= restTolerance) return false
 
     const { x, y: startY } = bounds
-    const floor = floorY(area)
     const startedAt = Date.now()
     fallTimer = setInterval(() => {
-      const y = Math.min(floor, startY + fallDistance(Date.now() - startedAt, gravity, maxSpeed))
+      const y = Math.min(target, startY + fallDistance(Date.now() - startedAt, gravity, maxSpeed))
       moveTo(x, y)
-      if (y < floor) return
+      if (y < target) return
       stopFall()
       events.onLanded()
     }, intervalMs)

@@ -10,6 +10,7 @@ import { registerIpcHandlers, type CareUi } from './ipc'
 import { createTray, showPetContextMenu } from './menus'
 import { createPetMotion } from './petMotion'
 import { createPetWindow } from './petWindow'
+import { createWindowList } from './windowList'
 import { lockDownWebContents } from './security'
 import { createSettingsStore } from './settingsStore'
 import { createAdoptWindowManager, createSettingsWindowManager } from './settingsWindow'
@@ -75,6 +76,7 @@ function start(): void {
     if (!win.isDestroyed()) win.webContents.send(channel, payload)
   }
 
+  const listWindows = createWindowList()
   const motion = createPetMotion(
     win,
     store.settings.petSize,
@@ -84,7 +86,11 @@ function start(): void {
       onFallStart: () => sendToPet(IpcChannel.PetFallStart),
       onLanded: () => sendToPet(IpcChannel.PetLanded)
     },
-    { gravity: () => store.settings.gravity }
+    {
+      gravity: () => store.settings.gravity,
+      // FR-71, FR-72: other apps' windows, read only when a fall starts.
+      windows: () => (store.settings.sitOnWindows ? listWindows() : [])
+    }
   )
 
   /**
@@ -309,8 +315,13 @@ function start(): void {
   store.onChange((next, previous) => {
     applySettings(win, motion, next, previous)
     settingsWindow.get()?.webContents.send(IpcChannel.SettingsChanged, next)
-    // FR-64: turning Gravity on drops a cat that was left in the air.
-    if (next.gravity && !previous.gravity) settlePet()
+    // FR-64: turning Gravity on drops a cat that was left in the air; FR-71: turning Sit on
+    // windows off drops a cat sitting on one (on: it may now stay where it lands next).
+    if (
+      (next.gravity && !previous.gravity) ||
+      (next.sitOnWindows !== previous.sitOnWindows && next.gravity)
+    )
+      settlePet()
     if (next.language !== previous.language) {
       // FR-44: open windows switch at once; menus and dialogs read the language when shown.
       sendToPet(IpcChannel.AppLanguageChanged, next.language)
