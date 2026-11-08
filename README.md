@@ -12,6 +12,8 @@
 ![offline](https://img.shields.io/badge/works-100%25%20offline-264653)
 ![stack](https://img.shields.io/badge/Electron%20%2B%20Vue%203-TypeScript-6c757d)
 
+[![Download for Windows](https://img.shields.io/badge/Download-Windows%20installer-e8893a?style=for-the-badge)](https://github.com/sorinoi/chibi-cat-pet/releases/latest)
+
 <img src="docs/images/hero.png" width="338" alt="The cat walks in, celebrates, eats, gets petted, walks back and falls asleep">
 
 [English](#english) · [ภาษาไทย](#thai)
@@ -133,9 +135,14 @@ Every animation below is rendered straight from the app's sprite sheets.<br>
 
 ### Install
 
-Build the installer (see Development) and run `dist/desktop-pet-setup-5.0.0.exe`. It
-installs for your user only (no admin rights) and adds Start menu and desktop shortcuts.
-Installing over an older version keeps your settings.
+**[Download the latest installer](https://github.com/sorinoi/chibi-cat-pet/releases/latest)**
+(`desktop-pet-setup-<version>.exe` under _Assets_), then run it. Or build it yourself (see
+Development): `npm run dist` writes `dist/desktop-pet-setup-<version>.exe`.
+
+It installs for your user only (no admin rights) and adds Start menu and desktop shortcuts.
+Installing over an older version keeps your settings and your cat. The installer is not
+code-signed, so Windows SmartScreen may warn the first time: choose _More info_, then _Run
+anyway_. The release page lists the file's SHA-256 if you want to check the download.
 
 | | |
 | --- | --- |
@@ -248,8 +255,11 @@ Pet-care tuning lives in `src/shared/careConfig.ts`, focus timer defaults in
 
 ### ติดตั้ง
 
-build installer ก่อน (ดูหัวข้อพัฒนาต่อ) แล้วรัน `dist/desktop-pet-setup-5.0.0.exe` ติดตั้งเฉพาะผู้ใช้ปัจจุบัน
-ไม่ต้องใช้สิทธิ์ admin และสร้าง shortcut ให้ทั้งใน Start menu และบนเดสก์ท็อป ติดตั้งทับเวอร์ชันเก่าได้โดยการตั้งค่าเดิมยังอยู่
+**[ดาวน์โหลดตัวติดตั้งล่าสุด](https://github.com/sorinoi/chibi-cat-pet/releases/latest)** (ไฟล์ `desktop-pet-setup-<version>.exe` ในหัวข้อ _Assets_) แล้วรันได้เลย
+หรือ build เองก็ได้ (ดูหัวข้อพัฒนาต่อ): `npm run dist` จะได้ไฟล์ `dist/desktop-pet-setup-<version>.exe`
+
+ติดตั้งเฉพาะผู้ใช้ปัจจุบัน ไม่ต้องใช้สิทธิ์ admin และสร้าง shortcut ให้ทั้งใน Start menu และบนเดสก์ท็อป ติดตั้งทับเวอร์ชันเก่าได้โดยการตั้งค่าและน้องแมวตัวเดิมยังอยู่
+ตัวติดตั้งยังไม่ได้ลงชื่อ (code signing) ครั้งแรก Windows SmartScreen อาจเตือน ให้กด _More info_ แล้วเลือก _Run anyway_ ในหน้าดาวน์โหลดมีค่า SHA-256 ของไฟล์ไว้ให้ตรวจ
 
 | | |
 | --- | --- |
