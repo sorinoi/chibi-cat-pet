@@ -1,0 +1,31 @@
+{
+  "name": "desktop-pet-server",
+  "version": "6.0.0",
+  "description": "Activity log server and dashboard for Desktop Pet (requirement-v6.md)",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --watch src/main.ts",
+    "build": "node scripts/build.ts",
+    "start": "node --env-file-if-exists=.env dist/server.js",
+    "migrate": "node --env-file-if-exists=.env dist/cli.js migrate",
+    "key:create": "node --env-file-if-exists=.env dist/cli.js key:create",
+    "key:list": "node --env-file-if-exists=.env dist/cli.js key:list",
+    "key:revoke": "node --env-file-if-exists=.env dist/cli.js key:revoke",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "fastify": "^5.12.8",
+    "mysql2": "^3.24.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "esbuild": "^0.28.2",
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.0"
+  }
+}

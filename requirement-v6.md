@@ -147,7 +147,7 @@ Same phase approval rule as before. v6 starts only after the user approves this 
 | Phase | Work | Gate | Status |
 | --- | --- | --- | --- |
 | V6-M1 | Contract and client: `activity.ts`, pet and device ids, event recording, outbox, sender, Settings group (EN/TH) | Unit tests; an isolated app run sends to a small local test endpoint; offline queue fills, drains, no duplicates; switch off sends nothing | Done 2026-11-08, approved |
-| V6-M2 | Server API: `server/` package, MySQL migrations, keys, events and health endpoints, tests | App -> local server -> rows in MySQL; duplicates skipped; bad key and bad data refused | - |
+| V6-M2 | Server API: `server/` package, MySQL migrations, keys, events and health endpoints, tests | App -> local server -> rows in MySQL; duplicates skipped; bad key and bad data refused | Done 2026-11-08, approved |
 | V6-M3 | Dashboard: login, overview charts, events page, TH/EN | Pages show the data from M2; login required; page check in a browser | - |
 | V6-M4 | Build and deploy: server bundle, pm2 config, nginx example, deploy README; installer unchanged in size | Server-only build runs from a clean folder; the user deploys to the VPS and the app sends over HTTPS | - |
 | V6-M5 | Polish: NFR-01/31/32 measurement, installer 6.0.0, upgrade from 5.0.0 | Acceptance criteria below pass | - |

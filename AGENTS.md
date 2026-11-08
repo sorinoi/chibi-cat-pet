@@ -13,7 +13,7 @@ Communicate with the user in Thai, casual and friendly, no rude or vulgar langua
 - v2.0 (done and accepted 2026-11-06): pet-care system, see `requirement-v2.md`. Only ONE pet at a time. Adopting a different pet means starting over and wiping the old pet's data immediately.
 - v4.0 (done and accepted 2026-11-07; the 8-hour memory run NFR-22 is deferred): hungry notification, focus history, optional focus treats, sad/look/stretch/yawn clips (art: cat-life.png from the user), 8-hour memory run; see `requirement-v4.md`.
 - v5.0 (done and accepted 2026-11-08): gravity (a dropped cat falls to the taskbar) and window perches (sits and walks on other windows' top edges), no new art; jump and climb (art: cat-move.png from the user); all approved 2026-11-07; see `requirement-v5.md`.
-- v6 (approved 2026-11-08; V6-M1 client done and approved 2026-11-08, V6-M2 server next): activity log. With "Send activity to my server" on (off by default) the app sends care and focus events to the user's own server; offline they wait in an outbox file. The server (`server/`, Node + Fastify + MySQL, pm2 on the user's VPS) stores them and serves a dashboard. Built and deployed apart from the desktop app; see `requirement-v6.md`.
+- v6 (approved 2026-11-08; V6-M1 client done and approved 2026-11-08; V6-M2 server API done and approved 2026-11-08; V6-M3 dashboard next): activity log. With "Send activity to my server" on (off by default) the app sends care and focus events to the user's own server; offline they wait in an outbox file. The server (`server/`, Node + Fastify + MySQL, pm2 on the user's VPS) stores them and serves a dashboard. Built and deployed apart from the desktop app; see `requirement-v6.md`.
 - v3.0 (done and accepted 2026-11-06): Pomodoro focus timer + Thai/English UI, see `requirement-v3.md`. The timer is not linked to pet care; the cat keeps living as usual and only reacts at phase changes.
 - Out of scope: macOS/Linux, multiple pets at once, cloud sync back to the app, accounts for other people, shop/marketplace/plugins.
 - Requirement IDs (FR-xx, NFR-xx) come from the requirement doc. Reference them in commits and PRs when relevant.
@@ -47,11 +47,24 @@ npm run sprite:regrid -- <in.png> <out.png> [scale] [cols] [rows] [--painted-bac
 npm run readme:art  # re-render the animated README previews (APNG) into docs/images/
 ```
 
+Server (v6, run inside `server/`, its own package; needs `server/.env` from `.env.example`):
+
+```
+npm install            # server deps only (fastify, mysql2; dev: esbuild, typescript, vitest)
+npm run build          # bundle src/main.ts and src/cli.ts (with src/shared/activity.ts) into dist/
+npm run dev            # run src/main.ts directly (Node type stripping), restarts on change
+npm start              # run dist/server.js
+npm run migrate        # apply new migrations/*.sql (from dist/cli.js, so build first)
+npm run key:create -- <label>   # make an API key, shown once; key:list, key:revoke -- <id|prefix>
+npm run typecheck      # tsc for server/
+npm test               # vitest; database tests use TEST_DATABASE_URL (a *_test database, emptied by the tests)
+```
+
 `scripts/` holds the icon generator, the sprite prep tool and the README image renderer (`.mts`, run by Node's built-in type stripping). `scripts/lib/png.mts` is a tiny dependency-free PNG codec (also writes APNG). README.md is bilingual (English + Thai); rerun `readme:art` when the sprites or clip timings change. New art from the user goes into `assets/sprites-inbox/`, then through `sprite:prepare` into `assets/models/`.
 
 Installer notes: config in `electron-builder.yml`, extra uninstall steps in `build/installer.nsh` (Run key, updater cache). The installed app keeps data in `%APPDATA%\desktop-pet` (settings.json, pet.json); uninstall deletes it. `"Desktop Pet.exe" --settings` opens the settings window, also when the app is already running.
 
-Update this section whenever scripts change. Run `typecheck`, `lint` and `test` before declaring a task done.
+Update this section whenever scripts change. Run `typecheck`, `lint` and `test` before declaring a task done; when `server/` changed, also its `typecheck` and `test`.
 
 ## Project layout
 
@@ -63,6 +76,7 @@ src/shared/      types and pure logic used by main and renderer (IPC, settings, 
 assets/models/   sprite sheets .png + one JSON model config + license note
 assets/sprites-inbox/  the user's original art, before `sprite:prepare` or `sprite:regrid`
 scripts/         icon generator, sprite prep and regrid tools, README image renderer (docs/images)
+server/          v6 activity log server, its own package (never in the installer): src/ (Fastify API, MySQL access, keys, CLI), migrations/ (plain SQL), scripts/build.ts (esbuild)
 ```
 
 ## Hard rules
