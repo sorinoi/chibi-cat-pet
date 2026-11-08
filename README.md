@@ -144,7 +144,7 @@ npm run dev
 | `npm run dist` | Build plus the NSIS installer in `dist/` |
 | `npm run icons:build` | Regenerate `resources/*.png` and `build/icon.ico` |
 | `npm run sprite:prepare -- <in.png> <out.png> [cols] [rows]` | Clean a sprite sheet and print its cell boxes |
-| `npm run sprite:regrid -- <in.png> <out.png> [scale] [cols] [rows]` | Rebuild an off-spec sheet: clear a hazy background, cut frames by their art, 224 px grid, feet on one line |
+| `npm run sprite:regrid -- <in.png> <out.png> [scale] [cols] [rows] [--painted-background]` | Rebuild an off-spec sheet: clear a hazy background, cut frames by their art, 224 px grid, feet on one line. `--painted-background` first clears a "transparent" checkerboard painted into an opaque image |
 | `npm run readme:art` | Re-render the animated README images in `docs/images/` |
 
 Run `typecheck`, `lint` and `test` before committing.
