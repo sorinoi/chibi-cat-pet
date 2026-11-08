@@ -47,6 +47,8 @@ export const IpcChannel = {
   CareChanged: 'care:changed',
   /** settings -> main (invoke): name -> CareView | null (null = name not usable). */
   CareRename: 'care:rename',
+  /** settings -> main (invoke): look id -> CareView | null (requirement-v7.md FR-107). */
+  CareSetLook: 'care:set-look',
   /** settings -> main (invoke): confirm, wipe, open adoption -> boolean (wiped). */
   CareAdoptNew: 'care:adopt-new',
   /** settings -> main (send): open the adoption window (no pet yet). */
@@ -225,6 +227,8 @@ export interface SettingsApi {
   onCareChanged(listener: (view: CareView | null) => void): () => void
   /** Resolves null when the name is not usable. */
   renamePet(name: string): Promise<CareView | null>
+  /** requirement-v7.md FR-107: repaints the cat; resolves null without a cat. */
+  setLook(look: string): Promise<CareView | null>
   /** Asks for confirmation; on yes deletes the pet and opens adoption. Resolves true if wiped. */
   adoptNew(): Promise<boolean>
   openAdopt(): void
@@ -274,5 +278,5 @@ export type ActivityTestResult =
 /** API exposed to the adoption window as `window.adoptApi`. */
 export interface AdoptApi extends LanguageApi {
   /** Resolves false when the name is not usable. */
-  adopt(name: string): Promise<boolean>
+  adopt(name: string, look: string): Promise<boolean>
 }

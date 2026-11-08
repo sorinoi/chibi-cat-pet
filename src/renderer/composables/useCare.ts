@@ -6,6 +6,8 @@ export interface UseCare {
   pet: Ref<CareView | null | undefined>
   /** Resolves false when the name was not usable. */
   rename(name: string): Promise<boolean>
+  /** requirement-v7.md FR-107: repaints the cat. */
+  setLook(look: string): Promise<void>
   adoptNew(): Promise<void>
   openAdopt(): void
 }
@@ -31,6 +33,10 @@ export function useCare(): UseCare {
       const view = await api.renamePet(name)
       if (view) pet.value = view
       return view !== null
+    },
+    async setLook(look) {
+      const view = await api.setLook(look)
+      if (view) pet.value = view
     },
     async adoptNew() {
       await api.adoptNew()

@@ -338,4 +338,12 @@ describe('care engine: look (requirement-v7.md FR-103, FR-107)', () => {
     again.load()
     expect(again.current()?.look).toBe('gray')
   })
+
+  it('adopts with a look; a new adoption starts with the look it is given (FR-103, FR-106)', () => {
+    const e = engine()
+    e.load()
+    expect(e.adopt('Mochi', 'gray').look).toBe('gray')
+    e.wipe()
+    expect(e.adopt('Tama').look).toBeNull()
+  })
 })

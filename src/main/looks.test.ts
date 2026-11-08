@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { ACTIVE_MODEL } from '../shared/activeModel'
+import { LANGUAGES, stringsFor } from '../shared/strings'
 
 const MODELS = join(__dirname, '..', '..', 'assets', 'models')
 
@@ -29,4 +30,13 @@ describe('shipped looks share one layout (requirement-v7.md FR-101)', () => {
       }
     })
   }
+})
+
+describe('look names (requirement-v7.md FR-100, NFR-43)', () => {
+  it('every shipped look has a name in English and Thai', () => {
+    for (const look of Object.keys(ACTIVE_MODEL.looks)) {
+      for (const lang of LANGUAGES)
+        expect(stringsFor(lang).looks[look], `${lang} ${look}`).toBeTruthy()
+    }
+  })
 })

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import LookPreview from '../components/LookPreview.vue'
 import { useCare } from '../composables/useCare'
+import { ACTIVE_MODEL } from '../../shared/activeModel'
+import { lookOf } from '../../shared/modelConfig'
 import { CARE } from '../../shared/careConfig'
 import { moodLabel, percent } from '../../shared/careText'
 import { sanitizeName } from '../../shared/petRecord'
@@ -14,7 +17,12 @@ const props = defineProps<{
   /** FR-53: show the treat stock while treats are on. */
   showTreats: boolean
 }>()
-const { pet, rename, adoptNew, openAdopt } = useCare()
+const { pet, rename, setLook, adoptNew, openAdopt } = useCare()
+
+/** requirement-v7.md FR-107: the looks, default first; the cat's look (null = default). */
+const looks = Object.keys(ACTIVE_MODEL.looks)
+const currentLook = computed(() => lookOf(ACTIVE_MODEL, pet.value?.look ?? null))
+const LOOK_PREVIEW_SIZE = 40
 const text = computed(() => props.text.settings)
 
 const draft = ref('')
@@ -52,6 +60,21 @@ async function saveName(): Promise<void> {
       </form>
       <p v-if="invalid" class="error">{{ text.nameInvalid(CARE.nameMaxLength) }}</p>
 
+      <div v-if="looks.length > 1" class="looks" role="radiogroup" :aria-label="text.look">
+        <span class="looks-label">{{ text.look }}</span>
+        <label v-for="id in looks" :key="id" class="look" :class="{ on: id === currentLook }">
+          <input
+            type="radio"
+            name="look"
+            :value="id"
+            :checked="id === currentLook"
+            @change="setLook(id)"
+          />
+          <LookPreview :look="id" :size="LOOK_PREVIEW_SIZE" />
+          <span>{{ props.text.looks[id] ?? id }}</span>
+        </label>
+      </div>
+
       <div class="bar">
         <span>{{ text.fed }}</span>
         <meter min="0" max="100" low="30" optimum="100" :value="pet.needs.hunger" />
@@ -87,8 +110,8 @@ async function saveName(): Promise<void> {
 
 <style scoped>
 .pet {
-  margin-bottom: 22px;
-  padding-bottom: 18px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
   border-bottom: 1px solid #e2ddd6;
 }
 
@@ -112,6 +135,45 @@ h2 {
   border: 1px solid #c9c2b8;
   border-radius: 6px;
   user-select: text;
+}
+
+.looks {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -4px 0 6px;
+}
+
+.looks-label {
+  width: 56px;
+  flex: none;
+}
+
+.look {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px 4px 3px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.look.on {
+  border-color: #e8893a;
+  background: #fff;
+}
+
+.look:has(input:focus-visible) {
+  outline: 2px solid #1d6fd6;
+  outline-offset: 1px;
+}
+
+.look input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .bar {

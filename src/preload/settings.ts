@@ -16,6 +16,7 @@ const settingsApi: SettingsApi = {
   getCare: () => ipcRenderer.invoke(IpcChannel.CareGet),
   onCareChanged: (listener) => subscribe<CareView | null>(IpcChannel.CareChanged, listener),
   renamePet: (name) => ipcRenderer.invoke(IpcChannel.CareRename, name),
+  setLook: (look) => ipcRenderer.invoke(IpcChannel.CareSetLook, look),
   adoptNew: () => ipcRenderer.invoke(IpcChannel.CareAdoptNew),
   openAdopt: () => ipcRenderer.send(IpcChannel.CareOpenAdopt),
   getFocus: () => ipcRenderer.invoke(IpcChannel.FocusGet),

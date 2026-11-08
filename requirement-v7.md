@@ -82,7 +82,7 @@ Same phase approval rule as before.
 | Phase | Work | Gate | Status |
 | --- | --- | --- | --- |
 | V7-M1 | Looks in the model config, pet.json `look`, scene loads a look's sheets, layout test; `sprite:recolor` with one test variant (not shipped until approved) | The cat can be drawn in the test variant with no change in size, feet or wall anchors; tests pass | Done 2026-11-08, approved |
-| V7-M2 | Look picker in the adoption window and Settings, IPC, strings TH/EN | Adopt with a look, change it later, survives a restart; memory released | - |
+| V7-M2 | Look picker in the adoption window and Settings, IPC, strings TH/EN | Adopt with a look, change it later, survives a restart; memory released | Done 2026-11-08, approved |
 | V7-M3 | Final looks (recolored and approved by the user, or new art from the user), README, installer 7.0.0, upgrade from 6.0.0 (the cat keeps its look `orange`) | Acceptance criteria below pass | - |
 
 ## 11. Acceptance criteria (v7)

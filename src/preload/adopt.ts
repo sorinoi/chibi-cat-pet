@@ -4,7 +4,7 @@ import type { Language } from '../shared/strings'
 
 /** The adoption window can adopt (FR-22) and follow the UI language; nothing else. */
 const adoptApi: AdoptApi = {
-  adopt: (name) => ipcRenderer.invoke(IpcChannel.CareAdopt, name),
+  adopt: (name, look) => ipcRenderer.invoke(IpcChannel.CareAdopt, name, look),
   getLanguage: () => ipcRenderer.invoke(IpcChannel.AppGetLanguage),
   onLanguageChanged: (listener) => {
     const handler = (_event: IpcRendererEvent, language: Language): void => listener(language)

@@ -13,6 +13,7 @@ import { createPetMotion } from './petMotion'
 import { createPetWindow } from './petWindow'
 import { createWindowList } from './windowList'
 import { ACTIVE_MODEL } from '../shared/activeModel'
+import { LOOK_ID } from '../shared/modelConfig'
 import { lockDownWebContents } from './security'
 import { createSettingsStore } from './settingsStore'
 import { createAdoptWindowManager, createSettingsWindowManager } from './settingsWindow'
@@ -38,6 +39,15 @@ let tray: Tray | null = null
 /** `"Desktop Pet.exe" --settings` opens the settings window (also when already running). */
 const SETTINGS_FLAG = '--settings'
 let onSecondInstance: (argv: readonly string[]) => void = () => {}
+
+/** requirement-v7.md FR-103: a look id this model has, or null (the default). */
+const knownLook = (look: unknown): string | null =>
+  typeof look === 'string' &&
+  LOOK_ID.test(look) &&
+  look !== ACTIVE_MODEL.defaultLook &&
+  ACTIVE_MODEL.looks[look]
+    ? look
+    : null
 
 const toView = (s: CareSnapshot | null): CareView | null =>
   s && {
@@ -203,10 +213,10 @@ function start(): void {
 
   const careUi: CareUi = {
     view: () => toView(care.current()),
-    adopt(name) {
+    adopt(name, look) {
       if (hasPet()) return false
       try {
-        care.adopt(name)
+        care.adopt(name, knownLook(look))
       } catch {
         return false
       }
@@ -217,6 +227,8 @@ function start(): void {
       return true
     },
     rename: (name) => toView(care.rename(name)),
+    // requirement-v7.md FR-107: only looks this version has.
+    setLook: (look) => (care.setLook(knownLook(look)) ? toView(care.current()) : null),
     async adoptNew() {
       const parent = settingsWindow.get()
       const t = text().readopt

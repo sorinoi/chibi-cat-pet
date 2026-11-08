@@ -57,7 +57,9 @@ export interface ActivityUi {
 export interface CareUi {
   view(): CareView | null
   /** FR-22/23: false when the name is not usable or a pet already exists. */
-  adopt(name: string): boolean
+  adopt(name: string, look: unknown): boolean
+  /** requirement-v7.md FR-107. */
+  setLook(look: string): CareView | null
   rename(name: string): CareView | null
   /** FR-25: confirm, wipe, open adoption. */
   adoptNew(): Promise<boolean>
@@ -122,14 +124,18 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
     return bonus && { counted: bonus.counted, refused: false }
   })
 
-  ipcMain.handle(IpcChannel.CareAdopt, (event, name: unknown) => {
+  ipcMain.handle(IpcChannel.CareAdopt, (event, name: unknown, look: unknown) => {
     if (!fromAdopt(event) || typeof name !== 'string') return false
-    return careUi.adopt(name)
+    return careUi.adopt(name, look)
   })
   ipcMain.handle(IpcChannel.CareGet, (event) => (fromSettings(event) ? careUi.view() : null))
   ipcMain.handle(IpcChannel.CareRename, (event, name: unknown) => {
     if (!fromSettings(event) || typeof name !== 'string') return null
     return careUi.rename(name)
+  })
+  ipcMain.handle(IpcChannel.CareSetLook, (event, look: unknown) => {
+    if (!fromSettings(event) || typeof look !== 'string') return null
+    return careUi.setLook(look)
   })
   ipcMain.handle(IpcChannel.CareAdoptNew, (event) =>
     fromSettings(event) ? careUi.adoptNew() : false
@@ -196,6 +202,7 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
       IpcChannel.CareAdopt,
       IpcChannel.CareGet,
       IpcChannel.CareRename,
+      IpcChannel.CareSetLook,
       IpcChannel.CareAdoptNew,
       IpcChannel.SettingsGet,
       IpcChannel.SettingsUpdate,

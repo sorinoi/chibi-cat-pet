@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { spriteSheetUrl } from '../models/registry'
+import { computed, ref } from 'vue'
+import LookPreview from '../components/LookPreview.vue'
 import { ACTIVE_MODEL } from '../../shared/activeModel'
 import { CARE } from '../../shared/careConfig'
 import { nameLength, sanitizeName } from '../../shared/petRecord'
@@ -15,7 +15,10 @@ useDocumentLanguage(
 const name = ref('')
 const busy = ref(false)
 const failed = ref(false)
-const preview = ref<HTMLCanvasElement | null>(null)
+/** requirement-v7.md FR-106: the looks, default first, and the one picked. */
+const looks = Object.keys(ACTIVE_MODEL.looks)
+const look = ref(ACTIVE_MODEL.defaultLook)
+const LOOK_PREVIEW_SIZE = 84
 
 const length = computed(() => nameLength(name.value.trim()))
 const valid = computed(() => sanitizeName(name.value) !== null)
@@ -24,49 +27,27 @@ async function adopt(): Promise<void> {
   if (!valid.value || busy.value) return
   busy.value = true
   failed.value = false
-  const ok = await window.adoptApi.adopt(name.value)
+  const ok = await window.adoptApi.adopt(name.value, look.value)
   // On success main closes this window; on failure let the user try again.
   if (!ok) {
     failed.value = true
     busy.value = false
   }
 }
-
-/** Draws the cat's first idle frame as a preview of who is being adopted. */
-onMounted(async () => {
-  const el = preview.value
-  const clip = ACTIVE_MODEL.clips.idle
-  const sheet = ACTIVE_MODEL.sheets[clip.sheet]
-  if (!el || !sheet) return
-  const img = new Image()
-  img.src = spriteSheetUrl(sheet.file)
-  await img.decode()
-  const ctx = el.getContext('2d')
-  if (!ctx) return
-  const dpr = window.devicePixelRatio
-  el.width = el.clientWidth * dpr
-  el.height = el.clientHeight * dpr
-  ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(
-    img,
-    clip.column * sheet.cellWidth,
-    clip.row * sheet.cellHeight,
-    sheet.cellWidth,
-    sheet.cellHeight,
-    0,
-    0,
-    el.width,
-    el.height
-  )
-})
 </script>
 
 <template>
   <main class="adopt">
-    <canvas ref="preview" class="preview" aria-hidden="true" />
     <h1>{{ text.heading }}</h1>
     <p class="intro">{{ text.intro }}</p>
     <form @submit.prevent="adopt">
+      <div class="looks" role="radiogroup" :aria-label="text.lookLabel">
+        <label v-for="id in looks" :key="id" class="look" :class="{ on: id === look }">
+          <input v-model="look" type="radio" name="look" :value="id" />
+          <LookPreview :look="id" :size="LOOK_PREVIEW_SIZE" />
+          <span>{{ strings.looks[id] ?? id }}</span>
+        </label>
+      </div>
       <label for="name">{{ text.nameLabel }}</label>
       <div class="row">
         <input
@@ -105,15 +86,49 @@ body {
   text-align: center;
 }
 
-.preview {
-  width: 150px;
-  height: 150px;
+.looks {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.look {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 4px 6px 6px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.look.on {
+  border-color: #e8893a;
+  background: #fff;
+}
+
+.look:has(input:focus-visible) {
+  outline: 2px solid #1d6fd6;
+  outline-offset: 2px;
+}
+
+.look input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.look span {
+  font-size: 12px;
 }
 
 h1 {
   font-size: 18px;
   font-weight: 600;
-  margin: 4px 0 6px;
+  margin: 8px 0 6px;
 }
 
 .intro {

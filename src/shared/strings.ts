@@ -75,6 +75,7 @@ const EN = {
     mood: 'Mood',
     adoptedOn: (date: string): string => `Adopted on ${date}`,
     adoptNew: 'Adopt a new cat…',
+    look: 'Coat',
     noPet: 'You have no cat yet.',
     hungerReminder: 'Remind me when the cat is hungry',
     adopt: 'Adopt a cat…',
@@ -89,10 +90,18 @@ const EN = {
     hungryNoticeTitle: (name: string): string => `${name} is hungry`,
     hungryNoticeBody: "Feed them from the cat's menu or the tray menu."
   },
+  /** requirement-v7.md FR-100: look (coat) names by look id. */
+  looks: {
+    orange: 'Orange',
+    gray: 'Gray tabby',
+    black: 'Black',
+    white: 'White'
+  } as Record<string, string>,
   adopt: {
     title: 'Adopt a cat',
     heading: 'A cat is looking for a home',
-    intro: 'Give your new cat a name. You can change it later in Settings.',
+    intro: 'Pick a coat and give your new cat a name. You can change both later in Settings.',
+    lookLabel: 'Coat',
     nameLabel: 'Name',
     placeholder: 'e.g. Mochi',
     button: 'Adopt',
@@ -246,6 +255,7 @@ const TH: Strings = {
     mood: 'อารมณ์',
     adoptedOn: (date: string): string => `รับเลี้ยงเมื่อ ${date}`,
     adoptNew: 'รับเลี้ยงแมวตัวใหม่…',
+    look: 'สีขน',
     noPet: 'คุณยังไม่มีน้องแมว',
     hungerReminder: 'แจ้งเตือนเมื่อน้องแมวหิว',
     adopt: 'รับเลี้ยงแมว…',
@@ -260,10 +270,17 @@ const TH: Strings = {
     hungryNoticeTitle: (name: string): string => `${name}หิวแล้ว`,
     hungryNoticeBody: 'ให้อาหารได้จากเมนูคลิกขวาที่ตัวแมว หรือเมนู tray'
   },
+  looks: {
+    orange: 'ส้ม',
+    gray: 'เทาลายสลิด',
+    black: 'ดำ',
+    white: 'ขาว'
+  },
   adopt: {
     title: 'รับเลี้ยงแมว',
     heading: 'มีน้องแมวกำลังหาบ้านอยู่',
-    intro: 'ตั้งชื่อให้น้องแมวตัวใหม่ เปลี่ยนชื่อทีหลังได้ในหน้าตั้งค่า',
+    intro: 'เลือกสีขนและตั้งชื่อให้น้องแมวตัวใหม่ เปลี่ยนได้ทีหลังในหน้าตั้งค่า',
+    lookLabel: 'สีขน',
     nameLabel: 'ชื่อ',
     placeholder: 'เช่น มะลิ',
     button: 'รับเลี้ยง',

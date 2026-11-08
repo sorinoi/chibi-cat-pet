@@ -39,7 +39,7 @@ export interface CareEngine {
   /** While true, needs drop at the sleep rate (the user is away, FR-07). */
   setAsleep(asleep: boolean): void
   /** FR-22/23. Replaces nothing: call wipe() first to re-adopt. */
-  adopt(name: string): CareSnapshot
+  adopt(name: string, look?: string | null): CareSnapshot
   /** FR-24: returns the new snapshot, or null when the name is not usable or there is no pet. */
   rename(name: string): CareSnapshot | null
   /** FR-25/32: deletes the pet and its file now. */
@@ -188,8 +188,8 @@ export function createCareEngine({
       saveSoon()
     },
 
-    adopt(name) {
-      record = createPet(name, now(), config)
+    adopt(name, look = null) {
+      record = { ...createPet(name, now(), config), look }
       lastPetAt = null
       lastClickAt = null
       save()
