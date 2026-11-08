@@ -20,6 +20,7 @@ Decisions made:
 - v5: gravity (a dropped cat falls to the taskbar), window perches (the cat sits and walks on other windows' top edges), jump and climb (needs cat-move.png). Requirements: requirement-v5.md (approved 2026-11-07; done and accepted 2026-11-08, released as 5.0.0).
 - v6: activity log. Care and focus events go to the user's own server (Node + MySQL on a VPS, pm2) when the user turns it on, with an offline outbox and a web dashboard. This allows one kind of network call (requirement-v6.md section 7) and changes NFR-06/07 as noted there. Requirements: requirement-v6.md (approved 2026-11-08; V6-M1..M3 done and approved 2026-11-08, V6-M4 deploy and V6-M5 release to come).
 - v7: choose the cat's look (coat color); looks share the current sprite layout. Requirements: requirement-v7.md (approved 2026-11-08; done and accepted 2026-11-08 before V6-M4/M5, released as 7.0.0 together with the v6 app side).
+- v8: a livelier cat: more walking toward open space, hop runs with the user's cat-jump.png, an Activity setting (Calm / Normal / Lively). Requirements: requirement-v8.md (approved 2026-11-08, not started).
 
 ## 2. Scope
 

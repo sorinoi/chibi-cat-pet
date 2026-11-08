@@ -13,6 +13,7 @@ Communicate with the user in Thai, casual and friendly, no rude or vulgar langua
 - v5.0 (done and accepted 2026-11-08): gravity (a dropped cat falls to the taskbar) and window perches (sits and walks on other windows' top edges), no new art; jump and climb (art: cat-move.png from the user); all approved 2026-11-07; see `requirement-v5.md`.
 - v6 (approved 2026-11-08; V6-M1 client done and approved 2026-11-08; V6-M2 server API done and approved 2026-11-08; V6-M3 dashboard done and approved 2026-11-08; V6-M4 deploy next): activity log. With "Send activity to my server" on (off by default) the app sends care and focus events to the user's own server; offline they wait in an outbox file. The server (`server/`, Node + Fastify + MySQL, pm2 on the user's VPS) stores them and serves a dashboard. Built and deployed apart from the desktop app; see `requirement-v6.md`.
 - v7 (approved 2026-11-08; done 2026-11-08 before V6-M4/M5 because the VPS is not ready, user decision; installer 7.0.0, which also carries v6's activity log; accepted 2026-11-08): choose the cat's look (coat color). Looks share the current layout, only the image files differ; picker at adoption and in Settings; saved in pet.json; `sprite:recolor` makes variants the user approves; see `requirement-v7.md`.
+- v8 (approved 2026-11-08, not started): a livelier cat. Walks more often and farther, toward the side with more room; hop runs along the floor or a perch with the user's `cat-jump.png` (main lifts the window in small arcs, the art's shadows removed); Activity setting Calm / Normal / Lively; see `requirement-v8.md`.
 - v3.0 (done and accepted 2026-11-06): Pomodoro focus timer + Thai/English UI, see `requirement-v3.md`. The timer is not linked to pet care; the cat keeps living as usual and only reacts at phase changes.
 - Out of scope: macOS/Linux, multiple pets at once, cloud sync back to the app, accounts for other people, shop/marketplace/plugins.
 - Requirement IDs (FR-xx, NFR-xx) come from the requirement doc. Reference them in commits and PRs when relevant.
@@ -154,6 +155,8 @@ v4 requirements are in `requirement-v4.md` (V4-M1..M5; M1-M2 need no art). Appro
 v5 requirements are in `requirement-v5.md` (V5-M1..M6; M1-M3 need no art). Approved by the user on 2026-11-07. Same phase approval rule.
 
 v6 requirements are in `requirement-v6.md` (V6-M1..M5: client, server API, dashboard, deploy, polish). Approved by the user on 2026-11-08, including the server deps fastify, mysql2 and esbuild (dev). Same phase approval rule.
+
+v8 requirements are in `requirement-v8.md` (V8-M1..M4: walking more and the Activity setting, hop art, hop runs, polish and release). Approved by the user on 2026-11-08 as written. Same phase approval rule.
 
 v7 requirements are in `requirement-v7.md` (V7-M1..M3: looks and recolor tool, picker, final looks and release). Approved by the user on 2026-11-08 as written (open questions on their defaults). Done before V6-M4 and V6-M5 (user, 2026-11-08: the VPS is not ready). Same phase approval rule.
 
