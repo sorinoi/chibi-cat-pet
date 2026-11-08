@@ -49,7 +49,7 @@ export const ORANGE_COAT: CoatRange = {
 export const LOOK_PRESETS: Record<string, CoatColor> = {
   gray: { hue: 215, sat: 0.07, lightScale: 0.86, lightShift: 0 },
   black: { hue: 225, sat: 0.06, lightScale: 0.32, lightShift: 0.02 },
-  white: { hue: 35, sat: 0.35, lightScale: 0.2, lightShift: 0.74 }
+  white: { hue: 38, sat: 0.2, lightScale: 0.14, lightShift: 0.81 }
 }
 
 const clamp01 = (v: number): number => Math.min(1, Math.max(0, v))

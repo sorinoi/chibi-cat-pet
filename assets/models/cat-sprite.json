@@ -48,7 +48,9 @@
   "walkFacing": "right",
   "defaultLook": "orange",
   "looks": {
-    "gray": { "main": "cat-sprite-gray.png", "care": "cat-care-gray.png", "focus": "cat-focus-gray.png", "life": "cat-life-gray.png", "move": "cat-move-gray.png" }
+    "gray": { "main": "cat-sprite-gray.png", "care": "cat-care-gray.png", "focus": "cat-focus-gray.png", "life": "cat-life-gray.png", "move": "cat-move-gray.png" },
+    "black": { "main": "cat-sprite-black.png", "care": "cat-care-black.png", "focus": "cat-focus-black.png", "life": "cat-life-black.png", "move": "cat-move-black.png" },
+    "white": { "main": "cat-sprite-white.png", "care": "cat-care-white.png", "focus": "cat-focus-white.png", "life": "cat-life-white.png", "move": "cat-move-white.png" }
   },
   "clips": {
     "idle": { "sheet": "main", "row": 0, "frames": 8, "loop": true, "frameMs": [1400, 300, 150, 150, 600, 200, 300, 1200] },

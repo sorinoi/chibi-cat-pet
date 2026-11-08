@@ -1,6 +1,6 @@
 # Requirement v7: Choose the cat's look
 
-Status: APPROVED by the user on 2026-11-08 as written (open questions on their defaults). Started 2026-11-08 before V6-M4 and V6-M5 (user decision: the VPS is not ready); v6 is finished after v7. Open questions (section 13) use the defaults written here until decided. v6 (requirement-v6.md) stays the base: everything in v1 to v6 keeps working.
+Status: APPROVED by the user on 2026-11-08 as written (open questions on their defaults). Built and accepted 2026-11-08, released as 7.0.0. Started 2026-11-08 before V6-M4 and V6-M5 (user decision: the VPS is not ready); v6 is finished after v7. Open questions (section 13) use the defaults written here until decided. v6 (requirement-v6.md) stays the base: everything in v1 to v6 keeps working.
 
 ## 1. Overview
 
@@ -83,15 +83,15 @@ Same phase approval rule as before.
 | --- | --- | --- | --- |
 | V7-M1 | Looks in the model config, pet.json `look`, scene loads a look's sheets, layout test; `sprite:recolor` with one test variant (not shipped until approved) | The cat can be drawn in the test variant with no change in size, feet or wall anchors; tests pass | Done 2026-11-08, approved |
 | V7-M2 | Look picker in the adoption window and Settings, IPC, strings TH/EN | Adopt with a look, change it later, survives a restart; memory released | Done 2026-11-08, approved |
-| V7-M3 | Final looks (recolored and approved by the user, or new art from the user), README, installer 7.0.0, upgrade from 6.0.0 (the cat keeps its look `orange`) | Acceptance criteria below pass | - |
+| V7-M3 | Final looks (recolored and approved by the user, or new art from the user), README, installer 7.0.0, upgrade from 6.0.0 (the cat keeps its look `orange`) | Acceptance criteria below pass | Done 2026-11-08, accepted |
 
 ## 11. Acceptance criteria (v7)
 
-- [ ] The adoption window shows every look and the cat appears in the chosen one.
-- [ ] Settings changes the look at once; name, needs, treats, position and focus are untouched.
-- [ ] Every look plays every clip, with feet and wall paws exactly where the default's are.
-- [ ] Upgrading from 6.0.0 keeps the cat and shows it as `orange`.
-- [ ] Idle CPU and RAM still meet NFR-01; changing looks does not grow memory.
+- [x] The adoption window shows every look and the cat appears in the chosen one.
+- [x] Settings changes the look at once; name, needs, treats, position and focus are untouched.
+- [x] Every look plays every clip, with feet and wall paws exactly where the default's are. (Recolor keeps alpha, so every cell's outline is identical; checked on the canvas in V7-M1.)
+- [x] Upgrading keeps the cat and shows it as `orange`. (6.0.0 was never released; checked over the installed 5.0.0, section 14.)
+- [x] Idle CPU and RAM still meet NFR-01; changing looks does not grow memory.
 
 ## 12. Risks
 
@@ -107,3 +107,12 @@ Defaults are used until the user decides:
 - Can the look change after adoption? (default: yes, in Settings.)
 - Send the look with activity events (needs event schema version 2 and a server change)? (default: no in 7.0.)
 - When: decided 2026-11-08: before finishing v6 (V6-M4 deploy, V6-M5 release wait for the VPS).
+
+## 14. Measurements and release checks (V7-M3, 2026-11-08)
+
+- Looks: orange (the original art), gray tabby, black, white, all made with `sprite:recolor` and approved by the user from side-by-side previews. Presets in scripts/lib/recolor.mts (white tuned to hue 38, sat 0.2, lightness x 0.14 + 0.81). Known trade-off: the brown kibble in the bowl and, in gray, the orange long-break mug change color too; a tighter value range would keep them but left 2-2.5x more orange edge pixels on every frame.
+- Version 7.0.0 (user decision 2026-11-08): the v6 activity log ships in it; the v6 server deploy (V6-M4) waits for the user's VPS. Installer `dist/desktop-pet-setup-7.0.0.exe` 124.3 MB (5.0.0: 112.2 MB; about 4.4 MB per extra look).
+- NFR-01 (production build, isolated data, gray cat, 60 s, all processes): CPU 0.176 % of the machine, private RAM 187.6 MB. Pass.
+- NFR-40/42: 12 look changes from Settings, 2-6 ms each over IPC; right after, 608 MB in total (GPU process 386 MB of textures); 60 s later 210 MB (GPU 116 MB). The pet scene's JS heap stayed flat over 40 changes after a forced GC (V7-M1). No growth.
+- Upgrade over the installed 5.0.0 (with the user's OK): `/S` exit 0, Uninstall entry 7.0.0, settings.json and pet.json byte-identical after install; launched: only the pet window, the cat sOrinOi back with look null (orange) and a new pet id, no .bad file, activity log off. The data seen from the Claude session is the sandboxed copy (as for 4.0.0 and 5.0.0).
+

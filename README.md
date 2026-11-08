@@ -7,7 +7,7 @@
 **A little cat that lives on your Windows desktop, wants you to look after it, and cheers on your focus sessions.**<br>
 **แมวน้อยที่มาอยู่บนเดสก์ท็อป Windows ของคุณ รอให้คุณดูแล และคอยเชียร์ตอนคุณโฟกัสทำงาน**
 
-![version](https://img.shields.io/badge/version-5.0.0-f4a261)
+![version](https://img.shields.io/badge/version-7.0.0-f4a261)
 ![platform](https://img.shields.io/badge/platform-Windows%20x64-2a9d8f)
 ![offline](https://img.shields.io/badge/works-100%25%20offline-264653)
 ![stack](https://img.shields.io/badge/Electron%20%2B%20Vue%203-TypeScript-6c757d)
@@ -61,6 +61,18 @@ Every animation below is rendered straight from the app's sprite sheets.<br>
     <td align="center"><img src="docs/images/clip-climb.png" width="128" alt="climb"><br><sub><b>climb</b><br>ปีนขอบจอ</sub></td>
     <td align="center"><img src="docs/images/clip-hang.png" width="128" alt="hang"><br><sub><b>hang</b><br>เกาะผนัง</sub></td>
     <td></td>
+  </tr>
+</table>
+
+Pick a coat when you adopt, or change it later in Settings.<br>
+เลือกสีขนตอนรับเลี้ยง หรือเปลี่ยนทีหลังในหน้าตั้งค่า
+
+<table align="center">
+  <tr>
+    <td align="center"><img src="docs/images/look-orange.png" width="128" alt="orange"><br><sub><b>orange</b><br>ส้ม</sub></td>
+    <td align="center"><img src="docs/images/look-gray.png" width="128" alt="gray tabby"><br><sub><b>gray tabby</b><br>เทาลายสลิด</sub></td>
+    <td align="center"><img src="docs/images/look-black.png" width="128" alt="black"><br><sub><b>black</b><br>ดำ</sub></td>
+    <td align="center"><img src="docs/images/look-white.png" width="128" alt="white"><br><sub><b>white</b><br>ขาว</sub></td>
   </tr>
 </table>
 
@@ -133,6 +145,22 @@ Every animation below is rendered straight from the app's sprite sheets.<br>
 - ⚙️ Each part can be turned off in Settings ("Fall down when dropped", "Land and sit on other
   windows", "Jump and climb now and then"). With gravity off the cat behaves like v4.
 
+**Activity log (v6, optional)**
+
+- 📡 Off by default. Turn on "Send activity to my server" in Settings to send feeding,
+  petting, treats and focus sessions to **your own** server (see [server/](server/)): a small
+  Node + MySQL API with a web dashboard (charts of fed and happy over time, care and focus per
+  day, an event list; Thai and English).
+- 📴 Without a connection, events wait in a small queue on your PC and go out later. The cat
+  works exactly the same with the switch off, offline or with the server down.
+- 🔐 Only to the address you typed, `https://` only (plain http just for this PC or your home
+  network); the API key is stored encrypted for your Windows user.
+
+**Coats (v7)**
+
+- 🎨 Four coats: orange, gray tabby, black and white. Pick one when you adopt, or change it any
+  time in Settings > Your cat; the cat repaints at once and keeps its name, needs and treats.
+
 ### Install
 
 **[Download the latest installer](https://github.com/sorinoi/chibi-cat-pet/releases/latest)**
@@ -146,9 +174,9 @@ anyway_. The release page lists the file's SHA-256 if you want to check the down
 
 | | |
 | --- | --- |
-| Your data | `%APPDATA%\desktop-pet` (`settings.json`, `pet.json`, `focus.json` with your focus count for the last 30 days), removed on uninstall |
+| Your data | `%APPDATA%\desktop-pet` (`settings.json`, `pet.json` with your cat and its coat, `focus.json` with your focus count for the last 30 days; with the activity log on also `outbox.jsonl`, `device.json`, `activity-key.bin`), removed on uninstall |
 | Open settings | `"Desktop Pet.exe" --settings`, also while the app is running |
-| Privacy | No network, no telemetry, no account. Nothing leaves your PC |
+| Privacy | No telemetry, no account. Nothing leaves your PC unless you turn on the activity log, and then only to your own server |
 | Tested on | Windows 11, one monitor. Windows 10 is the target but untested |
 
 ### Development
@@ -173,6 +201,7 @@ npm run dev
 | `npm run sprite:prepare -- <in.png> <out.png> [cols] [rows]` | Clean a sprite sheet and print its cell boxes |
 | `npm run sprite:regrid -- <in.png> <out.png> [scale] [cols] [rows] [--painted-background]` | Rebuild an off-spec sheet: clear a hazy background, cut frames by their art, 224 px grid, feet on one line. `--painted-background` first clears a "transparent" checkerboard painted into an opaque image |
 | `npm run readme:art` | Re-render the animated README images in `docs/images/` |
+| `npm run sprite:recolor -- <look>` | Make a coat-color variant of every sprite sheet, with a side-by-side preview in `dist/` |
 
 Run `typecheck`, `lint` and `test` before committing.
 
@@ -253,6 +282,16 @@ Pet-care tuning lives in `src/shared/careConfig.ts`, focus timer defaults in
 - 🦘 **กระโดดและปีน** เป็นบางครั้ง: กระโดดขึ้นหน้าต่างที่อยู่ในระยะ กระโดดลงจากหน้าต่าง หรือปีนขอบจอขึ้นไปเกาะค้างไว้สักครู่แล้วปล่อยตัวลงมา
 - ⚙️ ปิดแต่ละอย่างได้ในหน้าตั้งค่า ("ปล่อยแล้วตกลงพื้น" "ลงไปนั่งบนหน้าต่างอื่นได้" "กระโดดและปีนบ้างเป็นครั้งคราว") ถ้าปิดแรงโน้มถ่วง น้องจะทำตัวเหมือน v4
 
+**บันทึกกิจกรรม (v6 เปิดเองได้)**
+
+- 📡 ค่าเริ่มต้นปิด ถ้าเปิด "ส่งกิจกรรมไปที่ server ของฉัน" ในหน้าตั้งค่า การให้อาหาร ลูบหัว ให้ขนม และรอบโฟกัสจะถูกส่งไปที่ server **ของคุณเอง** (ดู [server/](server/)) ซึ่งเป็น API เล็ก ๆ บน Node + MySQL พร้อมหน้า dashboard (กราฟความอิ่มและความสุข การดูแลและรอบโฟกัสต่อวัน รายการเหตุการณ์ ไทยและอังกฤษ)
+- 📴 ถ้าไม่มีเน็ต รายการจะรอในคิวเล็ก ๆ บนเครื่องแล้วส่งตามไปทีหลัง ปิดสวิตช์ ไม่มีเน็ต หรือ server ล่ม น้องแมวก็ทำงานเหมือนเดิมทุกอย่าง
+- 🔐 ส่งเฉพาะที่อยู่ที่คุณใส่เอง ต้องเป็น `https://` (http ธรรมดาใช้ได้แค่เครื่องนี้หรือวง LAN ในบ้าน) และ API key ถูกเข้ารหัสเก็บไว้กับผู้ใช้ Windows ของคุณ
+
+**สีขน (v7)**
+
+- 🎨 สีขน 4 แบบ: ส้ม เทาลายสลิด ดำ และขาว เลือกตอนรับเลี้ยง หรือเปลี่ยนเมื่อไหร่ก็ได้ในหน้าตั้งค่า > น้องแมวของคุณ น้องเปลี่ยนสีทันที ชื่อ ความอิ่ม ความสุข และขนมยังอยู่ครบ
+
 ### ติดตั้ง
 
 **[ดาวน์โหลดตัวติดตั้งล่าสุด](https://github.com/sorinoi/chibi-cat-pet/releases/latest)** (ไฟล์ `desktop-pet-setup-<version>.exe` ในหัวข้อ _Assets_) แล้วรันได้เลย
@@ -263,9 +302,9 @@ Pet-care tuning lives in `src/shared/careConfig.ts`, focus timer defaults in
 
 | | |
 | --- | --- |
-| ข้อมูลของคุณ | `%APPDATA%\desktop-pet` (`settings.json`, `pet.json`, `focus.json` ที่เก็บจำนวนรอบโฟกัสย้อนหลัง 30 วัน) ลบออกเมื่อถอนการติดตั้ง |
+| ข้อมูลของคุณ | `%APPDATA%\desktop-pet` (`settings.json`, `pet.json` ที่เก็บน้องแมวและสีขน, `focus.json` ที่เก็บจำนวนรอบโฟกัสย้อนหลัง 30 วัน ถ้าเปิดบันทึกกิจกรรมจะมี `outbox.jsonl`, `device.json`, `activity-key.bin` ด้วย) ลบออกเมื่อถอนการติดตั้ง |
 | เปิดหน้าตั้งค่า | `"Desktop Pet.exe" --settings` ใช้ได้แม้แอปเปิดอยู่ |
-| ความเป็นส่วนตัว | ไม่ใช้เน็ต ไม่เก็บสถิติ ไม่มีบัญชี ข้อมูลไม่ออกจากเครื่อง |
+| ความเป็นส่วนตัว | ไม่เก็บสถิติ ไม่มีบัญชี ข้อมูลไม่ออกจากเครื่อง เว้นแต่คุณเปิดบันทึกกิจกรรม ซึ่งจะส่งไปที่ server ของคุณเองเท่านั้น |
 | ทดสอบแล้วบน | Windows 11 จอเดียว (Windows 10 เป็นเป้าหมาย แต่ยังไม่ได้ทดสอบ) |
 
 ### พัฒนาต่อ
@@ -291,6 +330,8 @@ npm run dev
 | [requirement-v3.md](requirement-v3.md) | Focus timer and Thai/English UI |
 | [requirement-v4.md](requirement-v4.md) | Livelier cat, focus history and treats, hungry reminder |
 | [requirement-v5.md](requirement-v5.md) | Gravity, window perches, jump and climb |
+| [requirement-v6.md](requirement-v6.md) | Activity log server and dashboard |
+| [requirement-v7.md](requirement-v7.md) | Coats (looks) and the recolor tool |
 | [WORK-LOG.md](WORK-LOG.md) | Progress log and where to resume |
 | [CLAUDE.md](CLAUDE.md) · [AGENTS.md](AGENTS.md) | Working rules for coding agents |
 
@@ -301,5 +342,5 @@ artwork is included. See [cat-sprite.LICENSE.txt](assets/models/cat-sprite.LICEN
 ภาพแมวสร้างโดยเจ้าของโปรเจกต์ด้วย Claude (claude.ai) ไม่มีภาพจากบุคคลอื่น
 
 <div align="center">
-<sub>v5.0.0 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
+<sub>v7.0.0 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
 </div>

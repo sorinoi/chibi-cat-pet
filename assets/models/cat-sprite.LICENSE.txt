@@ -34,7 +34,7 @@ checkerboard was painted into an opaque image, with
 the image border up to the cat's outline, grey edge pixels un-blended, then the usual regrid
 (221.75 px cells; scale 0.75 matches the other sheets). Pixels are only moved and resampled.
 
-Looks (v7): cat-sprite-gray.png, cat-care-gray.png, cat-focus-gray.png, cat-life-gray.png,
-cat-move-gray.png are the sheets above recolored with `npm run sprite:recolor -- gray`
+Looks (v7): cat-*-gray.png, cat-*-black.png and cat-*-white.png (5 sheets each) are the sheets
+above recolored with `npm run sprite:recolor -- gray|black|white`
 (scripts/lib/recolor.mts): only the orange coat pixels get a new hue, saturation and lightness;
 alpha, outlines, cream fur and props are unchanged. Same source and terms as above.

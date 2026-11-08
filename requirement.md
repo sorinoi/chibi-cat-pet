@@ -19,7 +19,7 @@ Decisions made:
 - v4: hungry notification, focus history, optional focus treats, sad/look/stretch/yawn clips, 8-hour memory run. Requirements: requirement-v4.md (approved 2026-11-06, released as 4.0.0, accepted 2026-11-07 with the 8-hour run NFR-22 deferred).
 - v5: gravity (a dropped cat falls to the taskbar), window perches (the cat sits and walks on other windows' top edges), jump and climb (needs cat-move.png). Requirements: requirement-v5.md (approved 2026-11-07; done and accepted 2026-11-08, released as 5.0.0).
 - v6: activity log. Care and focus events go to the user's own server (Node + MySQL on a VPS, pm2) when the user turns it on, with an offline outbox and a web dashboard. This allows one kind of network call (requirement-v6.md section 7) and changes NFR-06/07 as noted there. Requirements: requirement-v6.md (approved 2026-11-08; V6-M1..M3 done and approved 2026-11-08, V6-M4 deploy and V6-M5 release to come).
-- v7: choose the cat's look (coat color); looks share the current sprite layout. Requirements: requirement-v7.md (approved 2026-11-08; started 2026-11-08 before V6-M4/M5, which wait for the VPS).
+- v7: choose the cat's look (coat color); looks share the current sprite layout. Requirements: requirement-v7.md (approved 2026-11-08; done and accepted 2026-11-08 before V6-M4/M5, released as 7.0.0 together with the v6 app side).
 
 ## 2. Scope
 

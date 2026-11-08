@@ -226,3 +226,15 @@ const heroFile = join(OUT_DIR, 'hero.png')
 const heroPng = toApng(hero, contentBox(hero), HERO_SCALE)
 writeFileSync(heroFile, heroPng)
 console.log(`${heroFile}  ${hero.length} frames  ${(heroPng.length / 1024).toFixed(0)} KB`)
+
+// requirement-v7.md: one idle preview per look for the README "Coats" row (same box as the clips).
+for (const [look, files] of Object.entries(model.looks)) {
+  for (const [name, file] of Object.entries(files)) {
+    sheetImages.set(name, decodePng(readFileSync(join(MODEL_DIR, file))))
+  }
+  const cels = clipCels('idle')
+  const file = join(OUT_DIR, `look-${look}.png`)
+  const png = toApng(cels, sharedBox, CLIP_SCALE)
+  writeFileSync(file, png)
+  console.log(`${file}  ${cels.length} frames  ${(png.length / 1024).toFixed(0)} KB`)
+}
