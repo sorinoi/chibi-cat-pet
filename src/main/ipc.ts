@@ -11,6 +11,7 @@ import {
   type ActivityView,
   type CareAct,
   type CareView,
+  type HopRequest,
   type SettingsSnapshot,
   type WalkRequest
 } from '../shared/ipc'
@@ -22,6 +23,21 @@ import { canStartWithWindows } from './applySettings'
 
 const isCareAct = (value: unknown): value is CareAct =>
   value === 'feed' || value === 'pet' || value === 'click' || value === 'treat'
+
+/** requirement-v8.md FR-114: a hop run request (main clamps the numbers). */
+function isHopRequest(value: unknown): value is HopRequest {
+  if (typeof value !== 'object' || value === null) return false
+  const { count, distance, roll } = value as Record<string, unknown>
+  return (
+    typeof count === 'number' &&
+    Number.isFinite(count) &&
+    typeof distance === 'number' &&
+    Number.isFinite(distance) &&
+    typeof roll === 'number' &&
+    roll >= 0 &&
+    roll <= 1
+  )
+}
 
 function isWalkRequest(value: unknown): value is WalkRequest {
   if (typeof value !== 'object' || value === null) return false
@@ -101,6 +117,9 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
   ipcMain.on(IpcChannel.PetClimbStop, (event) => {
     if (fromPet(event)) motion.stopClimb()
   })
+  ipcMain.on(IpcChannel.PetHopStop, (event) => {
+    if (fromPet(event)) motion.stopHops()
+  })
   ipcMain.on(IpcChannel.PetLookWatch, (event, on: unknown) => {
     if (fromPet(event) && typeof on === 'boolean') ctx.setLookWatch(on)
   })
@@ -113,6 +132,9 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
   })
   ipcMain.handle(IpcChannel.PetJumpStart, (event) => (fromPet(event) ? motion.startJump() : null))
   ipcMain.handle(IpcChannel.PetClimbStart, (event) => (fromPet(event) ? motion.startClimb() : null))
+  ipcMain.handle(IpcChannel.PetHopStart, (event, request: unknown) =>
+    fromPet(event) && isHopRequest(request) ? motion.startHops(request) : null
+  )
 
   ipcMain.handle(IpcChannel.CareAct, (event, act: unknown) => {
     if (!fromPet(event) || !isCareAct(act)) return null
@@ -196,6 +218,7 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
       IpcChannel.PetWalkStop,
       IpcChannel.PetJumpStop,
       IpcChannel.PetClimbStop,
+      IpcChannel.PetHopStop,
       IpcChannel.PetShowContextMenu,
       IpcChannel.PetLookWatch,
       IpcChannel.CareOpenAdopt
@@ -206,6 +229,7 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
       IpcChannel.PetWalkStart,
       IpcChannel.PetJumpStart,
       IpcChannel.PetClimbStart,
+      IpcChannel.PetHopStart,
       IpcChannel.CareAct,
       IpcChannel.CareAdopt,
       IpcChannel.CareGet,

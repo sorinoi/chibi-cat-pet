@@ -29,6 +29,11 @@ export const BEHAVIOR = {
       hopChance: 1 / 3
     }
   },
+  /**
+   * requirement-v8.md FR-114, NFR-48: a hop run is 2-5 hops of 40-80 DIP each (pet size 1), and
+   * never starts within minIntervalMs of the last one.
+   */
+  hop: { count: { min: 2, max: 5 }, distance: { min: 40, max: 80 }, minIntervalMs: 20_000 },
   /** DIP per second at pet size 1.0, roughly matched to the walk frames' stride. */
   walkSpeed: 45,
   /** Pointer travel (DIP) before a press becomes a drag instead of a click. */

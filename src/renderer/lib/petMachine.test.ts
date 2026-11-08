@@ -290,3 +290,20 @@ describe('falling (requirement-v5.md section 10)', () => {
     expect(clipFor('fall')).toBe('fall')
   })
 })
+
+describe('hop runs (requirement-v8.md FR-114, FR-115)', () => {
+  it('a wander becomes a hop run that ends standing', () => {
+    expect(run('idle', ['hopRun'])).toBe('hop')
+    expect(clipFor('hop')).toBe('hop')
+    expect(run('idle', ['hopRun', 'clipFinished'])).toBe('hop') // the next hop follows
+    expect(run('idle', ['hopRun', 'landed'])).toBe('idle')
+  })
+
+  it('can be caught or fall; nothing else interrupts', () => {
+    expect(transition('hop', 'dragStart')).toBe('drag')
+    expect(transition('hop', 'fallStart')).toBe('fall')
+    for (const event of ['click', 'feed', 'sleep', 'wander', 'jump', 'climbWander'] as const) {
+      expect(transition('hop', event)).toBeNull()
+    }
+  })
+})

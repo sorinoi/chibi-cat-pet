@@ -117,7 +117,8 @@ function start(): void {
       onSettled: (position) => store.setPosition(position), // FR-04, FR-63
       onFallStart: () => sendToPet(IpcChannel.PetFallStart),
       onLanded: () => sendToPet(IpcChannel.PetLanded),
-      onClimbPhase: (phase) => sendToPet(IpcChannel.PetClimbPhase, phase)
+      onClimbPhase: (phase) => sendToPet(IpcChannel.PetClimbPhase, phase),
+      onHopStep: (index) => sendToPet(IpcChannel.PetHopStep, index)
     },
     {
       gravity: () => store.settings.gravity,

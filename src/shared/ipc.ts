@@ -85,6 +85,12 @@ export const IpcChannel = {
   PetClimbStop: 'pet:climb-stop',
   /** main -> pet: ClimbPhase, when the cat reaches the wall and the top (FR-76). */
   PetClimbPhase: 'pet:climb-phase',
+  /** pet -> main (invoke): HopRequest -> HopStarted | null (requirement-v8.md FR-114). */
+  PetHopStart: 'pet:hop-start',
+  /** pet -> main (send): the pet could not show the hops; end the run. */
+  PetHopStop: 'pet:hop-stop',
+  /** main -> pet: number, the hop that starts now (0-based): play the hop clip once. */
+  PetHopStep: 'pet:hop-step',
   /** settings -> main (invoke): -> ActivityView (requirement-v6.md FR-87). */
   ActivityGet: 'activity:get',
   /** main -> settings: ActivityView, after every change. */
@@ -158,6 +164,20 @@ export interface ClimbStarted {
   side: 'left' | 'right'
 }
 
+/** requirement-v8.md FR-114: a hop run the pet asks for (distance in DIP at pet size 1). */
+export interface HopRequest {
+  count: number
+  distance: number
+  /** Random 0..1 for the direction (patrol, FR-111). */
+  roll: number
+}
+
+/** A hop run main has started: how many hops fit, and which way. */
+export interface HopStarted {
+  hops: number
+  direction: 1 | -1
+}
+
 /** climb: at the wall, going up; hold: at the top, holding on (then a fall). */
 export type ClimbPhase = 'climb' | 'hold'
 
@@ -196,6 +216,11 @@ export interface PetApi extends LanguageApi {
   stopClimb(): void
   /** Returns an unsubscribe function. */
   onClimbPhase(listener: (phase: ClimbPhase) => void): () => void
+  /** requirement-v8.md FR-114, FR-115. */
+  startHops(request: HopRequest): Promise<HopStarted | null>
+  stopHops(): void
+  /** Returns an unsubscribe function. */
+  onHopStep(listener: (index: number) => void): () => void
   /** Starts walking. Resolves with the distance actually planned after clamping (0 = no room). */
   startWalk(request: WalkRequest): Promise<number>
   stopWalk(): void

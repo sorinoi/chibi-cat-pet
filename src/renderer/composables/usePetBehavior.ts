@@ -33,7 +33,14 @@ const FOCUS_CUE: Record<FocusReaction, PetEvent> = {
 }
 
 /** States in which main moves the cat on its own; care waits until it stands (FR-62, FR-77). */
-const MOVING: ReadonlySet<PetState> = new Set<PetState>(['fall', 'jump', 'toWall', 'climb', 'hang'])
+const MOVING: ReadonlySet<PetState> = new Set<PetState>([
+  'fall',
+  'jump',
+  'toWall',
+  'climb',
+  'hang',
+  'hop'
+])
 
 /** Optional clips play only when the model has them (no fallback for sad and yawn). */
 const hasClip = (clip: ClipName): boolean => ACTIVE_MODEL.clips[clip] !== undefined
@@ -96,6 +103,7 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     else if (action === 'yawn') dispatch('nightYawn')
     else if (moveDue('jump', now)) void tryJump()
     else if (moveDue('climb', now)) void tryClimb()
+    else if (hopDue(now)) void tryHop()
     else dispatch('wander')
   }
 
@@ -108,6 +116,35 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     const { cooldownMs } = BEHAVIOR.jump
     if (lastMoveAt !== null && now - lastMoveAt < cooldownMs) return false
     return Math.random() < BEHAVIOR[kind].chance
+  }
+
+  /** requirement-v8.md FR-114, NFR-48: a wander becomes a hop run by the Activity level's chance. */
+  let lastHopAt: number | null = null
+  function hopDue(now: number): boolean {
+    if (!hasClip('hop')) return false
+    if (lastHopAt !== null && now - lastHopAt < BEHAVIOR.hop.minIntervalMs) return false
+    return Math.random() < level().hopChance
+  }
+
+  /** Main hops the cat along if there is room; otherwise it wanders. */
+  async function tryHop(): Promise<void> {
+    const { count, distance } = BEHAVIOR.hop
+    const started = await api.startHops({
+      count: Math.round(randomBetween(count.min, count.max)),
+      distance: randomBetween(distance.min, distance.max),
+      roll: Math.random()
+    })
+    if (state.value !== 'idle') {
+      if (started) api.stopHops()
+      return
+    }
+    if (!started) {
+      dispatch('wander')
+      return
+    }
+    lastHopAt = Date.now()
+    scene.setFacing(started.direction > 0 ? 'right' : 'left')
+    dispatch('hopRun')
   }
 
   /** Main walks the cat to a screen edge and climbs if it fits; otherwise it wanders. */
@@ -353,6 +390,10 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
       api.onFallStart(() => dispatch('fallStart')),
       api.onLanded(() => dispatch('landed')),
       api.onClimbPhase((phase) => dispatch(phase === 'climb' ? 'atWall' : 'holdPoint')),
+      // FR-115: main's clock: one play of the hop clip per hop.
+      api.onHopStep(() => {
+        if (state.value === 'hop') scene.play('hop')
+      }),
       api.onUserIdleChanged((idle) => {
         userIdle = idle
         dispatch(idle ? 'sleep' : 'wake')
@@ -401,6 +442,10 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
           if (state.value === 'idle') void tryJump()
         },
         // Try a climb now, without the chance or the cooldown (FR-76).
+        // Try a hop run now, without the chance or the interval (requirement-v8.md FR-114).
+        hopNow: () => {
+          if (state.value === 'idle') void tryHop()
+        },
         climbNow: () => {
           if (state.value === 'idle') void tryClimb()
         },

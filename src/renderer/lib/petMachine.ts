@@ -62,6 +62,8 @@ export type PetEvent =
   | 'jump'
   /** Main started a climb chosen instead of a wander: walking to the wall (FR-76). */
   | 'climbWander'
+  /** Main started a hop run chosen instead of a wander (requirement-v8.md FR-114). */
+  | 'hopRun'
   /** The cat reached the wall and climbs. */
   | 'atWall'
   /** The cat reached the top and holds on. */
@@ -105,6 +107,7 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
     sleep: 'sleep',
     jump: 'jump',
     climbWander: 'toWall',
+    hopRun: 'hop',
     ...canFall,
     ...careActions,
     ...focusCues
@@ -133,7 +136,7 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
   toWall: { atWall: 'climb', dragStart: 'drag', fallStart: 'fall', landed: 'idle' },
   climb: { holdPoint: 'hang', dragStart: 'drag', fallStart: 'fall', landed: 'land' },
   hang: { fallStart: 'fall', dragStart: 'drag', landed: 'land' },
-  // requirement-v8.md FR-115: hop runs come in V8-M3; a catch or a fall interrupts them.
+  // requirement-v8.md FR-115: a hop run ends with landed; a catch or a fall interrupts it.
   hop: { dragStart: 'drag', fallStart: 'fall', landed: 'idle' },
   land: {
     clipFinished: 'idle',

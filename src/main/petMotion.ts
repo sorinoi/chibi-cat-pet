@@ -1,5 +1,5 @@
 import { screen, type BrowserWindow, type Point, type Rectangle } from 'electron'
-import { MOTION, PET_WINDOW, WALL } from './config'
+import { MOTION, PET_WINDOW, HOP_TIMING, WALL } from './config'
 import {
   allowedArea,
   clampPosition,
@@ -15,6 +15,7 @@ import {
   type Rect,
   type Size
 } from './lib/placement'
+import { hopProgress, planHops } from './lib/hops'
 import {
   findLanding,
   followPerch,
@@ -32,7 +33,15 @@ import {
   type JumpQuery
 } from './lib/jumps'
 import { climbRise, planClimb } from './lib/climbs'
-import type { ClimbPhase, ClimbStarted, JumpStarted, WalkEnded, WalkRequest } from '../shared/ipc'
+import type {
+  ClimbPhase,
+  ClimbStarted,
+  HopRequest,
+  HopStarted,
+  JumpStarted,
+  WalkEnded,
+  WalkRequest
+} from '../shared/ipc'
 import type { Position } from '../shared/settings'
 
 export interface PetMotion {
@@ -61,6 +70,10 @@ export interface PetMotion {
    * onFallStart follows when it ends; a lost target turns into a fall (FR-74).
    */
   startJump(): JumpStarted | null
+  /** requirement-v8.md FR-114: plans and starts a hop run (null when no hop fits). */
+  startHops(request: HopRequest): HopStarted | null
+  /** Ends a hop run where the cat is (it lands, or falls). */
+  stopHops(): void
   /** The pet could not show the jump after all: end it (falling if in the air). */
   stopJump(): void
   /**
@@ -89,6 +102,8 @@ export interface PetMotionEvents {
   onLanded(): void
   /** FR-76: the climbing cat reached the wall (climb) or the top (hold). */
   onClimbPhase(phase: ClimbPhase): void
+  /** requirement-v8.md FR-115: hop number `index` of the run starts now. */
+  onHopStep(index: number): void
 }
 
 export interface PetMotionOptions {
@@ -169,6 +184,7 @@ export function createPetMotion(
   let perchFastUntil = 0
   let jumpTimer: NodeJS.Timeout | null = null
   let climbTimer: NodeJS.Timeout | null = null
+  let hopTimer: NodeJS.Timeout | null = null
 
   function areaAt(point: Point): Area {
     const { workArea } = screen.getDisplayNearestPoint(point)
@@ -221,6 +237,15 @@ export function createPetMotion(
     if (!climbTimer) return false
     clearInterval(climbTimer)
     climbTimer = null
+    settled()
+    return true
+  }
+
+  /** Returns true if a hop run was going (the cat may be in the air). */
+  function cancelHops(): boolean {
+    if (!hopTimer) return false
+    clearInterval(hopTimer)
+    hopTimer = null
     settled()
     return true
   }
@@ -325,11 +350,18 @@ export function createPetMotion(
     const result = followPerch({ ...geometry(), offsetX, areaAt }, target, front, displays())
     if (result.lost || !target) {
       finishWalk(false)
+      cancelHops() // requirement-v8.md FR-115: the perch went away mid-run
       if (startFall()) events.onFallStart()
       else events.onLanded()
       return
     }
     if (moved) perchFastUntil = Date.now() + MOTION.perch.fastForMs
+    // During a hop the cat is in the air on purpose: keep the perch, move nothing.
+    if (hopTimer) {
+      perch = { id: current.id, rect: target.rect, offsetX: current.offsetX }
+      schedulePerchCheck()
+      return
+    }
     if (result.x !== bounds.x || result.y !== bounds.y) {
       finishWalk(false) // riding beats walking
       moveTo(result.x, result.y)
@@ -372,7 +404,8 @@ export function createPetMotion(
     walkTimer !== null ||
     fallTimer !== null ||
     jumpTimer !== null ||
-    climbTimer !== null
+    climbTimer !== null ||
+    hopTimer !== null
 
   /** FR-76: plans and starts a climb; see PetMotion.startClimb. */
   function startClimb(): ClimbStarted | null {
@@ -442,6 +475,65 @@ export function createPetMotion(
       }
     }, c.intervalMs)
     return { side: plan.side }
+  }
+
+  /**
+   * requirement-v8.md FR-114, FR-115: a run of hops along the floor or the perch edge. Each hop
+   * crouches in place, flies a small arc, then stands; the pet plays the hop clip at each
+   * hop-step. The perch watcher keeps checking the perch but does not move the cat meanwhile.
+   */
+  function startHops({ count, distance, roll }: HopRequest): HopStarted | null {
+    if (busy() || win.isDestroyed() || !win.isVisible() || HOP_TIMING === null) return null
+    const timing = HOP_TIMING
+    const h = MOTION.hop
+    const hops = Math.min(h.maxCount, Math.max(1, Math.round(count)))
+    const each = Math.min(h.maxDistance, Math.max(h.minHop, distance)) * scale
+    const bounds = win.getBounds()
+    const area = areaAt(centerOf(bounds))
+    const { size, edgeMargin } = geometry()
+    const hopArea = perch ? perchWalkArea(area, perch.rect, size, edgeMargin) : area
+    const direction = patrolDirection(
+      bounds.x,
+      hopArea,
+      each * hops,
+      lastWalkDirection,
+      roll,
+      MOTION.patrolKeepChance
+    )
+    const xs = planHops({
+      x: bounds.x,
+      area: hopArea,
+      direction,
+      count: hops,
+      distance: each,
+      minHop: h.minHop * scale
+    })
+    if (xs.length === 0) return null
+    lastWalkDirection = direction
+
+    const y = bounds.y
+    const lift = size.height * h.liftFactor
+    let index = 0
+    let fromX = bounds.x
+    let hopStartedAt = Date.now()
+    events.onHopStep(0)
+    hopTimer = setInterval(() => {
+      const elapsed = Date.now() - hopStartedAt
+      const toX = xs[index] ?? fromX
+      const p = arcPoint({ x: fromX, y }, { x: toX, y }, lift, hopProgress(elapsed, timing))
+      moveTo(p.x, p.y)
+      if (elapsed < timing.totalMs) return
+      index++
+      fromX = toX
+      if (index >= xs.length) {
+        cancelHops()
+        events.onLanded()
+        return
+      }
+      hopStartedAt = Date.now()
+      events.onHopStep(index)
+    }, h.intervalMs)
+    return { hops: xs.length, direction }
   }
 
   /** FR-73..75: plans and starts a jump; see PetMotion.startJump. */
@@ -518,6 +610,12 @@ export function createPetMotion(
   return {
     startJump,
 
+    startHops,
+
+    stopHops() {
+      if (cancelHops()) fallOrLand()
+    },
+
     stopJump() {
       if (cancelJump()) fallOrLand()
     },
@@ -532,6 +630,7 @@ export function createPetMotion(
       finishWalk(false)
       cancelJump() // caught mid-jump
       cancelClimb() // picked off the wall
+      cancelHops() // caught mid-hop (requirement-v8.md FR-115)
       stopFall() // FR-62: caught in the air
       clearPerch() // picked up off a perch
       endDrag()
@@ -565,11 +664,12 @@ export function createPetMotion(
       stopFall()
       cancelJump() // settle() picks it up again when shown
       cancelClimb()
+      cancelHops()
       clearPerch()
     },
 
     startWalk({ dx, speed, roll }) {
-      if (dragTimer || fallTimer || jumpTimer || climbTimer) return 0
+      if (dragTimer || fallTimer || jumpTimer || climbTimer || hopTimer) return 0
       if (!Number.isFinite(dx) || !Number.isFinite(speed) || speed <= 0) return 0
       finishWalk(false)
       const bounds = win.getBounds()
@@ -620,7 +720,7 @@ export function createPetMotion(
       if (next === scale || win.isDestroyed()) return
       finishWalk(false)
       const wasFalling = stopFall()
-      const wasJumping = cancelJump() || cancelClimb()
+      const wasJumping = cancelJump() || cancelClimb() || cancelHops()
       const resized = resizeKeepingFeet(win.getBounds(), petWindowSize(next))
       scale = next
       const pos = clampPosition(resized.x, resized.y, areaAt(centerOf(resized)))
@@ -641,6 +741,8 @@ export function createPetMotion(
       jumpTimer = null
       if (climbTimer) clearInterval(climbTimer)
       climbTimer = null
+      if (hopTimer) clearInterval(hopTimer)
+      hopTimer = null
       clearPerch()
     }
   }

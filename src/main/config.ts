@@ -1,5 +1,6 @@
 import { ACTIVE_MODEL } from '../shared/activeModel'
 import { modelFrame } from '../shared/modelConfig'
+import { hopTiming, type HopTiming } from './lib/hops'
 
 /** Main-process constants. Sizes are in DIP (device-independent pixels). */
 
@@ -16,6 +17,14 @@ function wallShare(name: 'climb' | 'hang'): number | null {
   const sheet = ACTIVE_MODEL.sheets[clip.sheet]
   return ((clip.wallX - sheet.anchor.x) * sheet.scale) / frame.width
 }
+
+/**
+ * requirement-v8.md FR-114: one hop's crouch, air and landing time from the hop clip (frames
+ * 2-5 are in the air); null without hop art (no hops, FR-113).
+ */
+export const HOP_TIMING: HopTiming | null = ACTIVE_MODEL.clips.hop
+  ? hopTiming(ACTIVE_MODEL.clips.hop.frameMs, 2, 5)
+  : null
 
 /** Wall points of the climb and hang clips; null without climb art (no climbing, FR-76). */
 export const WALL = { climb: wallShare('climb'), hang: wallShare('hang') ?? wallShare('climb') }
@@ -85,6 +94,18 @@ export const MOTION = {
     downClearanceFactor: 0.6,
     /** Within this many DIP of an end of the walkable stretch counts as "at the end". */
     endSlack: 8
+  },
+  /** requirement-v8.md FR-114: hop runs. Distances in DIP at pet size 1.0. */
+  hop: {
+    /** Window step in the air (~30 Hz, NFR-02). */
+    intervalMs: 33,
+    /** Top of each hop's arc, as a share of the pet window height. */
+    liftFactor: 0.3,
+    /** A hop shorter than this ends the run (at the edge of the area). */
+    minHop: 20,
+    /** Longest run and hop the pet may ask for (requests are clamped). */
+    maxCount: 5,
+    maxDistance: 120
   },
   /** requirement-v5.md FR-76: climbing a screen edge. Speeds in DIP/s at pet size 1.0. */
   climb: {
