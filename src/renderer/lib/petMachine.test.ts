@@ -190,6 +190,30 @@ describe('look at the mouse (requirement-v4.md FR-56)', () => {
   })
 })
 
+describe('climbing (requirement-v5.md FR-76, FR-77)', () => {
+  it('walks to the wall, climbs, holds on and lets go', () => {
+    expect(run('idle', ['climbWander'])).toBe('toWall')
+    expect(clipFor('toWall')).toBe('walk')
+    expect(run('idle', ['climbWander', 'atWall'])).toBe('climb')
+    expect(run('idle', ['climbWander', 'atWall', 'holdPoint'])).toBe('hang')
+    expect(run('idle', ['climbWander', 'atWall', 'holdPoint', 'fallStart', 'landed'])).toBe('land')
+  })
+
+  it('can be caught on the way and on the wall; nothing else interrupts', () => {
+    for (const state of ['toWall', 'climb', 'hang'] as const) {
+      expect(transition(state, 'dragStart')).toBe('drag')
+      for (const event of ['click', 'feed', 'sleep', 'wander', 'cueFocusDone', 'jump'] as const) {
+        expect(transition(state, event)).toBeNull()
+      }
+    }
+  })
+
+  it('a climb main ends early falls from the wall, or is just over on the floor', () => {
+    expect(transition('climb', 'fallStart')).toBe('fall')
+    expect(transition('toWall', 'landed')).toBe('idle')
+  })
+})
+
 describe('jumping (requirement-v5.md section 10)', () => {
   it('jumps from idle and ends standing or falling', () => {
     expect(transition('idle', 'jump')).toBe('jump')

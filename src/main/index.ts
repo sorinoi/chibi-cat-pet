@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { createAppActions, resourcePath } from './appActions'
 import { createCareEngine, type CareSnapshot } from './careEngine'
 import { applySettings } from './applySettings'
-import { APP_USER_MODEL_ID, FOCUS_FILE, PET_FILE, RESOURCES, STORE } from './config'
+import { APP_USER_MODEL_ID, FOCUS_FILE, PET_FILE, RESOURCES, STORE, WALL } from './config'
 import { createFocusEngine, toFocusView } from './focusEngine'
 import { createCursorWatcher } from './cursorWatcher'
 import { registerIpcHandlers, type CareUi } from './ipc'
@@ -85,7 +85,8 @@ function start(): void {
       onWalkEnded: (event) => sendToPet(IpcChannel.PetWalkEnded, event),
       onSettled: (position) => store.setPosition(position), // FR-04, FR-63
       onFallStart: () => sendToPet(IpcChannel.PetFallStart),
-      onLanded: () => sendToPet(IpcChannel.PetLanded)
+      onLanded: () => sendToPet(IpcChannel.PetLanded),
+      onClimbPhase: (phase) => sendToPet(IpcChannel.PetClimbPhase, phase)
     },
     {
       gravity: () => store.settings.gravity,
@@ -93,7 +94,8 @@ function start(): void {
       windows: () => (store.settings.sitOnWindows ? windowList.list() : []),
       inspectWindow: (id, probe) => windowList.inspect(id, probe),
       // FR-78: only with the setting on and the art present.
-      jumps: () => store.settings.jumpAndClimb && ACTIVE_MODEL.clips.jump !== undefined
+      jumps: () => store.settings.jumpAndClimb && ACTIVE_MODEL.clips.jump !== undefined,
+      climbs: () => store.settings.jumpAndClimb && WALL.climb !== null
     }
   )
 

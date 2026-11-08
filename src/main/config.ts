@@ -6,6 +6,20 @@ import { modelFrame } from '../shared/modelConfig'
 const { displayScale, edgeOverflow } = ACTIVE_MODEL
 const frame = modelFrame(ACTIVE_MODEL)
 
+/**
+ * requirement-v5.md section 8: distance from the pet window's centre line to where the paws
+ * touch the wall, as a share of the window width (the frame is fitted to the window).
+ */
+function wallShare(name: 'climb' | 'hang'): number | null {
+  const clip = ACTIVE_MODEL.clips[name]
+  if (clip?.wallX === undefined) return null
+  const sheet = ACTIVE_MODEL.sheets[clip.sheet]
+  return ((clip.wallX - sheet.anchor.x) * sheet.scale) / frame.width
+}
+
+/** Wall points of the climb and hang clips; null without climb art (no climbing, FR-76). */
+export const WALL = { climb: wallShare('climb'), hang: wallShare('hang') ?? wallShare('climb') }
+
 export const PET_WINDOW = {
   /** Size at pet size 1.0: the model frame that fits every sprite sheet. */
   width: Math.round(frame.width * displayScale),
@@ -69,6 +83,21 @@ export const MOTION = {
     downClearanceFactor: 0.6,
     /** Within this many DIP of an end of the walkable stretch counts as "at the end". */
     endSlack: 8
+  },
+  /** requirement-v5.md FR-76: climbing a screen edge. Speeds in DIP/s at pet size 1.0. */
+  climb: {
+    intervalMs: 33,
+    /** Walking to the wall, like a normal walk. */
+    walkSpeed: 45,
+    /** At the wall, the climb clip's intro (sit, reach, leap) plays before it goes up. */
+    startDelayMs: 950,
+    climbSpeed: 70,
+    /** Climb height: a random share of the work area height. */
+    riseShare: { minShare: 0.25, maxShare: 0.75 },
+    /** Climbs shorter than this many pet window heights are not worth starting. */
+    minRiseFactor: 0.5,
+    /** Holding on at the top before letting go. */
+    holdMs: { min: 2000, max: 5000 }
   },
   /**
    * How far the window may hang past the work area edge at pet size 1.0: the cell's

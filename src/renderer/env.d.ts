@@ -12,6 +12,8 @@ interface PetDebug {
   wanderNow(): void
   /** Try a jump now (requirement-v5.md FR-73). */
   jumpNow(): void
+  /** Try a climb now (requirement-v5.md FR-76). */
+  climbNow(): void
   setUserIdle(idle: boolean): void
   /** Feed a cursor position as if main sent it (look at the mouse). */
   cursor(position: CursorNear): void

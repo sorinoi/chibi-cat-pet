@@ -2,12 +2,15 @@ import type { ClipName } from '../../shared/modelConfig'
 
 /**
  * Pet behavior states. Each state plays the clip of the same name, except `welcome`
- * (the adoption scene, FR-23), which plays `pet` and then moves on to `happy`.
+ * (the adoption scene, FR-23), which plays `pet` and then moves on to `happy`, and
+ * `toWall` (walking to a screen edge to climb it, requirement-v5.md FR-76), which plays `walk`.
  */
-export type PetState = ClipName | 'welcome'
+export type PetState = ClipName | 'welcome' | 'toWall'
 
 export function clipFor(state: PetState): ClipName {
-  return state === 'welcome' ? 'pet' : state
+  if (state === 'welcome') return 'pet'
+  if (state === 'toWall') return 'walk'
+  return state
 }
 
 export type PetEvent =
@@ -57,6 +60,12 @@ export type PetEvent =
   | 'landed'
   /** Main started a jump chosen instead of a wander (FR-73, FR-75). */
   | 'jump'
+  /** Main started a climb chosen instead of a wander: walking to the wall (FR-76). */
+  | 'climbWander'
+  /** The cat reached the wall and climbs. */
+  | 'atWall'
+  /** The cat reached the top and holds on. */
+  | 'holdPoint'
 
 /** FR-63: any cat at rest or in a reaction may be found in the air and fall (wakes it too). */
 const canFall = { fallStart: 'fall' } as const
@@ -95,6 +104,7 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
     cursorNear: 'look',
     sleep: 'sleep',
     jump: 'jump',
+    climbWander: 'toWall',
     ...canFall,
     ...careActions,
     ...focusCues
@@ -118,6 +128,11 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
   // FR-73..75, FR-77: a jump ends standing (land) or falling (off a perch, or the target was
   // lost, FR-74); only a catch interrupts it.
   jump: { landed: 'land', fallStart: 'fall', dragStart: 'drag' },
+  // FR-76, FR-77: walk to the wall, climb, hold on, let go (fall). Only a catch interrupts;
+  // a climb main ends early (hidden, resized) falls or, still on the floor, is just over.
+  toWall: { atWall: 'climb', dragStart: 'drag', fallStart: 'fall', landed: 'idle' },
+  climb: { holdPoint: 'hang', dragStart: 'drag', fallStart: 'fall', landed: 'land' },
+  hang: { fallStart: 'fall', dragStart: 'drag', landed: 'land' },
   land: {
     clipFinished: 'idle',
     ...canFall,

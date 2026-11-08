@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import {
   IpcChannel,
   type CareRequest,
+  type ClimbPhase,
   type CareView,
   type CursorNear,
   type PetApi,
@@ -25,6 +26,9 @@ const petApi: PetApi = {
   onLanded: (listener) => subscribe<void>(IpcChannel.PetLanded, () => listener()),
   startJump: () => ipcRenderer.invoke(IpcChannel.PetJumpStart),
   stopJump: () => ipcRenderer.send(IpcChannel.PetJumpStop),
+  startClimb: () => ipcRenderer.invoke(IpcChannel.PetClimbStart),
+  stopClimb: () => ipcRenderer.send(IpcChannel.PetClimbStop),
+  onClimbPhase: (listener) => subscribe<ClimbPhase>(IpcChannel.PetClimbPhase, listener),
   startWalk: (request) => ipcRenderer.invoke(IpcChannel.PetWalkStart, request),
   stopWalk: () => ipcRenderer.send(IpcChannel.PetWalkStop),
   onWalkEnded: (listener) => subscribe<WalkEnded>(IpcChannel.PetWalkEnded, listener),

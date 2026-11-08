@@ -16,9 +16,10 @@ export type LifeClip = (typeof LIFE_CLIPS)[number]
 
 /**
  * Optional v5 movement clips (requirement-v5.md section 9): `fall` plays `drag` until art
- * exists; without `jump` the cat does not jump (FR-73, FR-75).
+ * exists; without `jump` the cat does not jump (FR-73, FR-75), without `climb` it does not
+ * climb (FR-76); `hang` falls back to `climb`.
  */
-export const MOVE_CLIPS = ['fall', 'jump'] as const
+export const MOVE_CLIPS = ['fall', 'jump', 'climb', 'hang'] as const
 export type MoveClip = (typeof MOVE_CLIPS)[number]
 
 export const CLIP_NAMES = [
@@ -40,7 +41,9 @@ const CLIP_FALLBACK: Partial<Record<ClipName, ClipName>> = {
   // FR-58: the morning stretch falls back to happy.
   stretch: 'happy',
   // requirement-v5.md FR-60: a falling cat dangles like a carried one.
-  fall: 'drag'
+  fall: 'drag',
+  // FR-76: holding on to the wall without its own art keeps climbing in place.
+  hang: 'climb'
 }
 
 /** The clip the model can actually play for `name`, following fallbacks; idle as a last resort. */
@@ -83,6 +86,11 @@ export interface SpriteClip {
   loopFrom: number
   /** Duration of each frame in ms (from `frameMs`, or `fps` spread evenly). */
   frameMs: number[]
+  /**
+   * requirement-v5.md section 8: for wall clips (climb, hang), where the paws touch the wall
+   * in the cell (cell px, wall on the right). Main snaps this point to the screen edge.
+   */
+  wallX?: number
 }
 
 /** Per-model JSON stored next to its sprite sheets in assets/models/. */
@@ -227,7 +235,20 @@ function parseClip(
     const fps = requireNumber(raw, 'fps', where, { min: 0.1 })
     frameMs = Array.from({ length: frames }, () => Math.max(1000 / fps, minFrameMs))
   }
-  return { sheet: sheetName, row, column, frames, loop: raw['loop'], loopFrom, frameMs }
+  const clip: SpriteClip = {
+    sheet: sheetName,
+    row,
+    column,
+    frames,
+    loop: raw['loop'],
+    loopFrom,
+    frameMs
+  }
+  if (raw['wallX'] !== undefined) {
+    clip.wallX = requireNumber(raw, 'wallX', where, { min: 0 })
+    if (clip.wallX > sheet.cellWidth) fail(`"${where}.wallX" is outside the cell`)
+  }
+  return clip
 }
 
 /** Validates raw JSON. Throws with a readable reason when the config is unusable. */

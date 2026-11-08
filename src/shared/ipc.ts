@@ -72,7 +72,13 @@ export const IpcChannel = {
   /** pet -> main (invoke): -> JumpStarted | null (no jump fits now) (FR-73, FR-75). */
   PetJumpStart: 'pet:jump-start',
   /** pet -> main (send): the pet could not show the jump; end it. */
-  PetJumpStop: 'pet:jump-stop'
+  PetJumpStop: 'pet:jump-stop',
+  /** pet -> main (invoke): -> ClimbStarted | null (FR-76). */
+  PetClimbStart: 'pet:climb-start',
+  /** pet -> main (send): the pet could not show the climb; end it. */
+  PetClimbStop: 'pet:climb-stop',
+  /** main -> pet: ClimbPhase, when the cat reaches the wall and the top (FR-76). */
+  PetClimbPhase: 'pet:climb-phase'
 } as const
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
@@ -124,6 +130,14 @@ export interface JumpStarted {
   dx: number
 }
 
+/** A climb main has started (requirement-v5.md FR-76): it walks to this side's wall first. */
+export interface ClimbStarted {
+  side: 'left' | 'right'
+}
+
+/** climb: at the wall, going up; hold: at the top, holding on (then a fall). */
+export type ClimbPhase = 'climb' | 'hold'
+
 export interface WalkEnded {
   /** false when the walk was stopped before reaching the target. */
   completed: boolean
@@ -150,6 +164,11 @@ export interface PetApi extends LanguageApi {
   /** FR-73, FR-75: main jumps if a jump fits; ends with pet:landed or pet:fall-start. */
   startJump(): Promise<JumpStarted | null>
   stopJump(): void
+  /** FR-76: main walks to a screen edge, climbs, holds on and lets go (pet:climb-phase). */
+  startClimb(): Promise<ClimbStarted | null>
+  stopClimb(): void
+  /** Returns an unsubscribe function. */
+  onClimbPhase(listener: (phase: ClimbPhase) => void): () => void
   /** Starts walking. Resolves with the distance actually planned after clamping (0 = no room). */
   startWalk(request: WalkRequest): Promise<number>
   stopWalk(): void

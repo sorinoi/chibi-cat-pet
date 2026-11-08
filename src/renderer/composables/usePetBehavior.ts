@@ -31,6 +31,9 @@ const FOCUS_CUE: Record<FocusReaction, PetEvent> = {
   longBreak: 'cueLongBreak'
 }
 
+/** States in which main moves the cat on its own; care waits until it stands (FR-62, FR-77). */
+const MOVING: ReadonlySet<PetState> = new Set<PetState>(['fall', 'jump', 'toWall', 'climb', 'hang'])
+
 /** Optional clips play only when the model has them (no fallback for sad and yawn). */
 const hasClip = (clip: ClipName): boolean => ACTIVE_MODEL.clips[clip] !== undefined
 
@@ -61,8 +64,8 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   let queuedCue: PetEvent | null = null
   /** A menu care request that arrived mid-fall or mid-jump; handled once the cat stands. */
   let pendingCare: CareRequest | null = null
-  /** Last jump (requirement-v5.md NFR-30 cooldown). */
-  let lastJumpAt: number | null = null
+  /** Last jump or climb (requirement-v5.md NFR-30 cooldown, shared). */
+  let lastMoveAt: number | null = null
   const unsubscribers: Array<() => void> = []
 
   function clearWander(): void {
@@ -87,16 +90,36 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     if (action === 'hungry') dispatch('hungryReminder')
     else if (action === 'sad') dispatch('sadReminder')
     else if (action === 'yawn') dispatch('nightYawn')
-    else if (jumpDue(now)) void tryJump()
+    else if (moveDue('jump', now)) void tryJump()
+    else if (moveDue('climb', now)) void tryClimb()
     else dispatch('wander')
   }
 
-  /** FR-73, FR-75, NFR-30: now and then a wander becomes a jump attempt, with a cooldown. */
-  function jumpDue(now: number): boolean {
-    const { chance, cooldownMs } = BEHAVIOR.jump
-    if (!hasClip('jump')) return false
-    if (lastJumpAt !== null && now - lastJumpAt < cooldownMs) return false
-    return Math.random() < chance
+  /**
+   * FR-73, FR-75, FR-76, NFR-30: now and then a wander becomes a jump or climb attempt,
+   * with one cooldown for both.
+   */
+  function moveDue(kind: 'jump' | 'climb', now: number): boolean {
+    if (!hasClip(kind)) return false
+    const { cooldownMs } = BEHAVIOR.jump
+    if (lastMoveAt !== null && now - lastMoveAt < cooldownMs) return false
+    return Math.random() < BEHAVIOR[kind].chance
+  }
+
+  /** Main walks the cat to a screen edge and climbs if it fits; otherwise it wanders. */
+  async function tryClimb(): Promise<void> {
+    const started = await api.startClimb()
+    if (state.value !== 'idle') {
+      if (started) api.stopClimb()
+      return
+    }
+    if (!started) {
+      dispatch('wander')
+      return
+    }
+    lastMoveAt = Date.now()
+    scene.setFacing(started.side)
+    dispatch('climbWander')
   }
 
   /** Main jumps if one fits; otherwise the cat wanders as usual. */
@@ -111,7 +134,7 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
       dispatch('wander')
       return
     }
-    lastJumpAt = Date.now()
+    lastMoveAt = Date.now()
     if (started.dx !== 0) scene.setFacing(started.dx > 0 ? 'right' : 'left')
     dispatch('jump')
   }
@@ -295,7 +318,7 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
 
   function onCareRequest(request: CareRequest): void {
     // FR-62, FR-77: care waits for the landing (the welcome scene after adoption too).
-    if (state.value === 'fall' || state.value === 'jump') {
+    if (MOVING.has(state.value)) {
       pendingCare = request
       return
     }
@@ -313,6 +336,7 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
       // requirement-v5.md FR-60, FR-63: main moves the window; the pet only shows it.
       api.onFallStart(() => dispatch('fallStart')),
       api.onLanded(() => dispatch('landed')),
+      api.onClimbPhase((phase) => dispatch(phase === 'climb' ? 'atWall' : 'holdPoint')),
       api.onUserIdleChanged((idle) => {
         userIdle = idle
         dispatch(idle ? 'sleep' : 'wake')
@@ -355,6 +379,10 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
         // Try a jump now, without the chance or the cooldown (requirement-v5.md FR-73).
         jumpNow: () => {
           if (state.value === 'idle') void tryJump()
+        },
+        // Try a climb now, without the chance or the cooldown (FR-76).
+        climbNow: () => {
+          if (state.value === 'idle') void tryClimb()
         },
         // Look at the mouse without moving the real cursor.
         cursor: onCursor,

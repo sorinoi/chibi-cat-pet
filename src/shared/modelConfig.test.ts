@@ -78,6 +78,13 @@ describe('parseModelConfig', () => {
     expect(() => parseModelConfig(withClips(idleClip({ sheet: 'care' })))).toThrow(/unknown sheet/)
   })
 
+  it('reads a wall point for wall clips, inside the cell (requirement-v5.md section 8)', () => {
+    expect(parseModelConfig(withClips(idleClip({ wallX: 150 }))).clips.idle.wallX).toBe(150)
+    expect(parseModelConfig(withClips(idleClip({}))).clips.idle.wallX).toBeUndefined()
+    expect(() => parseModelConfig(withClips(idleClip({ wallX: 500 })))).toThrow(/wallX/)
+    expect(() => parseModelConfig(withClips(idleClip({ wallX: -1 })))).toThrow(/wallX/)
+  })
+
   it('lets a clip start in the middle of a row, inside the sheet (requirement-v5.md)', () => {
     expect(parseModelConfig(withClips(idleClip({ column: 2 }))).clips.idle.column).toBe(2)
     expect(() => parseModelConfig(withClips(idleClip({ column: 7 })))).toThrow(/column/)
@@ -154,6 +161,10 @@ describe('resolveClip (requirement-v3.md section 5 fallbacks)', () => {
   it('a v1-style model without happy uses click; anything else ends at idle', () => {
     expect(resolveClip('focusDone', { idle: 1, click: 1 })).toBe('click')
     expect(resolveClip('eat', { idle: 1 })).toBe('idle')
+  })
+
+  it('holding on plays climb until a hang clip exists (requirement-v5.md FR-76)', () => {
+    expect(resolveClip('hang', { idle: 1, climb: 1 })).toBe('climb')
   })
 
   it('a falling cat plays drag until a fall clip exists (requirement-v5.md FR-60)', () => {

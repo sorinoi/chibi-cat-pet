@@ -19,5 +19,7 @@ export const BEHAVIOR = {
    * requirement-v5.md FR-73, FR-75, NFR-30: a wander becomes a jump attempt this often, and
    * not again for cooldownMs after a jump (at most a few per hour).
    */
-  jump: { chance: 0.2, cooldownMs: 10 * 60 * 1000 }
+  jump: { chance: 0.2, cooldownMs: 10 * 60 * 1000 },
+  /** FR-76, NFR-30: otherwise a wander becomes a climb attempt this often (same cooldown). */
+  climb: { chance: 0.1 }
 } as const
