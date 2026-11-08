@@ -109,7 +109,8 @@ describe('parseModelConfig', () => {
   it('accepts the shipped cat model with every clip', () => {
     const config = parseModelConfig(shipped)
     expect(Object.keys(config.clips).sort()).toEqual([...CLIP_NAMES].sort())
-    for (const clip of MOVE_CLIPS) expect(config.clips[clip]?.sheet).toBe('move')
+    for (const clip of MOVE_CLIPS)
+      expect(config.clips[clip]?.sheet).toBe(clip === 'hop' ? 'hop' : 'move')
     expect(config.clips.fall?.column).toBe(3)
     for (const clip of ['focusStart', 'focusDone', 'breakOver', 'longBreak'] as const) {
       expect(config.clips[clip]?.sheet).toBe('focus')

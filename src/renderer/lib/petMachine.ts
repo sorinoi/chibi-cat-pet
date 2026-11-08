@@ -133,6 +133,8 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
   toWall: { atWall: 'climb', dragStart: 'drag', fallStart: 'fall', landed: 'idle' },
   climb: { holdPoint: 'hang', dragStart: 'drag', fallStart: 'fall', landed: 'land' },
   hang: { fallStart: 'fall', dragStart: 'drag', landed: 'land' },
+  // requirement-v8.md FR-115: hop runs come in V8-M3; a catch or a fall interrupts them.
+  hop: { dragStart: 'drag', fallStart: 'fall', landed: 'idle' },
   land: {
     clipFinished: 'idle',
     ...canFall,

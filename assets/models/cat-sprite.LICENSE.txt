@@ -34,7 +34,14 @@ checkerboard was painted into an opaque image, with
 the image border up to the cat's outline, grey edge pixels un-blended, then the usual regrid
 (221.75 px cells; scale 0.75 matches the other sheets). Pixels are only moved and resampled.
 
-Looks (v7): cat-*-gray.png, cat-*-black.png and cat-*-white.png (5 sheets each) are the sheets
+cat-hop.png (v8): 8 x 1 grid of 224 x 224 px cells, feet at y = 210.
+Row: hop (sit, crouch, push off, rise, top, fall, land, sit).
+Made from the user's cat-jump.png (generated with Claude, claude.ai) with
+`npm run sprite:regrid -- <in> <out> 0.72 8 1 --painted-background --drop-shadows`: the painted
+checkerboard cleared, the drawn ground shadows removed (scripts/lib/shadows.mts), frames on one
+feet line; the app lifts the cat during a hop. Pixels are only moved, resampled or cleared.
+
+Looks (v7): cat-*-gray.png, cat-*-black.png and cat-*-white.png (6 sheets each, with hop since v8) are the sheets
 above recolored with `npm run sprite:recolor -- gray|black|white`
 (scripts/lib/recolor.mts): only the orange coat pixels get a new hue, saturation and lightness;
 alpha, outlines, cream fur and props are unchanged. Same source and terms as above.

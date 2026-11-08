@@ -77,7 +77,7 @@ Same phase approval rule as before.
 | Phase | Work | Gate | Status |
 | --- | --- | --- | --- |
 | V8-M1 | Walking more: timing, distance, direction toward room; Activity setting (TH/EN) | Unit tests; in the app the cat roams the whole floor; Calm behaves like v7 | Done 2026-11-08, approved |
-| V8-M2 | Hop art: `--drop-shadows`, hop sheet for all four looks (previews approved by the user) | Hop frames fit the cell with feet on one line, no shadows; layout test passes | - |
+| V8-M2 | Hop art: `--drop-shadows`, hop sheet for all four looks (previews approved by the user) | Hop frames fit the cell with feet on one line, no shadows; layout test passes | Done 2026-11-08, approved |
 | V8-M3 | Hop runs: hop state, main motion, planning, interruptions | Hops on the floor and on a perch; catch and lost perch handled; click-through | - |
 | V8-M4 | Polish: tuning, NFR-01/45 measurement, README, installer 8.0.0, upgrade from 7.0.0 | Acceptance criteria below pass | - |
 

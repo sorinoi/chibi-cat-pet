@@ -17,9 +17,10 @@ export type LifeClip = (typeof LIFE_CLIPS)[number]
 /**
  * Optional v5 movement clips (requirement-v5.md section 9): `fall` plays `drag` until art
  * exists; without `jump` the cat does not jump (FR-73, FR-75), without `climb` it does not
- * climb (FR-76); `hang` falls back to `climb`.
+ * climb (FR-76); `hang` falls back to `climb`. requirement-v8.md FR-113: without `hop` the cat
+ * does not hop.
  */
-export const MOVE_CLIPS = ['fall', 'jump', 'climb', 'hang'] as const
+export const MOVE_CLIPS = ['fall', 'jump', 'climb', 'hang', 'hop'] as const
 export type MoveClip = (typeof MOVE_CLIPS)[number]
 
 export const CLIP_NAMES = [
