@@ -19,6 +19,9 @@ export function languageForLocales(locales: readonly string[]): Language {
   return first === 'th' || first.startsWith('th-') ? 'th' : 'en'
 }
 
+/** "1 event", "3 events" (English only; Thai has no plural). */
+const events = (count: number): string => `${count} ${count === 1 ? 'event' : 'events'}`
+
 const EN = {
   /** BCP 47 locale for dates. */
   locale: 'en-US',
@@ -141,6 +144,51 @@ const EN = {
       completedToday: (count: number): string => `Completed today: ${count} 🍅`,
       lastDays: (days: number): string => `Last ${days} days`
     }
+  },
+  /** requirement-v6.md FR-87, FR-88. */
+  activity: {
+    section: 'Activity log',
+    enabled: 'Send activity to my server',
+    note: 'Feeding, petting, treats and focus sessions go to your own server. Nothing else is sent.',
+    url: 'Server URL',
+    urlPlaceholder: 'https://pets.example.com',
+    key: 'API key',
+    keyPlaceholder: 'Paste the key from your server',
+    keySaved: 'Key saved',
+    keyNotSaved: 'The key could not be stored safely on this PC.',
+    saveKey: 'Save',
+    removeKey: 'Remove',
+    test: 'Test connection',
+    testing: 'Testing…',
+    testOk: 'Connected ✓',
+    notSet: 'Enter the server URL and the key first.',
+    badUrl: 'Use https:// (plain http only for this PC or your home network).',
+    unauthorized: 'The server did not accept the key.',
+    unreachable: 'Cannot reach the server.',
+    serverError: (code: number): string => `The server answered with an error (${code}).`,
+    status: {
+      off: 'Off',
+      ready: 'Connected, nothing waiting',
+      sending: (count: number): string => `Sending ${events(count)}…`,
+      waiting: (count: number): string => `${events(count)} waiting`,
+      retry: (minutes: number): string => `trying again in ${minutes} min`,
+      reasons: {
+        offline: 'cannot reach the server',
+        server: 'the server has a problem',
+        busy: 'the server asked to wait'
+      },
+      refusedKey: 'Stopped: the server did not accept the key',
+      refusedData: (code: number): string =>
+        `Stopped: the server did not accept the data (${code})`,
+      refusedOther: (code: number): string => `Stopped: the server answered ${code}`,
+      dropped: (count: number): string =>
+        `${count} old ${count === 1 ? 'event was' : 'events were'} dropped (limit)`
+    },
+    clear: 'Clear waiting events',
+    clearMessage: 'Clear the waiting events?',
+    clearDetail: 'They will not be sent to your server. This cannot be undone.',
+    clearCancel: 'Cancel',
+    clearConfirm: 'Clear'
   }
 }
 
@@ -268,6 +316,48 @@ const TH: Strings = {
       completedToday: (count: number): string => `วันนี้ทำครบแล้ว: ${count} 🍅`,
       lastDays: (days: number): string => `${days} วันที่ผ่านมา`
     }
+  },
+  activity: {
+    section: 'บันทึกกิจกรรม',
+    enabled: 'ส่งกิจกรรมไปที่ server ของฉัน',
+    note: 'การให้อาหาร ลูบหัว ให้ขนม และรอบโฟกัส จะถูกส่งไปที่ server ของคุณเอง ไม่ส่งอย่างอื่น',
+    url: 'URL ของ server',
+    urlPlaceholder: 'https://pets.example.com',
+    key: 'API key',
+    keyPlaceholder: 'วาง key จาก server ของคุณ',
+    keySaved: 'บันทึก key แล้ว',
+    keyNotSaved: 'เก็บ key อย่างปลอดภัยบนเครื่องนี้ไม่ได้',
+    saveKey: 'บันทึก',
+    removeKey: 'ลบ',
+    test: 'ทดสอบการเชื่อมต่อ',
+    testing: 'กำลังทดสอบ…',
+    testOk: 'เชื่อมต่อได้ ✓',
+    notSet: 'ใส่ URL ของ server และ key ก่อน',
+    badUrl: 'ใช้ https:// (http ใช้ได้เฉพาะเครื่องนี้หรือวง LAN ในบ้าน)',
+    unauthorized: 'server ไม่รับ key นี้',
+    unreachable: 'ติดต่อ server ไม่ได้',
+    serverError: (code: number): string => `server ตอบกลับว่ามีข้อผิดพลาด (${code})`,
+    status: {
+      off: 'ปิดอยู่',
+      ready: 'เชื่อมต่อแล้ว ไม่มีรายการค้าง',
+      sending: (count: number): string => `กำลังส่ง ${count} รายการ…`,
+      waiting: (count: number): string => `ค้างอยู่ ${count} รายการ`,
+      retry: (minutes: number): string => `จะลองใหม่ในอีก ${minutes} นาที`,
+      reasons: {
+        offline: 'ติดต่อ server ไม่ได้',
+        server: 'server มีปัญหา',
+        busy: 'server ขอให้รอก่อน'
+      },
+      refusedKey: 'หยุดส่งแล้ว: server ไม่รับ key นี้',
+      refusedData: (code: number): string => `หยุดส่งแล้ว: server ไม่รับข้อมูล (${code})`,
+      refusedOther: (code: number): string => `หยุดส่งแล้ว: server ตอบกลับ ${code}`,
+      dropped: (count: number): string => `ทิ้งรายการเก่าไป ${count} รายการ (เกินขีดจำกัด)`
+    },
+    clear: 'ล้างรายการที่ค้าง',
+    clearMessage: 'ล้างรายการที่ค้างอยู่ไหม',
+    clearDetail: 'รายการเหล่านี้จะไม่ถูกส่งไปที่ server และย้อนกลับไม่ได้',
+    clearCancel: 'ยกเลิก',
+    clearConfirm: 'ล้าง'
   }
 }
 

@@ -1,5 +1,6 @@
 import { Notification, app, dialog, nativeImage, powerMonitor, screen, type Tray } from 'electron'
 import { join } from 'node:path'
+import { createActivity } from './activity'
 import { createAppActions, resourcePath } from './appActions'
 import { createCareEngine, type CareSnapshot } from './careEngine'
 import { applySettings } from './applySettings'
@@ -63,8 +64,21 @@ function start(): void {
     settings: () => store.settings
   })
   focus.load()
-  // A focus the PC slept through is interrupted right on wake, not at the next tick.
-  const onResume = (): void => focus.check()
+
+  // v6 activity log (requirement-v6.md): care and focus events to the user's own server.
+  const activity = createActivity(app.getPath('userData'), () => store.settings, app.getVersion())
+  care.onActivity((item, pet) => activity.record(item, pet))
+  focus.onActivity((items) => {
+    const pet = care.current()
+    for (const item of items) activity.record(item, pet)
+  })
+
+  // A focus the PC slept through is interrupted right on wake, not at the next tick; the
+  // network may be back too.
+  const onResume = (): void => {
+    focus.check()
+    activity.resumed()
+  }
   powerMonitor.on('resume', onResume)
   const hasPet = (): boolean => care.current() !== null
 
@@ -262,8 +276,36 @@ function start(): void {
     careUi,
     focus,
     showContextMenu: () => showPetContextMenu(win, actions),
-    setLookWatch: (on) => cursor.setWatching(on)
+    setLookWatch: (on) => cursor.setWatching(on),
+    activityUi: {
+      view: () => activity.view(),
+      setKey: (key) => activity.setKey(key),
+      test: () => activity.test(),
+      async clear() {
+        const parent = settingsWindow.get()
+        const t = text().activity
+        const options = {
+          type: 'warning' as const,
+          title: text().appName,
+          message: t.clearMessage,
+          detail: t.clearDetail,
+          buttons: [t.clearCancel, t.clearConfirm],
+          defaultId: 0,
+          cancelId: 0,
+          noLink: true
+        }
+        const { response } = parent
+          ? await dialog.showMessageBox(parent, options)
+          : await dialog.showMessageBox(options)
+        if (response !== 1) return false
+        activity.clear()
+        return true
+      }
+    }
   })
+  activity.onChanged((view) =>
+    settingsWindow.get()?.webContents.send(IpcChannel.ActivityChanged, view)
+  )
 
   const userIdle = watchUserIdle(
     // FR-59 (requirement-v4.md): sleepier at night.
@@ -321,6 +363,7 @@ function start(): void {
   store.onChange((next, previous) => {
     applySettings(win, motion, next, previous)
     settingsWindow.get()?.webContents.send(IpcChannel.SettingsChanged, next)
+    activity.settingsChanged(next, previous)
     // FR-64: turning Gravity on drops a cat that was left in the air; FR-71: turning Sit on
     // windows off drops a cat sitting on one (on: it may now stay where it lands next).
     if (
@@ -358,6 +401,7 @@ function start(): void {
     care.dispose()
     powerMonitor.off('resume', onResume)
     focus.dispose()
+    activity.dispose()
     cursor.dispose()
     screen.off('display-added', onDisplaysChanged)
     screen.off('display-removed', onDisplaysChanged)

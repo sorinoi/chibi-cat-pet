@@ -12,9 +12,12 @@ import {
   type Needs
 } from '../shared/needs'
 import { createPet, sanitizeName, type PetRecord } from '../shared/petRecord'
+import type { ActivityItem, CareActivityType } from '../shared/activity'
 import { deletePetFile, readPetFile, writePetFile, type PetFileResult } from './petStore'
 
 export interface CareSnapshot {
+  /** requirement-v6.md FR-82. */
+  id: string
   name: string
   needs: Needs
   mood: Mood
@@ -50,6 +53,11 @@ export interface CareEngine {
   /** FR-52: gives one treat; null when there is no cat or no treat. */
   giveTreat(): { full: boolean } | null
   onChange(listener: (snapshot: CareSnapshot | null) => void): void
+  /**
+   * requirement-v6.md FR-80: every care action, with the pet right after it (for
+   * `pet.replaced`, the pet just before it is wiped).
+   */
+  onActivity(listener: (item: ActivityItem<CareActivityType>, pet: CareSnapshot) => void): void
   /** Bring needs up to date and write pending changes (call before quitting). */
   flush(): void
   dispose(): void
@@ -78,10 +86,14 @@ export function createCareEngine({
   let lastPetAt: number | null = null
   let lastClickAt: number | null = null
   const listeners: Array<(snapshot: CareSnapshot | null) => void> = []
+  const activityListeners: Array<
+    (item: ActivityItem<CareActivityType>, pet: CareSnapshot) => void
+  > = []
 
   function snapshot(): CareSnapshot | null {
     if (!record) return null
     return {
+      id: record.id,
       name: record.name,
       needs: { ...record.needs },
       mood: moodOf(record.needs, config),
@@ -94,6 +106,19 @@ export function createCareEngine({
   const emit = (): void => {
     const s = snapshot()
     listeners.forEach((fn) => fn(s))
+  }
+
+  /** FR-80: tells the activity log; a failing listener never breaks care. */
+  function report(item: ActivityItem<CareActivityType>): void {
+    const s = snapshot()
+    if (!s) return
+    for (const fn of activityListeners) {
+      try {
+        fn(item, s)
+      } catch (err) {
+        console.error('Activity listener failed:', err)
+      }
+    }
   }
 
   function save(): void {
@@ -166,19 +191,26 @@ export function createCareEngine({
       emit()
       const s = snapshot()
       if (!s) throw new Error('Adoption failed')
+      report({ type: 'pet.adopted', data: {} })
       return s
     },
 
     rename(name) {
       const clean = sanitizeName(name, config)
       if (!record || !clean) return null
+      const from = record.name
       record = { ...record, name: clean }
       save()
       emit()
+      if (clean !== from) report({ type: 'pet.renamed', data: { from } })
       return snapshot()
     },
 
     wipe() {
+      if (record) {
+        catchUp(now())
+        report({ type: 'pet.replaced', data: {} })
+      }
       if (saveTimer) clearTimeout(saveTimer)
       saveTimer = null
       record = null
@@ -199,6 +231,7 @@ export function createCareEngine({
         saveSoon()
       }
       emit()
+      report({ type: 'care.feed', data: { refused: result.refused } })
       return { refused: result.refused }
     },
 
@@ -217,6 +250,7 @@ export function createCareEngine({
         saveSoon()
       }
       emit()
+      report({ type: 'care.pet', data: { counted: result.counted } })
       return { counted: result.counted }
     },
 
@@ -242,6 +276,7 @@ export function createCareEngine({
         record = { ...record, treats: next }
         saveSoon()
         emit()
+        report({ type: 'treat.earned', data: { count: added } })
       }
       return added
     },
@@ -253,11 +288,16 @@ export function createCareEngine({
       record = { ...record, needs: result.needs, treats: record.treats - 1 }
       saveSoon()
       emit()
+      report({ type: 'care.treat', data: { full: result.full } })
       return { full: result.full }
     },
 
     onChange(listener) {
       listeners.push(listener)
+    },
+
+    onActivity(listener) {
+      activityListeners.push(listener)
     },
 
     flush() {
@@ -272,6 +312,7 @@ export function createCareEngine({
       if (saveTimer) clearTimeout(saveTimer)
       saveTimer = null
       listeners.length = 0
+      activityListeners.length = 0
     }
   }
 }

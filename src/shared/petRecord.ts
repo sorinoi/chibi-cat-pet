@@ -7,6 +7,11 @@ export type PetSpecies = (typeof PET_SPECIES)[number]
 
 export interface PetRecord {
   version: 1
+  /**
+   * Random UUID that names this pet in the activity log (requirement-v6.md FR-82). Made at
+   * adoption; a pet from before v6 gets one when it is loaded.
+   */
+  id: string
   name: string
   species: PetSpecies
   /** Epoch ms. */
@@ -26,6 +31,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const clampNeed = (v: number): number => Math.min(100, Math.max(0, v))
 const count = (v: unknown): number => (finite(v) && v >= 0 ? Math.floor(v) : 0)
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** A new random pet id (FR-82). */
+export const newPetId = (): string => globalThis.crypto.randomUUID()
 
 /** Number of user-visible characters (Thai vowels and tone marks do not count separately). */
 export function nameLength(name: string): number {
@@ -41,11 +50,17 @@ export function sanitizeName(raw: unknown, c: CareConfig = CARE): string | null 
 }
 
 /** A new pet (FR-23). Throws if the name is not usable. */
-export function createPet(name: string, now: number, c: CareConfig = CARE): PetRecord {
+export function createPet(
+  name: string,
+  now: number,
+  c: CareConfig = CARE,
+  id: string = newPetId()
+): PetRecord {
   const clean = sanitizeName(name, c)
   if (!clean) throw new Error(`Pet name must be 1-${c.nameMaxLength} characters`)
   return {
     version: 1,
+    id,
     name: clean,
     species: 'cat',
     adoptedAt: now,
@@ -58,9 +73,14 @@ export function createPet(name: string, now: number, c: CareConfig = CARE): PetR
 
 /**
  * Reads a stored record. Returns null when it cannot be trusted (missing name, species or
- * timestamps); the caller then treats the file as damaged (FR-33). Needs are clamped.
+ * timestamps); the caller then treats the file as damaged (FR-33). Needs are clamped. A
+ * record without a usable id gets `makeId()` (pets from before v6, FR-82).
  */
-export function parsePetRecord(raw: unknown, c: CareConfig = CARE): PetRecord | null {
+export function parsePetRecord(
+  raw: unknown,
+  c: CareConfig = CARE,
+  makeId: () => string = newPetId
+): PetRecord | null {
   if (!isRecord(raw) || raw['version'] !== 1) return null
   const name = sanitizeName(raw['name'], c)
   const species = raw['species']
@@ -70,8 +90,10 @@ export function parsePetRecord(raw: unknown, c: CareConfig = CARE): PetRecord | 
   if (!finite(adoptedAt) || !finite(updatedAt) || !isRecord(needs)) return null
   if (!finite(needs['hunger']) || !finite(needs['happiness'])) return null
   const counters = isRecord(raw['counters']) ? raw['counters'] : {}
+  const id = raw['id']
   return {
     version: 1,
+    id: typeof id === 'string' && UUID.test(id) ? id.toLowerCase() : makeId(),
     name,
     species: species as PetSpecies,
     adoptedAt,

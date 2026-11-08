@@ -133,7 +133,7 @@ export const STORE = {
 
 export const SETTINGS_WINDOW = {
   width: 820,
-  height: 820
+  height: 840
 } as const
 
 export const ADOPT_WINDOW = {
@@ -152,3 +152,23 @@ export const RESOURCES = {
 
 /** Must match `appId` in electron-builder.yml (notifications, FR-37). */
 export const APP_USER_MODEL_ID = 'com.sorinoi.desktoppet'
+
+/** requirement-v6.md sections 5 and 6: the activity log client (NFR-38). */
+export const ACTIVITY = {
+  /** Events waiting to be sent, one JSON per line (FR-89, FR-90). */
+  outboxFile: 'outbox.jsonl',
+  /** This install's random id (FR-82). */
+  deviceFile: 'device.json',
+  /** The API key, encrypted with Windows' safeStorage (NFR-34). */
+  keyFile: 'activity-key.bin',
+  /** FR-84: events per request. */
+  batchSize: 100,
+  /** FR-85: give up on one request after this long. */
+  timeoutMs: 10_000,
+  /** FR-85: wait this long after a failure, doubling each time, up to retryMaxMs. */
+  retryMinMs: 60_000,
+  retryMaxMs: 30 * 60_000,
+  /** FR-89: the outbox keeps at most this many events, none older than maxAgeDays. */
+  maxEvents: 10_000,
+  maxAgeDays: 30
+} as const

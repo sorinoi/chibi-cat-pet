@@ -45,8 +45,8 @@ Out of scope for v6.0:
 
 | ID | Requirement |
 | --- | --- |
-| FR-80 | The app records an event for each of these, at the moment main applies it: `pet.adopted` (name), `pet.renamed` (new name), `pet.replaced` (adopt new, the old pet is wiped locally), `care.feed` (refused or not), `care.pet` (every pet action, stroke or menu, with whether it counted for happiness), `care.treat` (given, or refused when full), `treat.earned` (count), `focus.started`, `focus.paused`, `focus.resumed`, `focus.skipped`, `focus.stopped`, `focus.phaseEnded` (which phase, planned minutes, completed or skipped). Clicks, app start and app quit are not sent (user, 2026-11-08). |
-| FR-81 | Every event has: a random event id (UUID), type, time (UTC milliseconds) and the PC's UTC offset in minutes, the pet id, the device id, the app version, and the pet's hunger, happiness and mood right after the action. Type-specific fields as listed in FR-80. Nothing else (NFR-34). |
+| FR-80 | The app records an event for each of these, at the moment main applies it: `pet.adopted` (name), `pet.renamed` (new name), `pet.replaced` (adopt new, the old pet is wiped locally), `care.feed` (refused or not), `care.pet` (every pet action, stroke or menu, with whether it counted for happiness), `care.treat` (given, or refused when full), `treat.earned` (count), `focus.started` (a focus or break phase started, by the user or automatically; phase and planned minutes), `focus.paused`, `focus.resumed`, `focus.skipped`, `focus.stopped` (phase, or none when only a waiting break was stopped), `focus.phaseEnded` (phase; completed, or not when a focus was cut short because the PC slept). Focus events are recorded only while there is a pet. Clicks, app start and app quit are not sent (user, 2026-11-08). |
+| FR-81 | Every event has: a random event id (UUID), type, time (UTC milliseconds) and the PC's UTC offset in minutes, the device id, the app version, and the pet right after the action: id, name, adoption time, hunger, happiness (two decimals) and mood. A schema version `v` comes first. Type-specific fields as listed in FR-80. Nothing else (NFR-34). |
 | FR-82 | Pet id: a random UUID stored in pet.json, made at adoption; a pet from v5 gets one the first time v6 loads it. Device id: a random UUID made once per install, stored in the app data folder. Neither contains anything about the PC or the user. |
 | FR-83 | Events are recorded only while "Send activity to my server" is on. Turning it off stops recording; turning it on does not invent past events. |
 
@@ -55,7 +55,7 @@ Out of scope for v6.0:
 | ID | Requirement |
 | --- | --- |
 | FR-84 | New events go into the outbox file first, then main tries to send at once. Sending is a `POST` of up to 100 events in one request to `<server URL>/api/v1/events` with the API key as a Bearer token. Only main sends (Electron `net.fetch`); renderers never touch the network. |
-| FR-85 | A batch the server accepted (2xx) is removed from the outbox. On no connection, a timeout (10 s) or a 5xx, the events stay and main tries again later, backing off from 1 minute up to 30 minutes; it also tries again when Windows says it is back online or the PC wakes. A 4xx other than 429 (bad key, bad data) stops sending until the settings change, and the status shows the reason. |
+| FR-85 | A batch the server accepted (2xx) is removed from the outbox. On no connection, a timeout (10 s) or a 5xx, the events stay and main tries again later, backing off from 1 minute up to 30 minutes; it also tries again when the PC wakes (main has no "back online" event; a new event does not cut a wait short). A 4xx other than 429 (bad key, bad data) stops sending until the settings change, and the status shows the reason. |
 | FR-86 | Sending again is safe: the server ignores an event id it already has (FR-91), so an answer lost on the way never makes duplicates. |
 | FR-87 | Settings (new group "Activity log"): an on/off switch (off by default), server URL, API key (hidden field), a "Test connection" button (calls `GET /api/v1/health` with the key), and a status line: connected / waiting to send N events / last error. Changing the URL or key keeps the outbox. |
 | FR-88 | "Clear waiting events" button in Settings empties the outbox (with a confirm), for when the user does not want old events sent. Uninstall deletes the outbox with the rest of the data. |
@@ -146,7 +146,7 @@ Same phase approval rule as before. v6 starts only after the user approves this 
 
 | Phase | Work | Gate | Status |
 | --- | --- | --- | --- |
-| V6-M1 | Contract and client: `activity.ts`, pet and device ids, event recording, outbox, sender, Settings group (EN/TH) | Unit tests; an isolated app run sends to a small local test endpoint; offline queue fills, drains, no duplicates; switch off sends nothing | - |
+| V6-M1 | Contract and client: `activity.ts`, pet and device ids, event recording, outbox, sender, Settings group (EN/TH) | Unit tests; an isolated app run sends to a small local test endpoint; offline queue fills, drains, no duplicates; switch off sends nothing | Done 2026-11-08, approved |
 | V6-M2 | Server API: `server/` package, MySQL migrations, keys, events and health endpoints, tests | App -> local server -> rows in MySQL; duplicates skipped; bad key and bad data refused | - |
 | V6-M3 | Dashboard: login, overview charts, events page, TH/EN | Pages show the data from M2; login required; page check in a browser | - |
 | V6-M4 | Build and deploy: server bundle, pm2 config, nginx example, deploy README; installer unchanged in size | Server-only build runs from a clean folder; the user deploys to the VPS and the app sends over HTTPS | - |

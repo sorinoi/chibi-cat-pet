@@ -78,7 +78,17 @@ export const IpcChannel = {
   /** pet -> main (send): the pet could not show the climb; end it. */
   PetClimbStop: 'pet:climb-stop',
   /** main -> pet: ClimbPhase, when the cat reaches the wall and the top (FR-76). */
-  PetClimbPhase: 'pet:climb-phase'
+  PetClimbPhase: 'pet:climb-phase',
+  /** settings -> main (invoke): -> ActivityView (requirement-v6.md FR-87). */
+  ActivityGet: 'activity:get',
+  /** main -> settings: ActivityView, after every change. */
+  ActivityChanged: 'activity:changed',
+  /** settings -> main (invoke): string (empty removes it) -> boolean stored (NFR-34). */
+  ActivitySetKey: 'activity:set-key',
+  /** settings -> main (invoke): -> ActivityTestResult (FR-87, FR-92). */
+  ActivityTest: 'activity:test',
+  /** settings -> main (invoke): confirm, then empty the outbox -> boolean cleared (FR-88). */
+  ActivityClear: 'activity:clear'
 } as const
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
@@ -219,7 +229,45 @@ export interface SettingsApi {
   getFocus(): Promise<FocusView>
   /** Returns an unsubscribe function. */
   onFocusChanged(listener: (view: FocusView) => void): () => void
+  /** requirement-v6.md FR-87. */
+  getActivity(): Promise<ActivityView>
+  /** Returns an unsubscribe function. */
+  onActivityChanged(listener: (view: ActivityView) => void): () => void
+  /** Stores the API key encrypted; an empty string removes it. Resolves false if it could not. */
+  setActivityKey(key: string): Promise<boolean>
+  testActivity(): Promise<ActivityTestResult>
+  /** FR-88: asks for confirmation, then empties the outbox. Resolves true if cleared. */
+  clearActivity(): Promise<boolean>
 }
+
+/** requirement-v6.md FR-85, FR-87: where sending stands, for the Settings status line. */
+export type ActivityState = {
+  /** Events in the outbox. */
+  waiting: number
+  /** Events dropped by the outbox limits since the app started (FR-89). */
+  dropped: number
+  /** Epoch ms of the last accepted batch since the app started. */
+  lastSentAt: number | null
+} & (
+  | { kind: 'off' }
+  | { kind: 'notSet' }
+  | { kind: 'badUrl' }
+  | { kind: 'ready' }
+  | { kind: 'sending' }
+  | { kind: 'retrying'; retryAt: number; reason: 'offline' | 'server' | 'busy' }
+  | { kind: 'refused'; reason: 'unauthorized' | 'badData' | 'other'; code: number }
+)
+
+export interface ActivityView {
+  state: ActivityState
+  /** An API key is stored (the key itself never leaves main). */
+  hasKey: boolean
+}
+
+export type ActivityTestResult =
+  | { ok: true }
+  | { ok: false; reason: 'notSet' | 'badUrl' | 'unauthorized' | 'unreachable' }
+  | { ok: false; reason: 'server'; code: number }
 
 /** API exposed to the adoption window as `window.adoptApi`. */
 export interface AdoptApi extends LanguageApi {

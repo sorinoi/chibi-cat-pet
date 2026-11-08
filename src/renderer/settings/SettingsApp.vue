@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import PetSection from './PetSection.vue'
 import FocusSection from './FocusSection.vue'
+import ActivitySection from './ActivitySection.vue'
 import { useSettings } from '../composables/useSettings'
 import { SETTINGS_LIMITS } from '../../shared/settings'
 import { computed } from 'vue'
@@ -142,6 +143,7 @@ function checkedFrom(event: Event): boolean {
       </div>
       <div class="column">
         <FocusSection :text="strings" :settings="settings" :set="set" />
+        <ActivitySection :text="strings" :settings="settings" :set="set" />
       </div>
     </div>
 

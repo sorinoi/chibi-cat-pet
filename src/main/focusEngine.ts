@@ -1,5 +1,7 @@
 import { existsSync, readFileSync, renameSync, rmSync } from 'node:fs'
 import { writeJsonAtomic } from './lib/jsonFile'
+import { actionItems, timerItems, type FocusAction } from './lib/focusActivity'
+import type { ActivityItem, FocusActivityType } from '../shared/activity'
 import type { FocusView } from '../shared/focusText'
 import { FOCUS, type FocusConfig } from '../shared/focusConfig'
 import {
@@ -70,6 +72,8 @@ export interface FocusEngine {
   check(): void
   /** Called after every change and once a minute while a phase runs (for tooltips). */
   onChange(listener: (snapshot: FocusSnapshot, events: TimerEvent[]) => void): void
+  /** requirement-v6.md FR-80: what the user and the timer did, in order. */
+  onActivity(listener: (items: Array<ActivityItem<FocusActivityType>>) => void): void
   dispose(): void
 }
 
@@ -100,6 +104,19 @@ export function createFocusEngine({
   let tickTimer: ReturnType<typeof setInterval> | null = null
   let midnightTimer: ReturnType<typeof setTimeout> | null = null
   const listeners: Array<(snapshot: FocusSnapshot, events: TimerEvent[]) => void> = []
+  const activityListeners: Array<(items: Array<ActivityItem<FocusActivityType>>) => void> = []
+
+  /** FR-80: tells the activity log; a failing listener never breaks the timer. */
+  function report(items: Array<ActivityItem<FocusActivityType>>): void {
+    if (items.length === 0) return
+    for (const fn of activityListeners) {
+      try {
+        fn(items)
+      } catch (err) {
+        console.error('Activity listener failed:', err)
+      }
+    }
+  }
 
   function snapshot(): FocusSnapshot {
     const t = now()
@@ -167,15 +184,29 @@ export function createFocusEngine({
 
   function check(): void {
     const t = now()
-    emit(apply(t, [advance(state, t, lastSeen, settings(), config)]))
+    const s = settings()
+    const before = state
+    const step = advance(state, t, lastSeen, s, config)
+    emit(apply(t, [step]))
+    report(timerItems(before, step.events, s))
   }
 
   /** A user action: first catch up (a phase may have ended, or the PC slept), then act. */
-  function act(fn: (current: TimerState, t: number, s: FocusSettings) => TimerStep): void {
+  function act(
+    action: FocusAction,
+    fn: (current: TimerState, t: number, s: FocusSettings) => TimerStep
+  ): void {
     const t = now()
     const s = settings()
+    const before = state
     const caughtUp = advance(state, t, lastSeen, s, config)
-    emit(apply(t, [caughtUp, fn(caughtUp.state, t, s)]))
+    const acted = fn(caughtUp.state, t, s)
+    emit(apply(t, [caughtUp, acted]))
+    report([
+      ...timerItems(before, caughtUp.events, s),
+      ...actionItems(action, caughtUp.state, acted.state),
+      ...timerItems(caughtUp.state, acted.events, s)
+    ])
   }
 
   return {
@@ -199,15 +230,18 @@ export function createFocusEngine({
       return 'damaged'
     },
     current: snapshot,
-    startFocus: () => act((st, t, s) => startFocus(st, t, s)),
-    startBreak: () => act((st, t, s) => startBreak(st, t, s)),
-    pause: () => act((st, t) => pause(st, t)),
-    resume: () => act((st, t) => resume(st, t)),
-    skip: () => act((st, t, s) => skip(st, t, s)),
-    stop: () => act((st) => stop(st)),
+    startFocus: () => act('startFocus', (st, t, s) => startFocus(st, t, s)),
+    startBreak: () => act('startBreak', (st, t, s) => startBreak(st, t, s)),
+    pause: () => act('pause', (st, t) => pause(st, t)),
+    resume: () => act('resume', (st, t) => resume(st, t)),
+    skip: () => act('skip', (st, t, s) => skip(st, t, s)),
+    stop: () => act('stop', (st) => stop(st)),
     check,
     onChange(listener) {
       listeners.push(listener)
+    },
+    onActivity(listener) {
+      activityListeners.push(listener)
     },
     dispose() {
       if (phaseTimer) clearTimeout(phaseTimer)
@@ -215,6 +249,7 @@ export function createFocusEngine({
       if (midnightTimer) clearTimeout(midnightTimer)
       phaseTimer = tickTimer = midnightTimer = null
       listeners.length = 0
+      activityListeners.length = 0
     }
   }
 }

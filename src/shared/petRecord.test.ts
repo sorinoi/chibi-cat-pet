@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createPet, nameLength, parsePetRecord, sanitizeName } from './petRecord'
 
+const PET_ID = '11111111-2222-4333-8444-555555555555'
+
 describe('pet names', () => {
   it('counts visible characters, so Thai marks do not use up the limit', () => {
     expect(nameLength('มะลิ')).toBe(3) // ม, ะ, ลิ
@@ -19,8 +21,9 @@ describe('pet names', () => {
 
 describe('createPet', () => {
   it('starts at 80 / 80 with zero counters', () => {
-    expect(createPet('มะลิ', 1_000)).toEqual({
+    expect(createPet('มะลิ', 1_000, undefined, PET_ID)).toEqual({
       version: 1,
+      id: PET_ID,
       name: 'มะลิ',
       species: 'cat',
       adoptedAt: 1_000,
@@ -60,6 +63,24 @@ describe('parsePetRecord', () => {
     expect(parsePetRecord({ ...good, species: 'dog' })).toBeNull()
     expect(parsePetRecord({ ...good, updatedAt: 'yesterday' })).toBeNull()
     expect(parsePetRecord({ ...good, needs: { hunger: 50 } })).toBeNull()
+  })
+})
+
+describe('pet id (requirement-v6.md FR-82)', () => {
+  it('a new pet gets a random UUID', () => {
+    const a = createPet('Mochi', 1)
+    const b = createPet('Mochi', 1)
+    expect(a.id).toMatch(/^[0-9a-f-]{36}$/)
+    expect(a.id).not.toBe(b.id)
+  })
+
+  it('keeps a stored id and gives a pet from before v6 a new one', () => {
+    const stored = createPet('Mochi', 1, undefined, PET_ID)
+    expect(parsePetRecord(JSON.parse(JSON.stringify(stored)))?.id).toBe(PET_ID)
+    const old: Record<string, unknown> = { ...stored }
+    delete old['id']
+    expect(parsePetRecord(old, undefined, () => PET_ID)?.id).toBe(PET_ID)
+    expect(parsePetRecord({ ...old, id: 'nope' }, undefined, () => PET_ID)?.id).toBe(PET_ID)
   })
 })
 

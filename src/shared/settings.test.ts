@@ -152,3 +152,25 @@ describe('sit on windows setting (requirement-v5.md FR-71)', () => {
     expect(sanitizeSettings({ sitOnWindows: 1 }).sitOnWindows).toBe(true)
   })
 })
+
+describe('activity log settings (requirement-v6.md FR-83, FR-87)', () => {
+  it('is off with no server by default, also for an older settings file', () => {
+    expect(DEFAULT_SETTINGS.activityLog).toBe(false)
+    const old = parsePersistedState({ settings: { gravity: true } }).settings
+    expect(old.activityLog).toBe(false)
+    expect(old.activityServerUrl).toBe('')
+  })
+
+  it('keeps the switch and a trimmed URL, capped in length', () => {
+    const s = sanitizeSettings({
+      activityLog: true,
+      activityServerUrl: ' https://pets.example.com '
+    })
+    expect(s.activityLog).toBe(true)
+    expect(s.activityServerUrl).toBe('https://pets.example.com')
+    expect(sanitizeSettings({ activityServerUrl: 'x'.repeat(600) }).activityServerUrl).toHaveLength(
+      500
+    )
+    expect(sanitizeSettings({ activityServerUrl: 42 }).activityServerUrl).toBe('')
+  })
+})

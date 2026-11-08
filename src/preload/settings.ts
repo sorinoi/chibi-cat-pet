@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import { IpcChannel, type CareView, type SettingsApi } from '../shared/ipc'
+import { IpcChannel, type ActivityView, type CareView, type SettingsApi } from '../shared/ipc'
 import type { Settings } from '../shared/settings'
 import type { FocusView } from '../shared/focusText'
 
@@ -19,7 +19,12 @@ const settingsApi: SettingsApi = {
   adoptNew: () => ipcRenderer.invoke(IpcChannel.CareAdoptNew),
   openAdopt: () => ipcRenderer.send(IpcChannel.CareOpenAdopt),
   getFocus: () => ipcRenderer.invoke(IpcChannel.FocusGet),
-  onFocusChanged: (listener) => subscribe<FocusView>(IpcChannel.FocusState, listener)
+  onFocusChanged: (listener) => subscribe<FocusView>(IpcChannel.FocusState, listener),
+  getActivity: () => ipcRenderer.invoke(IpcChannel.ActivityGet),
+  onActivityChanged: (listener) => subscribe<ActivityView>(IpcChannel.ActivityChanged, listener),
+  setActivityKey: (key) => ipcRenderer.invoke(IpcChannel.ActivitySetKey, key),
+  testActivity: () => ipcRenderer.invoke(IpcChannel.ActivityTest),
+  clearActivity: () => ipcRenderer.invoke(IpcChannel.ActivityClear)
 }
 
 contextBridge.exposeInMainWorld('settingsApi', settingsApi)

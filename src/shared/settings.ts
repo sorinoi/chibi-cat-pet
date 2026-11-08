@@ -31,12 +31,18 @@ export interface Settings extends FocusSettings {
   sitOnWindows: boolean
   /** Jumps now and then, and later climbs (FR-78); only while gravity is on. On by default. */
   jumpAndClimb: boolean
+  /** Send activity to my server (requirement-v6.md FR-83, FR-87). Off by default. */
+  activityLog: boolean
+  /** The server's base URL as typed; checked with checkServerUrl when used (section 7). */
+  activityServerUrl: string
 }
 
 export const SETTINGS_LIMITS = {
   petSize: { min: 0.5, max: 2, step: 0.1 },
   opacity: { min: 0.3, max: 1, step: 0.05 },
   sleepAfterMinutes: { min: 1, max: 120, step: 1 },
+  /** Longest server URL kept (requirement-v6.md FR-87). */
+  activityServerUrl: { maxLength: 500 },
   ...FOCUS.limits
 } as const
 
@@ -53,7 +59,9 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   focusTreats: false,
   gravity: true,
   sitOnWindows: true,
-  jumpAndClimb: true
+  jumpAndClimb: true,
+  activityLog: false,
+  activityServerUrl: ''
 }
 
 export interface Position {
@@ -91,6 +99,9 @@ const wholeNumber = (
 const bool = (value: unknown, fallback: boolean): boolean =>
   typeof value === 'boolean' ? value : fallback
 
+const text = (value: unknown, maxLength: number, fallback: string): string =>
+  typeof value === 'string' ? value.trim().slice(0, maxLength) : fallback
+
 /** Merges `raw` over `base`, clamping numbers and ignoring unknown or bad fields. */
 export function sanitizeSettings(raw: unknown, base: Settings = DEFAULT_SETTINGS): Settings {
   const r = isRecord(raw) ? raw : {}
@@ -126,7 +137,13 @@ export function sanitizeSettings(raw: unknown, base: Settings = DEFAULT_SETTINGS
     focusTreats: bool(r['focusTreats'], base.focusTreats),
     gravity: bool(r['gravity'], base.gravity),
     sitOnWindows: bool(r['sitOnWindows'], base.sitOnWindows),
-    jumpAndClimb: bool(r['jumpAndClimb'], base.jumpAndClimb)
+    jumpAndClimb: bool(r['jumpAndClimb'], base.jumpAndClimb),
+    activityLog: bool(r['activityLog'], base.activityLog),
+    activityServerUrl: text(
+      r['activityServerUrl'],
+      SETTINGS_LIMITS.activityServerUrl.maxLength,
+      base.activityServerUrl
+    )
   }
 }
 

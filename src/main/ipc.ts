@@ -7,6 +7,8 @@ import {
 } from 'electron'
 import {
   IpcChannel,
+  type ActivityTestResult,
+  type ActivityView,
   type CareAct,
   type CareView,
   type SettingsSnapshot,
@@ -40,6 +42,16 @@ export interface IpcContext {
   getAdoptWindow(): BrowserWindow | null
   /** Adoption, rename and re-adoption flows (they touch several windows, so main wires them). */
   careUi: CareUi
+  /** requirement-v6.md FR-87, FR-88: the Settings activity log group. */
+  activityUi: ActivityUi
+}
+
+export interface ActivityUi {
+  view(): ActivityView
+  setKey(key: string): boolean
+  test(): Promise<ActivityTestResult>
+  /** Confirm, then empty the outbox. */
+  clear(): Promise<boolean>
 }
 
 export interface CareUi {
@@ -148,6 +160,20 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
     return store.update(patch)
   })
 
+  const { activityUi } = ctx
+  ipcMain.handle(IpcChannel.ActivityGet, (event) =>
+    fromSettings(event) ? activityUi.view() : null
+  )
+  ipcMain.handle(IpcChannel.ActivitySetKey, (event, key: unknown) =>
+    fromSettings(event) && typeof key === 'string' ? activityUi.setKey(key) : false
+  )
+  ipcMain.handle(IpcChannel.ActivityTest, (event) =>
+    fromSettings(event) ? activityUi.test() : null
+  )
+  ipcMain.handle(IpcChannel.ActivityClear, (event) =>
+    fromSettings(event) ? activityUi.clear() : false
+  )
+
   return () => {
     for (const channel of [
       IpcChannel.WindowSetIgnoreMouse,
@@ -174,7 +200,11 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
       IpcChannel.SettingsGet,
       IpcChannel.SettingsUpdate,
       IpcChannel.AppGetLanguage,
-      IpcChannel.FocusGet
+      IpcChannel.FocusGet,
+      IpcChannel.ActivityGet,
+      IpcChannel.ActivitySetKey,
+      IpcChannel.ActivityTest,
+      IpcChannel.ActivityClear
     ]) {
       ipcMain.removeHandler(channel)
     }

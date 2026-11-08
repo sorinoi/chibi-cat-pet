@@ -257,3 +257,69 @@ describe('care engine: treats (requirement-v4.md FR-51..53)', () => {
     expect(e.current()?.treats).toBe(0)
   })
 })
+
+describe('care engine: activity (requirement-v6.md FR-80, FR-82)', () => {
+  it('reports every care action with the pet right after it; clicks are not reported', () => {
+    const e = engine()
+    e.load()
+    const seen: Array<[string, unknown, string, number]> = []
+    e.onActivity((item, pet) => seen.push([item.type, item.data, pet.name, pet.needs.hunger]))
+    const mochi = e.adopt('Mochi')
+    e.feed() // 80 -> 100
+    e.feed() // refused
+    e.pet()
+    e.pet() // within the cooldown: not counted, still reported
+    e.click()
+    e.earnTreats(2)
+    e.giveTreat()
+    e.rename('Mochi') // same name: nothing to report
+    e.rename('Tama')
+    e.wipe()
+    expect(seen.map(([type, data]) => [type, data])).toEqual([
+      ['pet.adopted', {}],
+      ['care.feed', { refused: false }],
+      ['care.feed', { refused: true }],
+      ['care.pet', { counted: true }],
+      ['care.pet', { counted: false }],
+      ['treat.earned', { count: 2 }],
+      ['care.treat', { full: true }],
+      ['pet.renamed', { from: 'Mochi' }],
+      ['pet.replaced', {}]
+    ])
+    expect(seen[1]?.[3]).toBe(100)
+    expect(seen.at(-1)?.[2]).toBe('Tama')
+    expect(mochi.id).toMatch(/^[0-9a-f-]{36}$/)
+  })
+
+  it('keeps the pet id across restarts and gives an old pet.json one', () => {
+    const e = engine()
+    e.load()
+    const id = e.adopt('Mochi').id
+    e.flush()
+    const again = engine()
+    again.load()
+    expect(again.current()?.id).toBe(id)
+
+    const old: Record<string, unknown> = JSON.parse(readFileSync(file, 'utf8'))
+    delete old['id']
+    writeFileSync(file, JSON.stringify(old))
+    const upgraded = engine()
+    upgraded.load()
+    const newId = upgraded.current()?.id
+    expect(newId).toMatch(/^[0-9a-f-]{36}$/)
+    expect(JSON.parse(readFileSync(file, 'utf8')).id).toBe(newId) // saved at load
+  })
+
+  it('a failing listener does not break care', () => {
+    const e = engine()
+    e.load()
+    e.adopt('Mochi')
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    e.onActivity(() => {
+      throw new Error('boom')
+    })
+    expect(e.feed()).toEqual({ refused: false })
+    expect(error).toHaveBeenCalled()
+    error.mockRestore()
+  })
+})

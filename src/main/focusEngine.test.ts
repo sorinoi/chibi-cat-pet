@@ -198,3 +198,31 @@ describe('focus engine: history (requirement-v4.md FR-48, FR-49)', () => {
     expect(week[6]).toEqual({ date: '2026-11-06', count: 0 })
   })
 })
+
+describe('focus engine: activity (requirement-v6.md FR-80)', () => {
+  it('reports the user steps and what the timer did, in order', () => {
+    const e = engine()
+    e.load()
+    const items: Array<[string, unknown]> = []
+    e.onActivity((list) => items.push(...list.map((i): [string, unknown] => [i.type, i.data])))
+    e.startFocus()
+    run(5 * MIN)
+    e.pause()
+    e.pause() // already paused: nothing
+    e.resume()
+    run(20 * MIN) // focus ends, short break starts
+    e.skip() // skips the break; autoStartFocus off -> idle
+    e.startFocus()
+    e.stop()
+    expect(items).toEqual([
+      ['focus.started', { phase: 'focus', minutes: 25 }],
+      ['focus.paused', { phase: 'focus' }],
+      ['focus.resumed', { phase: 'focus' }],
+      ['focus.phaseEnded', { phase: 'focus', completed: true }],
+      ['focus.started', { phase: 'shortBreak', minutes: 5 }],
+      ['focus.skipped', { phase: 'shortBreak' }],
+      ['focus.started', { phase: 'focus', minutes: 25 }],
+      ['focus.stopped', { phase: 'focus' }]
+    ])
+  })
+})
