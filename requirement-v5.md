@@ -1,6 +1,6 @@
 # Requirement v5: Gravity, window perches, jumping and climbing
 
-Status: APPROVED by the user on 2026-11-07 (options A and B first, option C, section 6, added and approved the same day; open questions on their defaults). Not built yet; implementation starts with V5-M1 only after v4.0 is accepted and the user says go. Open questions (section 14) use the defaults written here until decided. v4 (requirement-v4.md) stays the base: everything in v1 to v4 keeps working.
+Status: APPROVED by the user on 2026-11-07 (options A and B first, option C, section 6, added and approved the same day; open questions on their defaults). Built and accepted 2026-11-08, released as 5.0.0 (measurements in section 15). Open questions (section 14) use the defaults written here until decided. v4 (requirement-v4.md) stays the base: everything in v1 to v4 keeps working.
 
 ## 1. Overview
 
@@ -129,19 +129,19 @@ Same phase approval rule as before. v5 starts only after the user accepts v4.0 (
 | V5-M3 | Riding and losing the perch: follow moves, walk within the edge, fall on every loss case, poll tiers | Rides a moving test window; falls on minimize, close, maximize, cover; no polling on the floor (measured) | Done 2026-11-08, approved |
 | V5-M4 | Art import (`cat-move.png`), jump up and jump down, Jump and climb setting | Jumps onto a test window in reach and not out of reach; lost target falls; jumps down at an edge; feet steady; jump rules unit tested | Done 2026-11-08, approved |
 | V5-M5 | Climb: wall anchor, climb wander, hold and let go | Climbs both screen edges, holds, falls (onto a perch when one is below); never crosses to another monitor; click-through while climbing | Done 2026-11-08, approved |
-| V5-M6 | Polish: tuning, NFR-01/25 measurement, installer 5.0.0, upgrade from 4.0.0 | Acceptance criteria below pass | - |
+| V5-M6 | Polish: tuning, NFR-01/25 measurement, installer 5.0.0, upgrade from 4.0.0 | Acceptance criteria below pass | Done 2026-11-08, accepted |
 
 ## 13. Acceptance criteria (v5)
 
-- [ ] A cat dropped in the air falls and lands on the floor of the display it is over; the landing spot is remembered.
-- [ ] The cat can be caught while falling, jumping or climbing; nothing else interrupts those.
-- [ ] With Gravity off the cat behaves exactly as in v4.
-- [ ] A cat that falls onto a suitable window lands on its top edge and walks only along it.
-- [ ] The cat rides along when its window moves and falls when the window is minimized, maximized, closed, goes fullscreen or gets covered.
-- [ ] With the move clips, the cat now and then jumps up onto a window in reach, jumps down from a perch, and climbs a screen edge and lets go; with the setting off or without the clips it does none of that.
-- [ ] Clicks pass through empty areas while falling, jumping, climbing and on a perch.
-- [ ] Idle CPU and RAM still meet NFR-01 on the floor and on a perch; nothing polls on the floor (NFR-25).
-- [ ] Upgrading from 4.0.0 keeps settings, pet and focus data; the new settings appear with their defaults.
+- [x] A cat dropped in the air falls and lands on the floor of the display it is over; the landing spot is remembered.
+- [x] The cat can be caught while falling, jumping or climbing; nothing else interrupts those.
+- [x] With Gravity off the cat behaves exactly as in v4.
+- [x] A cat that falls onto a suitable window lands on its top edge and walks only along it.
+- [x] The cat rides along when its window moves and falls when the window is minimized, maximized, closed, goes fullscreen or gets covered. (Fullscreen: a fullscreen window in front also hides the cat, FR-16; not hand-checked.)
+- [x] With the move clips, the cat now and then jumps up onto a window in reach, jumps down from a perch, and climbs a screen edge and lets go; with the setting off or without the clips it does none of that.
+- [x] Clicks pass through empty areas while falling, jumping, climbing and on a perch.
+- [x] Idle CPU and RAM still meet NFR-01 on the floor and on a perch; nothing polls on the floor (NFR-25).
+- [x] Upgrading from 4.0.0 keeps settings, pet and focus data; the new settings appear with their defaults. (Installed over 4.0.0; the data seen from the Claude session is the sandboxed copy, see section 15.)
 
 ## 14. Open questions
 
@@ -154,3 +154,19 @@ Defaults are used until the user decides:
 - Jump reach: up to 3 x the cat's height up and 4 x its width sideways? How often: about 1 in 6 wanders for a jump, 1 in 10 for a climb?
 - Climb height: anywhere from a quarter to three quarters of the screen height, holding 2 to 5 seconds?
 - v4.0 acceptance: accept 4.0 with the 8-hour run (NFR-22) still open, or finish it before V5-M1?
+
+## 15. Measurements and release checks (V5-M6, 2026-11-08)
+
+Production build, isolated `--user-data-dir` with v4-shaped data (settings.json without the v5 keys, a test cat, focus.json version 2), pet size 0.7, cat awake (sleep after 120 min), settings window closed, 60 s, all processes of the run (main, renderer, GPU, network):
+
+| Where | CPU (machine) | CPU (one core) | Main process | Private RAM | NFR-01 |
+| --- | --- | --- | --- | --- | --- |
+| Floor (default settings, cat wandering) | 0.085 % | 1.35 % | 0.16 % of one core | 204.4 MB | pass |
+| Perch (test window, Jump and climb off so it stays) | 0.119 % | 1.90 % | 0.47 % of one core | 215.8 MB | pass |
+
+- v4.0 for comparison: 0.041 % of the machine, 201.2 MB (requirement-v4.md). The perch checks add about 0.3 % of one core in main (NFR-25: 4 checks per second while the perch is still).
+- Tuning: no changes. A fall from the top of a 1080p screen takes about 1.04 s (NFR-26). Jumps and climbs share a 10 min cooldown, so at most 6 per hour while the cat is awake, usually fewer (NFR-30).
+- Upgrade data (isolated run): a v4 settings.json gets gravity, sitOnWindows and jumpAndClimb on, the other settings unchanged; the cat and today's focus count load; a cat saved in the air falls at start.
+- Installer: `dist/desktop-pet-setup-5.0.0.exe` (112 MB). The packaged app (win-unpacked, isolated data) landed on a test window at start (koffi in the package works), rode along when it moved and fell when it was minimized; no debug hook in the build.
+- Install over 4.0.0 (2026-11-08, with the user's OK): `desktop-pet-setup-5.0.0.exe /S` exit 0, Uninstall entry 5.0.0; settings.json and pet.json byte-identical to the backup after install (no focus.json yet); Run key unchanged; launched: only the pet window, the cat sOrinOi is back (no adoption, no .bad file). The session sees a sandboxed %APPDATA% (WORK-LOG 2026-11-07), so the real data is a hand check for the user.
+

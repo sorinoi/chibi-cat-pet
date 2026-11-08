@@ -201,7 +201,11 @@ const PREVIEW_CLIPS: ClipName[] = [
   'sad',
   'look',
   'stretch',
-  'yawn'
+  'yawn',
+  'jump',
+  'fall',
+  'climb',
+  'hang'
 ]
 const previews = PREVIEW_CLIPS.filter((name) => model.clips[name]).map((name) => ({
   name,

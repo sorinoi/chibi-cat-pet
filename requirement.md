@@ -17,7 +17,7 @@ Decisions made:
 - v2: pet-care system. Only one pet at a time. Adopting a different pet means starting over and wiping the previous pet's data immediately. Requirements: requirement-v2.md (approved 2026-11-06, released as 2.0.0).
 - v3: focus timer (Pomodoro) and Thai/English UI. Requirements: requirement-v3.md (approved 2026-11-06, released as 3.0.0).
 - v4: hungry notification, focus history, optional focus treats, sad/look/stretch/yawn clips, 8-hour memory run. Requirements: requirement-v4.md (approved 2026-11-06, released as 4.0.0, accepted 2026-11-07 with the 8-hour run NFR-22 deferred).
-- v5: gravity (a dropped cat falls to the taskbar), window perches (the cat sits and walks on other windows' top edges), jump and climb (needs cat-move.png). Requirements: requirement-v5.md (approved 2026-11-07, not started).
+- v5: gravity (a dropped cat falls to the taskbar), window perches (the cat sits and walks on other windows' top edges), jump and climb (needs cat-move.png). Requirements: requirement-v5.md (approved 2026-11-07; done and accepted 2026-11-08, released as 5.0.0).
 
 ## 2. Scope
 

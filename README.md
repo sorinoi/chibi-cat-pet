@@ -7,7 +7,7 @@
 **A little cat that lives on your Windows desktop, wants you to look after it, and cheers on your focus sessions.**<br>
 **แมวน้อยที่มาอยู่บนเดสก์ท็อป Windows ของคุณ รอให้คุณดูแล และคอยเชียร์ตอนคุณโฟกัสทำงาน**
 
-![version](https://img.shields.io/badge/version-4.0.0-f4a261)
+![version](https://img.shields.io/badge/version-5.0.0-f4a261)
 ![platform](https://img.shields.io/badge/platform-Windows%20x64-2a9d8f)
 ![offline](https://img.shields.io/badge/works-100%25%20offline-264653)
 ![stack](https://img.shields.io/badge/Electron%20%2B%20Vue%203-TypeScript-6c757d)
@@ -50,6 +50,14 @@ Every animation below is rendered straight from the app's sprite sheets.<br>
     <td align="center"><img src="docs/images/clip-look.png" width="128" alt="look"><br><sub><b>look</b><br>มองตามเมาส์</sub></td>
     <td align="center"><img src="docs/images/clip-stretch.png" width="128" alt="stretch"><br><sub><b>stretch</b><br>บิดขี้เกียจ</sub></td>
     <td align="center"><img src="docs/images/clip-yawn.png" width="128" alt="yawn"><br><sub><b>yawn</b><br>หาวง่วง</sub></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td align="center"><img src="docs/images/clip-jump.png" width="128" alt="jump"><br><sub><b>jump</b><br>กระโดด</sub></td>
+    <td align="center"><img src="docs/images/clip-fall.png" width="128" alt="fall"><br><sub><b>fall</b><br>ร่วงลงมา</sub></td>
+    <td align="center"><img src="docs/images/clip-climb.png" width="128" alt="climb"><br><sub><b>climb</b><br>ปีนขอบจอ</sub></td>
+    <td align="center"><img src="docs/images/clip-hang.png" width="128" alt="hang"><br><sub><b>hang</b><br>เกาะผนัง</sub></td>
     <td></td>
   </tr>
 </table>
@@ -111,9 +119,21 @@ Every animation below is rendered straight from the app's sprite sheets.<br>
 - 🔔 **Hungry reminder** (optional, off by default): one Windows notification when the cat is
   very hungry, at most every 4 hours.
 
+**Up and down (v5)**
+
+- 🪂 **Gravity**: drop the cat in the air and it falls down to the taskbar. You can catch it
+  on the way down.
+- 🪟 **Sits on your windows**: a falling cat lands on the top edge of an open window and
+  strolls along it. It rides along when you move the window, and falls off when the window is
+  minimized, maximized, closed or covered.
+- 🦘 **Jumps and climbs** now and then: up onto a window in reach, down from its perch, or up
+  the edge of the screen, where it hangs on for a few seconds and lets go.
+- ⚙️ Each part can be turned off in Settings ("Fall down when dropped", "Land and sit on other
+  windows", "Jump and climb now and then"). With gravity off the cat behaves like v4.
+
 ### Install
 
-Build the installer (see Development) and run `dist/desktop-pet-setup-4.0.0.exe`. It
+Build the installer (see Development) and run `dist/desktop-pet-setup-5.0.0.exe`. It
 installs for your user only (no admin rights) and adds Start menu and desktop shortcuts.
 Installing over an older version keeps your settings.
 
@@ -219,9 +239,16 @@ Pet-care tuning lives in `src/shared/careConfig.ts`, focus timer defaults in
 - 🍬 **ขนม** (เปิดเองได้ ค่าเริ่มต้นปิด): โฟกัสครบหนึ่งรอบได้ขนมหนึ่งชิ้น (เก็บได้สูงสุด 5) ให้น้องจากเมนูได้ ช่วยเพิ่มความอิ่มและความสุขนิดหน่อย
 - 🔔 **เตือนเมื่อหิว** (เปิดเองได้ ค่าเริ่มต้นปิด): แจ้งเตือน Windows หนึ่งครั้งเมื่อน้องหิวมาก ไม่เกินทุก 4 ชั่วโมง
 
+**ขึ้นสูงลงต่ำ (v5)**
+
+- 🪂 **แรงโน้มถ่วง**: ปล่อยน้องกลางอากาศ น้องจะร่วงลงไปถึง taskbar คว้ากลางทางได้
+- 🪟 **นั่งบนหน้าต่าง**: ตอนร่วงลงมา น้องจะเกาะขอบบนของหน้าต่างที่เปิดอยู่แล้วเดินเล่นบนนั้น ย้ายหน้าต่าง น้องก็ไปด้วย ถ้าหน้าต่างถูกย่อ ขยายเต็มจอ ปิด หรือมีหน้าต่างอื่นมาบัง น้องจะตกลงมา
+- 🦘 **กระโดดและปีน** เป็นบางครั้ง: กระโดดขึ้นหน้าต่างที่อยู่ในระยะ กระโดดลงจากหน้าต่าง หรือปีนขอบจอขึ้นไปเกาะค้างไว้สักครู่แล้วปล่อยตัวลงมา
+- ⚙️ ปิดแต่ละอย่างได้ในหน้าตั้งค่า ("ปล่อยแล้วตกลงพื้น" "ลงไปนั่งบนหน้าต่างอื่นได้" "กระโดดและปีนบ้างเป็นครั้งคราว") ถ้าปิดแรงโน้มถ่วง น้องจะทำตัวเหมือน v4
+
 ### ติดตั้ง
 
-build installer ก่อน (ดูหัวข้อพัฒนาต่อ) แล้วรัน `dist/desktop-pet-setup-4.0.0.exe` ติดตั้งเฉพาะผู้ใช้ปัจจุบัน
+build installer ก่อน (ดูหัวข้อพัฒนาต่อ) แล้วรัน `dist/desktop-pet-setup-5.0.0.exe` ติดตั้งเฉพาะผู้ใช้ปัจจุบัน
 ไม่ต้องใช้สิทธิ์ admin และสร้าง shortcut ให้ทั้งใน Start menu และบนเดสก์ท็อป ติดตั้งทับเวอร์ชันเก่าได้โดยการตั้งค่าเดิมยังอยู่
 
 | | |
@@ -253,6 +280,7 @@ npm run dev
 | [requirement-v2.md](requirement-v2.md) | Pet-care system, acceptance criteria, open questions |
 | [requirement-v3.md](requirement-v3.md) | Focus timer and Thai/English UI |
 | [requirement-v4.md](requirement-v4.md) | Livelier cat, focus history and treats, hungry reminder |
+| [requirement-v5.md](requirement-v5.md) | Gravity, window perches, jump and climb |
 | [WORK-LOG.md](WORK-LOG.md) | Progress log and where to resume |
 | [CLAUDE.md](CLAUDE.md) · [AGENTS.md](AGENTS.md) | Working rules for coding agents |
 
@@ -263,5 +291,5 @@ artwork is included. See [cat-sprite.LICENSE.txt](assets/models/cat-sprite.LICEN
 ภาพแมวสร้างโดยเจ้าของโปรเจกต์ด้วย Claude (claude.ai) ไม่มีภาพจากบุคคลอื่น
 
 <div align="center">
-<sub>v4.0.0 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
+<sub>v5.0.0 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
 </div>
