@@ -137,7 +137,7 @@ export const SETTINGS_WINDOW = {
 } as const
 
 export const ADOPT_WINDOW = {
-  width: 380,
+  width: 520,
   height: 440
 } as const
 

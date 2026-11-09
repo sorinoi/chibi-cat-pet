@@ -88,6 +88,7 @@ body {
 
 .looks {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
   margin: 0 0 16px;

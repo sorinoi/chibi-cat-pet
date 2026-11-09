@@ -7,7 +7,7 @@
 **A little cat that lives on your Windows desktop, wants you to look after it, and cheers on your focus sessions.**<br>
 **แมวน้อยที่มาอยู่บนเดสก์ท็อป Windows ของคุณ รอให้คุณดูแล และคอยเชียร์ตอนคุณโฟกัสทำงาน**
 
-![version](https://img.shields.io/badge/version-7.0.0-f4a261)
+![version](https://img.shields.io/badge/version-7.0.1-f4a261)
 ![platform](https://img.shields.io/badge/platform-Windows%20x64-2a9d8f)
 ![offline](https://img.shields.io/badge/works-100%25%20offline-264653)
 ![stack](https://img.shields.io/badge/Electron%20%2B%20Vue%203-TypeScript-6c757d)
@@ -342,5 +342,5 @@ artwork is included. See [cat-sprite.LICENSE.txt](assets/models/cat-sprite.LICEN
 ภาพแมวสร้างโดยเจ้าของโปรเจกต์ด้วย Claude (claude.ai) ไม่มีภาพจากบุคคลอื่น
 
 <div align="center">
-<sub>v7.0.0 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
+<sub>v7.0.1 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
 </div>

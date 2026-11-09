@@ -115,4 +115,5 @@ Defaults are used until the user decides:
 - NFR-01 (production build, isolated data, gray cat, 60 s, all processes): CPU 0.176 % of the machine, private RAM 187.6 MB. Pass.
 - NFR-40/42: 12 look changes from Settings, 2-6 ms each over IPC; right after, 608 MB in total (GPU process 386 MB of textures); 60 s later 210 MB (GPU 116 MB). The pet scene's JS heap stayed flat over 40 changes after a forced GC (V7-M1). No growth.
 - Upgrade over the installed 5.0.0 (with the user's OK): `/S` exit 0, Uninstall entry 7.0.0, settings.json and pet.json byte-identical after install; launched: only the pet window, the cat sOrinOi back with look null (orange) and a new pet id, no .bad file, activity log off. The data seen from the Claude session is the sandboxed copy (as for 4.0.0 and 5.0.0).
+- Version 7.0.1 (2026-11-09, FR-106): the adoption window was too narrow for 4 looks (cards clipped on both sides). Window width 380 -> 520 DIP; the look cards wrap instead of overflowing.
 
