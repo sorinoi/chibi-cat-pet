@@ -6,7 +6,7 @@ import { layoutActionArc } from './lib/actionArc'
 import { createActionsVisibility } from './lib/actionsVisibility'
 import type { ActionsUi } from './ipc'
 import { IpcChannel, type ActionId, type ActionsLayout, type ArtBox } from '../shared/ipc'
-import type { ActionButton } from '../shared/quickActions'
+import { ACTION_MOTION, type ActionButton } from '../shared/quickActions'
 
 export interface QuickActions extends ActionsUi {
   /** Redraw open buttons (the focus timer or the language changed, FR-129). */
@@ -70,15 +70,32 @@ export function createQuickActions(pet: BrowserWindow, options: QuickActionsOpti
 
   /** The art the buttons are placed around, relative to the pet window (DIP). */
   let anchor: ArtBox | null = null
+  /** FR-133: the window hides after the buttons shrank back into the cat. */
+  let hideTimer: ReturnType<typeof setTimeout> | null = null
   const alive = (): boolean => !win.isDestroyed() && !pet.isDestroyed()
+
+  function cancelHide(): void {
+    if (hideTimer) clearTimeout(hideTimer)
+    hideTimer = null
+  }
 
   const visibility = createActionsVisibility({
     hideDelayMs: ACTIONS.hideDelayMs,
     onHide: () => {
       anchor = null
       if (alive()) {
-        win.hide()
         win.setIgnoreMouseEvents(true, { forward: true })
+        cancelHide()
+        if (pet.isVisible()) {
+          // Shrink first (clicks already pass through), then hide the window.
+          win.webContents.send(IpcChannel.ActionsHide)
+          hideTimer = setTimeout(() => {
+            hideTimer = null
+            if (alive() && !visibility.isOpen()) win.hide()
+          }, ACTION_MOTION.hideMs + ACTIONS.hideSlackMs)
+        } else {
+          win.hide()
+        }
       }
       options.onClosed()
     }
@@ -95,7 +112,10 @@ export function createQuickActions(pet: BrowserWindow, options: QuickActionsOpti
       y: Math.round(feet.y)
     }).workArea
     const size = options.petSize()
-    const buttonSize = Math.max(ACTIONS.minButtonSize, ACTIONS.buttonSize * size)
+    const buttonSize = Math.min(
+      ACTIONS.maxButtonSize,
+      Math.max(ACTIONS.minButtonSize, ACTIONS.buttonSize * size)
+    )
     const buttons = options.buttons()
     const arc = layoutActionArc({
       head,
@@ -121,7 +141,11 @@ export function createQuickActions(pet: BrowserWindow, options: QuickActionsOpti
         y: area.y - arc.window.y,
         width: area.width,
         height: area.height
-      }
+      },
+      origin:
+        arc.side === 'above'
+          ? { x: head.x - arc.window.x, y: head.y - arc.window.y }
+          : { x: feet.x - arc.window.x, y: feet.y - arc.window.y }
     }
     win.webContents.send(IpcChannel.ActionsLayout, layout)
     win.setBounds(arc.window)
@@ -140,6 +164,7 @@ export function createQuickActions(pet: BrowserWindow, options: QuickActionsOpti
     window: () => (win.isDestroyed() ? null : win),
     open(art) {
       if (!options.enabled() || !alive() || !pageReady || !pet.isVisible()) return false
+      cancelHide()
       anchor = art
       place()
       win.setAlwaysOnTop(pet.isAlwaysOnTop(), 'pop-up-menu')
@@ -164,6 +189,7 @@ export function createQuickActions(pet: BrowserWindow, options: QuickActionsOpti
       if (visibility.isOpen()) place()
     },
     dispose() {
+      cancelHide()
       visibility.dispose()
       if (!pet.isDestroyed()) {
         pet.off('move', onPetMove)

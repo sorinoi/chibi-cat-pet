@@ -7,7 +7,7 @@
 **A little cat that lives on your Windows desktop, wants you to look after it, and cheers on your focus sessions.**<br>
 **แมวน้อยที่มาอยู่บนเดสก์ท็อป Windows ของคุณ รอให้คุณดูแล และคอยเชียร์ตอนคุณโฟกัสทำงาน**
 
-![version](https://img.shields.io/badge/version-8.0.0-f4a261)
+![version](https://img.shields.io/badge/version-9.0.0-f4a261)
 ![platform](https://img.shields.io/badge/platform-Windows%20x64-2a9d8f)
 ![offline](https://img.shields.io/badge/works-100%25%20offline-264653)
 ![stack](https://img.shields.io/badge/Electron%20%2B%20Vue%203-TypeScript-6c757d)
@@ -170,6 +170,15 @@ Pick a coat when you adopt, or change it later in Settings.<br>
 - ⚙️ **Activity level** in Settings > General: Calm (as quiet as v7, no hops), Normal (the
   default) or Lively (busier, but at most one hop run every 20 seconds).
 
+**Quick buttons (v9)**
+
+- 🫧 Rest the mouse on the cat for a moment and four round buttons float up in an arc over its
+  head: 🍗 Feed, 🍅 Focus (start, pause or resume the timer), ⚙️ Settings and 🙈 Hide.
+- 🖐️ Stroking the cat still pets it; the buttons wait for a still mouse. They go away shortly
+  after the mouse leaves, and the cat stays put while they show.
+- 📐 Near the top of the screen they open below the feet, near the sides they turn toward the
+  middle. Turn them off in Settings > General.
+
 ### Install
 
 **[Download the latest installer](https://github.com/sorinoi/chibi-cat-pet/releases/latest)**
@@ -307,6 +316,12 @@ Pet-care tuning lives in `src/shared/careConfig.ts`, focus timer defaults in
 - 🐇 บางครั้งจะ**กระโดดดึ๋ง ๆ** ไปข้างหน้าหลายครั้งติดกัน ทั้งบนพื้นและบนขอบหน้าต่าง คว้าน้องกลางทางได้เหมือนเดิม
 - ⚙️ **ความซน** ในหน้าตั้งค่า > ทั่วไป: สงบ (เงียบเหมือน v7 ไม่กระโดด) ปกติ (ค่าเริ่มต้น) หรือซน (ขยับบ่อยขึ้น แต่กระโดดไม่เกินหนึ่งชุดทุก 20 วินาที)
 
+**ปุ่มลัด (v9)**
+
+- 🫧 วางเมาส์นิ่ง ๆ บนตัวน้องสักครู่ จะมีปุ่มกลม 4 ปุ่มลอยขึ้นเป็นวงโค้งเหนือหัว: 🍗 ให้อาหาร, 🍅 โฟกัส (เริ่ม หยุดชั่วคราว หรือทำต่อ), ⚙️ ตั้งค่า และ 🙈 ซ่อนน้องแมว
+- 🖐️ ถูเมาส์ไปมาบนตัวน้องยังเป็นการลูบหัวเหมือนเดิม ปุ่มจะรอให้เมาส์นิ่งก่อน เมาส์ออกไปไม่นานปุ่มก็หายไป และระหว่างที่ปุ่มโชว์ น้องจะนั่งรออยู่กับที่
+- 📐 ถ้าน้องอยู่ชิดขอบบนของจอ ปุ่มจะไปอยู่ใต้เท้า ชิดขอบซ้ายขวาปุ่มจะหันเข้ากลางจอ ปิดได้ในหน้าตั้งค่า > ทั่วไป
+
 ### ติดตั้ง
 
 **[ดาวน์โหลดตัวติดตั้งล่าสุด](https://github.com/sorinoi/chibi-cat-pet/releases/latest)** (ไฟล์ `desktop-pet-setup-<version>.exe` ในหัวข้อ _Assets_) แล้วรันได้เลย
@@ -348,6 +363,7 @@ npm run dev
 | [requirement-v6.md](requirement-v6.md) | Activity log server and dashboard |
 | [requirement-v7.md](requirement-v7.md) | Coats (looks) and the recolor tool |
 | [requirement-v8.md](requirement-v8.md) | Walking more, hop runs, Activity level |
+| [requirement-v9.md](requirement-v9.md) | Quick buttons around the cat |
 | [WORK-LOG.md](WORK-LOG.md) | Progress log and where to resume |
 | [CLAUDE.md](CLAUDE.md) · [AGENTS.md](AGENTS.md) | Working rules for coding agents |
 
@@ -358,5 +374,5 @@ artwork is included. See [cat-sprite.LICENSE.txt](assets/models/cat-sprite.LICEN
 ภาพแมวสร้างโดยเจ้าของโปรเจกต์ด้วย Claude (claude.ai) ไม่มีภาพจากบุคคลอื่น
 
 <div align="center">
-<sub>v8.0.0 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
+<sub>v9.0.0 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
 </div>

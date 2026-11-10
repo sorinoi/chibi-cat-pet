@@ -120,7 +120,9 @@ export const IpcChannel = {
   /** buttons window -> main (send): boolean, the pointer is on a button (FR-121). */
   ActionsHover: 'actions:hover',
   /** buttons window -> main (send): ActionId, a button was clicked (FR-128..131). */
-  ActionsRun: 'actions:run'
+  ActionsRun: 'actions:run',
+  /** main -> buttons window: shrink the buttons back into the cat (FR-133), then main hides it. */
+  ActionsHide: 'actions:hide'
 } as const
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
@@ -220,6 +222,8 @@ export interface ActionsLayout {
   buttons: Array<{ id: ActionId; variant: ActionVariant; label: string; x: number; y: number }>
   /** The display's work area relative to the window, to keep labels on screen. */
   area: { x: number; y: number; width: number; height: number }
+  /** FR-133: where the buttons grow out of and shrink back into (head, or feet when below). */
+  origin: { x: number; y: number }
 }
 
 /** climb: at the wall, going up; hold: at the top, holding on (then a fall). */
@@ -308,6 +312,8 @@ export interface ActionsApi {
   run(id: ActionId): void
   /** Returns an unsubscribe function. */
   onLayout(listener: (layout: ActionsLayout) => void): () => void
+  /** FR-133: play the hide animation. Returns an unsubscribe function. */
+  onHide(listener: () => void): () => void
 }
 
 export interface SettingsSnapshot {

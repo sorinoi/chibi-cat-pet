@@ -10,6 +10,11 @@ const actionsApi: ActionsApi = {
     const handler = (_event: IpcRendererEvent, layout: ActionsLayout): void => listener(layout)
     ipcRenderer.on(IpcChannel.ActionsLayout, handler)
     return () => ipcRenderer.removeListener(IpcChannel.ActionsLayout, handler)
+  },
+  onHide: (listener) => {
+    const handler = (): void => listener()
+    ipcRenderer.on(IpcChannel.ActionsHide, handler)
+    return () => ipcRenderer.removeListener(IpcChannel.ActionsHide, handler)
   }
 }
 

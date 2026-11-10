@@ -1,6 +1,6 @@
 # Requirement v9: Quick buttons around the cat
 
-Status: APPROVED by the user on 2026-11-10 as written (open questions on their defaults). Not built yet; implementation starts with V9-M1 when the user says go. v8 (requirement-v8.md, released as 8.0.0) stays the base: everything in v1 to v8 keeps working. V6-M4 (server deploy) still waits for the user's VPS and is not part of v9.
+Status: DONE. Approved by the user on 2026-11-10 as written (open questions on their defaults); done and accepted 2026-11-10, released as 9.0.0. v8 (requirement-v8.md, released as 8.0.0) stays the base: everything in v1 to v8 keeps working. V6-M4 (server deploy) still waits for the user's VPS and is not part of v9.
 
 ## 1. Overview
 
@@ -55,7 +55,7 @@ Out of scope for v9.0: more or user-picked buttons, keyboard access, buttons for
 | ID | Requirement |
 | --- | --- |
 | FR-132 | Icons are emoji in round light buttons with a soft outline: Feed 🍗, Focus 🍅 (Pause ⏸️, Resume ▶️, Start break ☕), Settings ⚙️, Hide 🙈. They can be swapped for drawn icons later without changing the layout. |
-| FR-133 | Appear: the buttons grow out of the head point to their places one after another (about 40 ms apart, 220 ms each). Hide: they shrink back into the head (150 ms). While shown each button bobs up and down by a few DIP, each at its own phase. Hovered button grows a little. |
+| FR-133 | Appear: the buttons grow out of the head point to their places one after another (about 40 ms apart, 220 ms each). Hide: they shrink back into the head (150 ms). While shown each button bobs up and down by a few DIP, each at its own phase (a 12 fps timer in 0.5 DIP steps since V9-M3: a CSS animation repainted the window 60 times a second, about 28 % of one core). Hovered button grows a little. |
 | FR-134 | Settings > General: "Buttons over the cat" (on by default; older settings files read as on). Off means the v8 behavior. |
 
 ## 8. Non-functional requirements (additions)
@@ -86,19 +86,19 @@ Same phase approval rule as before.
 
 | Phase | Work | Gate | Status |
 | --- | --- | --- | --- |
-| V9-M1 | Buttons window, dwell trigger and hide rules, arc layout with edge handling, cat waits; buttons without actions | Unit tests; in the app the arc opens on a rest, not on a stroke, stays while moving to it, fits at all edges; click-through between buttons | - |
-| V9-M2 | The four actions, focus button states, labels TH/EN, Settings switch | Each button does what the menu does; Feed hidden without a cat; switch off = v8 | - |
-| V9-M3 | Pop and float animation, tuning, NFR measurement, README, installer 9.0.0, upgrade from 8.0.0 | Acceptance criteria below pass | - |
+| V9-M1 | Buttons window, dwell trigger and hide rules, arc layout with edge handling, cat waits; buttons without actions | Unit tests; in the app the arc opens on a rest, not on a stroke, stays while moving to it, fits at all edges; click-through between buttons | Done 2026-11-10, approved |
+| V9-M2 | The four actions, focus button states, labels TH/EN, Settings switch | Each button does what the menu does; Feed hidden without a cat; switch off = v8 | Done 2026-11-10, approved |
+| V9-M3 | Pop and float animation, tuning, NFR measurement, README, installer 9.0.0, upgrade from 8.0.0 | Acceptance criteria below pass | Done 2026-11-10, accepted (released as 9.0.0) |
 
 ## 12. Acceptance criteria (v9)
 
-- [ ] Resting the mouse on the cat opens four buttons in an arc over its head; stroking it still pets it without opening them.
-- [ ] The buttons stay while the mouse moves to them and hide shortly after it leaves.
-- [ ] Feed, Focus (start, pause, resume), Settings and Hide do the same as the menu.
-- [ ] At the top, left and right edges of the screen and on a window edge every button is fully visible.
-- [ ] The cat does not wander off while the buttons show; no buttons while it moves.
-- [ ] Clicks pass through the gaps between buttons.
-- [ ] Idle CPU and RAM still meet NFR-01.
+- [x] Resting the mouse on the cat opens four buttons in an arc over its head; stroking it still pets it without opening them. (V9-M1, V9-M3)
+- [x] The buttons stay while the mouse moves to them and hide shortly after it leaves. (V9-M1: 0.6 s; shrink 138 ms)
+- [x] Feed, Focus (start, pause, resume), Settings and Hide do the same as the menu. (V9-M2)
+- [x] At the top, left and right edges of the screen and on a window edge every button is fully visible. (V9-M1 edges; labels V9-M2)
+- [x] The cat does not wander off while the buttons show; no buttons while it moves. (V9-M1: 16 s at Lively)
+- [x] Clicks pass through the gaps between buttons. (V9-M1)
+- [x] Idle CPU and RAM still meet NFR-01. (section 14)
 
 ## 13. Open questions
 
@@ -108,3 +108,18 @@ Defaults are used until the user decides:
 - Dwell 0.7 s and hide delay 0.6 s (default); tune after trying it.
 - The setting on by default (default: yes).
 - Should Hide ask first? (default: no, the tray brings the cat back like the menu's Hide.)
+
+## 14. Measurements (V9-M3, 2026-11-10)
+
+Production build, isolated data, pet size 0.7, Calm, 2560 x 1600 at 125 %, 16 logical processors. CPU is the app's processes together (now five: the buttons window has its own renderer); RAM is private bytes.
+
+| Check | Result | Target |
+| --- | --- | --- |
+| NFR-01 idle, 60 s | CPU 0.14 % of the machine, 216 MB (8.0.0 Calm: 191 MB; the buttons window adds about 25 MB) | Pass |
+| NFR-50 buttons hidden | buttons renderer 0 s CPU over 60 s | Pass |
+| NFR-50 buttons shown and bobbing, 10 s | 6.2 % of one core, 0.39 % of the machine (first try with a 60 fps CSS bob: 28.3 %) | - |
+| NFR-51 rest end -> first button frame | 58 ms | 100 ms |
+| NFR-51 click Focus -> timer running | 12 ms | 100 ms |
+| FR-133 appear | buttons start 20-40 ms apart, each about 205 ms to full size (slight overshoot to 1.08) | 40 / 220 ms |
+| FR-133 hide | shrink 138 ms; window hidden 814 ms after the pointer left (0.6 s delay + shrink + 30 ms) | 150 ms |
+| Upgrade | 9.0.0 installed over 8.0.0: settings.json and pet.json byte-identical, cat and look kept, buttons on | - |

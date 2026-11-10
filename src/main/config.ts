@@ -203,6 +203,8 @@ export const ACTIVITY = {
 export const ACTIONS = {
   buttonSize: 44,
   minButtonSize: 34,
+  /** A big cat (pet size up to 2) still gets hand-sized buttons; the arc grows with it. */
+  maxButtonSize: 56,
   /** Arc centre to button centre. */
   radius: 100,
   minRadius: 78,
@@ -223,5 +225,7 @@ export const ACTIONS = {
    */
   labelRoom: { outward: 30, across: 70 },
   /** FR-121: hide this long after the pointer is on neither the cat nor a button. */
-  hideDelayMs: 600
+  hideDelayMs: 600,
+  /** FR-133: extra wait after the shrink animation before the window hides. */
+  hideSlackMs: 30
 } as const

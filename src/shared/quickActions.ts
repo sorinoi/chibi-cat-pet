@@ -44,6 +44,31 @@ export function actionButtons(
   return ACTION_IDS.filter((id) => hasPet || id !== 'feed').map((id) => all[id])
 }
 
+/**
+ * requirement-v9.md FR-133: the buttons' motion. Shared because main waits for the hide
+ * animation before it hides the window.
+ */
+export const ACTION_MOTION = {
+  /** Each button grows out of the cat this long, the next one this much later. */
+  appearMs: 220,
+  staggerMs: 40,
+  /** All buttons shrink back into the cat together. */
+  hideMs: 150,
+  /**
+   * Bobbing while shown: up and down by this many DIP, once per period. A timer moves the
+   * buttons bobFps times a second in bobStepDip steps and repaints only on a change (NFR-50:
+   * a 60 fps CSS animation cost about 28 % of one core while shown).
+   */
+  bobDip: 3,
+  bobPeriodMs: 2000,
+  bobFps: 12,
+  bobStepDip: 0.5,
+  /** The button under the pointer grows a little. */
+  hoverScale: 1.12,
+  /** Size at the start of the appear and the end of the hide. */
+  startScale: 0.2
+} as const
+
 /** FR-129: what a click on the Focus button does in each timer state. */
 export type FocusCommand = 'startFocus' | 'pause' | 'resume' | 'startBreak'
 
