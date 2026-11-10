@@ -307,3 +307,42 @@ describe('hop runs (requirement-v8.md FR-114, FR-115)', () => {
     }
   })
 })
+
+describe('quick buttons (requirement-v9.md FR-120..123)', () => {
+  it('a resting or looking cat waits while the buttons show, then rests again', () => {
+    expect(transition('idle', 'actionsOpen')).toBe('attend')
+    expect(transition('look', 'actionsOpen')).toBe('attend')
+    expect(clipFor('attend')).toBe('idle')
+    expect(run('idle', ['actionsOpen', 'actionsClosed'])).toBe('idle')
+  })
+
+  it('waits: no wander, no other move starts while the buttons show (FR-122, FR-123)', () => {
+    for (const event of ['wander', 'jump', 'climbWander', 'hopRun', 'cursorNear'] as const) {
+      expect(transition('attend', event)).toBeNull()
+    }
+  })
+
+  it('still reacts like a resting cat (and those reactions hide the buttons)', () => {
+    expect(transition('attend', 'click')).toBe('click')
+    expect(transition('attend', 'dragStart')).toBe('drag')
+    expect(transition('attend', 'feed')).toBe('eat')
+    expect(transition('attend', 'cueFocusStart')).toBe('focusStart')
+    expect(transition('attend', 'fallStart')).toBe('fall')
+    expect(transition('attend', 'sleep')).toBe('sleep')
+  })
+
+  it('no buttons for a moving cat (FR-123)', () => {
+    for (const state of [
+      'walk',
+      'hop',
+      'fall',
+      'jump',
+      'toWall',
+      'climb',
+      'hang',
+      'drag'
+    ] as const) {
+      expect(transition(state, 'actionsOpen')).toBeNull()
+    }
+  })
+})

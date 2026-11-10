@@ -11,6 +11,7 @@ import { registerIpcHandlers, type CareUi } from './ipc'
 import { createTray, showPetContextMenu } from './menus'
 import { createPetMotion } from './petMotion'
 import { createPetWindow } from './petWindow'
+import { createQuickActions } from './actionsWindow'
 import { createWindowList } from './windowList'
 import { ACTIVE_MODEL } from '../shared/activeModel'
 import { LOOK_ID } from '../shared/modelConfig'
@@ -107,6 +108,12 @@ function start(): void {
   const sendToPet = (channel: string, payload?: unknown): void => {
     if (!win.isDestroyed()) win.webContents.send(channel, payload)
   }
+
+  // requirement-v9.md: the quick buttons around the cat.
+  const quickActions = createQuickActions(win, {
+    petSize: () => store.settings.petSize,
+    onClosed: () => sendToPet(IpcChannel.PetActionsClosed)
+  })
 
   const windowList = createWindowList()
   const motion = createPetMotion(
@@ -296,6 +303,7 @@ function start(): void {
     careUi,
     focus,
     showContextMenu: () => showPetContextMenu(win, actions),
+    actionsUi: quickActions,
     setLookWatch: (on) => cursor.setWatching(on),
     activityUi: {
       view: () => activity.view(),
@@ -417,6 +425,7 @@ function start(): void {
     care.flush()
   })
   win.on('closed', () => {
+    quickActions.dispose()
     motion.dispose()
     userIdle.dispose()
     fullscreen.dispose()

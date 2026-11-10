@@ -1,4 +1,4 @@
-import type { AdoptApi, CursorNear, PetApi, SettingsApi } from '../shared/ipc'
+import type { ActionsApi, AdoptApi, CursorNear, PetApi, SettingsApi } from '../shared/ipc'
 import type { PetEvent, PetState } from './lib/petMachine'
 import type { ClipName } from '../shared/modelConfig'
 
@@ -23,6 +23,10 @@ interface PetDebug {
   cursor(position: CursorNear): void
   /** Whether the pet asked main for cursor updates. */
   lookWatching(): boolean
+  /** Open the quick buttons as if the pointer rested on the cat (requirement-v9.md FR-120). */
+  actionsNow(): void
+  /** Whether the quick buttons show. */
+  actionsOpen(): boolean
 }
 
 declare global {
@@ -33,6 +37,8 @@ declare global {
     settingsApi: SettingsApi
     /** Adoption window only (src/preload/adopt.ts). */
     adoptApi: AdoptApi
+    /** Quick buttons window only (src/preload/actions.ts, requirement-v9.md). */
+    actionsApi: ActionsApi
     __petDebug?: PetDebug
   }
 }

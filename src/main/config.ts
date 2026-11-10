@@ -195,3 +195,28 @@ export const ACTIVITY = {
   maxEvents: 10_000,
   maxAgeDays: 30
 } as const
+
+/**
+ * requirement-v9.md FR-121, FR-124, FR-125: the quick buttons around the cat (DIP at pet size
+ * 1.0 unless noted; sizes scale with the pet size, never below the min values).
+ */
+export const ACTIONS = {
+  buttonSize: 44,
+  minButtonSize: 34,
+  /** Arc centre to button centre. */
+  radius: 100,
+  minRadius: 78,
+  /** Between the first and the last button (degrees). */
+  spreadDeg: 140,
+  /** The arc centre sits this share of the radius inside the cat from its head or feet. */
+  centreInset: 0.1,
+  /** Kept between a button and the edge of the work area. */
+  edgeMargin: 4,
+  /** Turned toward the middle at a side edge, in steps, before shifting (degrees). */
+  maxTurnDeg: 75,
+  turnStepDeg: 5,
+  /** Room around the buttons inside their window (hover growth, bobbing). */
+  windowPad: 12,
+  /** FR-121: hide this long after the pointer is on neither the cat nor a button. */
+  hideDelayMs: 600
+} as const

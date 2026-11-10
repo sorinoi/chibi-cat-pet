@@ -6,8 +6,11 @@ import {
   type IpcMainInvokeEvent
 } from 'electron'
 import {
+  ACTION_IDS,
   IpcChannel,
+  type ActionId,
   type ActivityTestResult,
+  type ArtBox,
   type ActivityView,
   type CareAct,
   type CareView,
@@ -39,6 +42,22 @@ function isHopRequest(value: unknown): value is HopRequest {
   )
 }
 
+const isPoint = (value: unknown): value is { x: number; y: number } => {
+  if (typeof value !== 'object' || value === null) return false
+  const { x, y } = value as Record<string, unknown>
+  return typeof x === 'number' && Number.isFinite(x) && typeof y === 'number' && Number.isFinite(y)
+}
+
+/** requirement-v9.md FR-124: the cat's art box from the pet. */
+function isArtBox(value: unknown): value is ArtBox {
+  if (typeof value !== 'object' || value === null) return false
+  const { head, feet } = value as Record<string, unknown>
+  return isPoint(head) && isPoint(feet)
+}
+
+const isActionId = (value: unknown): value is ActionId =>
+  typeof value === 'string' && (ACTION_IDS as readonly string[]).includes(value)
+
 function isWalkRequest(value: unknown): value is WalkRequest {
   if (typeof value !== 'object' || value === null) return false
   const { dx, speed, roll } = value as Record<string, unknown>
@@ -64,6 +83,20 @@ export interface IpcContext {
   careUi: CareUi
   /** requirement-v6.md FR-87, FR-88: the Settings activity log group. */
   activityUi: ActivityUi
+  /** requirement-v9.md: the quick buttons around the cat. */
+  actionsUi: ActionsUi
+}
+
+export interface ActionsUi {
+  window(): BrowserWindow | null
+  /** FR-120: show the buttons around this art; false when they cannot show now. */
+  open(art: ArtBox): boolean
+  /** FR-121: where the pointer is. */
+  pointer(on: 'pet' | 'buttons', over: boolean): void
+  close(): void
+  /** FR-126: the buttons window lets the mouse through, or not. */
+  setIgnoreMouse(ignore: boolean): void
+  run(id: ActionId): void
 }
 
 export interface ActivityUi {
@@ -196,6 +229,30 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
     return store.update(patch)
   })
 
+  const { actionsUi } = ctx
+  const fromActions = (event: IpcMainEvent | IpcMainInvokeEvent): boolean => {
+    const win = actionsUi.window()
+    return win !== null && event.sender === win.webContents
+  }
+  ipcMain.handle(IpcChannel.PetActionsOpen, (event, art: unknown) =>
+    fromPet(event) && isArtBox(art) ? actionsUi.open(art) : false
+  )
+  ipcMain.on(IpcChannel.PetActionsPointer, (event, over: unknown) => {
+    if (fromPet(event) && typeof over === 'boolean') actionsUi.pointer('pet', over)
+  })
+  ipcMain.on(IpcChannel.PetActionsClose, (event) => {
+    if (fromPet(event)) actionsUi.close()
+  })
+  ipcMain.on(IpcChannel.ActionsSetIgnoreMouse, (event, ignore: unknown) => {
+    if (fromActions(event) && typeof ignore === 'boolean') actionsUi.setIgnoreMouse(ignore)
+  })
+  ipcMain.on(IpcChannel.ActionsHover, (event, over: unknown) => {
+    if (fromActions(event) && typeof over === 'boolean') actionsUi.pointer('buttons', over)
+  })
+  ipcMain.on(IpcChannel.ActionsRun, (event, id: unknown) => {
+    if (fromActions(event) && isActionId(id)) actionsUi.run(id)
+  })
+
   const { activityUi } = ctx
   ipcMain.handle(IpcChannel.ActivityGet, (event) =>
     fromSettings(event) ? activityUi.view() : null
@@ -221,7 +278,12 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
       IpcChannel.PetHopStop,
       IpcChannel.PetShowContextMenu,
       IpcChannel.PetLookWatch,
-      IpcChannel.CareOpenAdopt
+      IpcChannel.CareOpenAdopt,
+      IpcChannel.PetActionsPointer,
+      IpcChannel.PetActionsClose,
+      IpcChannel.ActionsSetIgnoreMouse,
+      IpcChannel.ActionsHover,
+      IpcChannel.ActionsRun
     ]) {
       ipcMain.removeAllListeners(channel)
     }
@@ -244,7 +306,8 @@ export function registerIpcHandlers(ctx: IpcContext): () => void {
       IpcChannel.ActivityGet,
       IpcChannel.ActivitySetKey,
       IpcChannel.ActivityTest,
-      IpcChannel.ActivityClear
+      IpcChannel.ActivityClear,
+      IpcChannel.PetActionsOpen
     ]) {
       ipcMain.removeHandler(channel)
     }

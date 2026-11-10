@@ -44,5 +44,17 @@ export const BEHAVIOR = {
    */
   jump: { chance: 0.2, cooldownMs: 10 * 60 * 1000 },
   /** FR-76, NFR-30: otherwise a wander becomes a climb attempt this often (same cooldown). */
-  climb: { chance: 0.1 }
+  climb: { chance: 0.1 },
+  /**
+   * requirement-v9.md FR-120: the quick buttons open when the pointer rests on the cat this long
+   * without moving more than restMoveDip (a stroke keeps moving, so it never opens them).
+   */
+  actions: { restMs: 700, restMoveDip: 4 }
+} as const
+
+/** requirement-v9.md FR-132: how the quick buttons look. */
+export const ACTIONS_VIEW = {
+  /** Emoji size as a share of the button diameter. */
+  iconScale: 0.5,
+  icons: { feed: '🍗', focus: '🍅', settings: '⚙️', hide: '🙈' }
 } as const

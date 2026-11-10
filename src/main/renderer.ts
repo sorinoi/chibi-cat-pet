@@ -2,7 +2,7 @@ import type { BrowserWindow } from 'electron'
 import { join } from 'node:path'
 
 /** Loads a renderer page from the Vite dev server in dev, or from the bundle when built. */
-export type RendererPage = 'index.html' | 'settings.html' | 'adopt.html'
+export type RendererPage = 'index.html' | 'settings.html' | 'adopt.html' | 'actions.html'
 
 export function loadRenderer(win: BrowserWindow, page: RendererPage): void {
   const devUrl = process.env['ELECTRON_RENDERER_URL']

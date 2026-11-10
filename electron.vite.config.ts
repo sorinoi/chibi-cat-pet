@@ -12,7 +12,8 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, 'src/preload/index.ts'),
           settings: resolve(__dirname, 'src/preload/settings.ts'),
-          adopt: resolve(__dirname, 'src/preload/adopt.ts')
+          adopt: resolve(__dirname, 'src/preload/adopt.ts'),
+          actions: resolve(__dirname, 'src/preload/actions.ts')
         }
       }
     }
@@ -24,7 +25,8 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, 'src/renderer/index.html'),
           settings: resolve(__dirname, 'src/renderer/settings.html'),
-          adopt: resolve(__dirname, 'src/renderer/adopt.html')
+          adopt: resolve(__dirname, 'src/renderer/adopt.html'),
+          actions: resolve(__dirname, 'src/renderer/actions.html')
         }
       }
     },

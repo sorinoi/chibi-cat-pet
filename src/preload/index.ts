@@ -50,7 +50,11 @@ const petApi: PetApi = {
   onFocusState: (listener) => subscribe<FocusView>(IpcChannel.FocusState, listener),
   onFocusReaction: (listener) => subscribe<FocusReaction>(IpcChannel.FocusReaction, listener),
   setLookWatch: (on) => ipcRenderer.send(IpcChannel.PetLookWatch, on),
-  onCursor: (listener) => subscribe<CursorNear>(IpcChannel.PetCursor, listener)
+  onCursor: (listener) => subscribe<CursorNear>(IpcChannel.PetCursor, listener),
+  openActions: (art) => ipcRenderer.invoke(IpcChannel.PetActionsOpen, art),
+  setActionsPointer: (over) => ipcRenderer.send(IpcChannel.PetActionsPointer, over),
+  closeActions: () => ipcRenderer.send(IpcChannel.PetActionsClose),
+  onActionsClosed: (listener) => subscribe<void>(IpcChannel.PetActionsClosed, () => listener())
 }
 
 contextBridge.exposeInMainWorld('petApi', petApi)

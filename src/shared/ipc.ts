@@ -100,7 +100,26 @@ export const IpcChannel = {
   /** settings -> main (invoke): -> ActivityTestResult (FR-87, FR-92). */
   ActivityTest: 'activity:test',
   /** settings -> main (invoke): confirm, then empty the outbox -> boolean cleared (FR-88). */
-  ActivityClear: 'activity:clear'
+  ActivityClear: 'activity:clear',
+  /**
+   * pet -> main (invoke): ArtBox -> boolean shown (requirement-v9.md FR-120). The pointer rested
+   * on the cat; main shows the quick buttons around it if it can.
+   */
+  PetActionsOpen: 'pet:actions-open',
+  /** pet -> main (send): boolean, the pointer is on the cat (FR-121 hide delay). */
+  PetActionsPointer: 'pet:actions-pointer',
+  /** pet -> main (send): hide the buttons now (state change, right-click; FR-121). */
+  PetActionsClose: 'pet:actions-close',
+  /** main -> pet: the buttons are gone (hide delay, a button click, hidden). */
+  PetActionsClosed: 'pet:actions-closed',
+  /** main -> buttons window: ActionsLayout, before it shows. */
+  ActionsLayout: 'actions:layout',
+  /** buttons window -> main (send): boolean, true = mouse passes through (FR-126). */
+  ActionsSetIgnoreMouse: 'actions:set-ignore-mouse',
+  /** buttons window -> main (send): boolean, the pointer is on a button (FR-121). */
+  ActionsHover: 'actions:hover',
+  /** buttons window -> main (send): ActionId, a button was clicked (FR-128..131). */
+  ActionsRun: 'actions:run'
 } as const
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel]
@@ -178,6 +197,27 @@ export interface HopStarted {
   direction: 1 | -1
 }
 
+/**
+ * requirement-v9.md FR-124: the cat's art in the pet window (DIP, relative to the window):
+ * the top centre (head) and the bottom centre (feet) of the current frame's opaque pixels.
+ */
+export interface ArtBox {
+  head: { x: number; y: number }
+  feet: { x: number; y: number }
+}
+
+/** The quick buttons, left to right (FR-124). */
+export const ACTION_IDS = ['feed', 'focus', 'settings', 'hide'] as const
+export type ActionId = (typeof ACTION_IDS)[number]
+
+/** Where the buttons go inside the buttons window (DIP), sent before it shows. */
+export interface ActionsLayout {
+  /** Button diameter (DIP). */
+  size: number
+  side: 'above' | 'below'
+  buttons: Array<{ id: ActionId; x: number; y: number }>
+}
+
 /** climb: at the wall, going up; hold: at the top, holding on (then a fall). */
 export type ClimbPhase = 'climb' | 'hold'
 
@@ -245,6 +285,25 @@ export interface PetApi extends LanguageApi {
   setLookWatch(on: boolean): void
   /** Returns an unsubscribe function. */
   onCursor(listener: (position: CursorNear) => void): () => void
+  /** requirement-v9.md FR-120: show the quick buttons around this art; resolves true if shown. */
+  openActions(art: ArtBox): Promise<boolean>
+  /** FR-121: whether the pointer is on the cat, while the buttons show. */
+  setActionsPointer(over: boolean): void
+  /** FR-121: hide the buttons now. */
+  closeActions(): void
+  /** Returns an unsubscribe function. */
+  onActionsClosed(listener: () => void): () => void
+}
+
+/** API exposed to the quick buttons window as `window.actionsApi` (requirement-v9.md). */
+export interface ActionsApi {
+  /** true: mouse passes through the window (FR-126). */
+  setIgnoreMouseEvents(ignore: boolean): void
+  /** The pointer is on a button (FR-121). */
+  setHover(over: boolean): void
+  run(id: ActionId): void
+  /** Returns an unsubscribe function. */
+  onLayout(listener: (layout: ActionsLayout) => void): () => void
 }
 
 export interface SettingsSnapshot {

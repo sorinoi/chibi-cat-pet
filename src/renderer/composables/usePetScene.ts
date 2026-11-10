@@ -1,4 +1,5 @@
 import { onBeforeUnmount, onMounted, type Ref } from 'vue'
+import type { ArtBox } from '../../shared/ipc'
 import { RENDER } from '../config'
 import { frameAt } from '../lib/spriteTimeline'
 import { spriteLayout, toCell, type SpriteLayout } from '../lib/spriteLayout'
@@ -37,6 +38,11 @@ export interface PetScene {
   setLook(look: string | null): void
   /** What is on screen now (for debugging). */
   current(): { clip: ClipName; frame: number; facing: Facing; look: string }
+  /**
+   * requirement-v9.md FR-124: the top centre (head) and bottom centre (feet) of the opaque
+   * pixels of the frame on screen, in client CSS pixels (window DIP). Null before the art loads.
+   */
+  artBox(): ArtBox | null
 }
 
 /** A decoded sheet plus its alpha channel (row-major) for hit tests. */
@@ -283,6 +289,37 @@ export function usePetScene(canvas: Ref<HTMLCanvasElement | null>): PetScene {
     },
     current() {
       return { clip: clipName, frame: shownFrame, facing, look: shownLook ?? wantedLook }
+    },
+    artBox() {
+      const el = canvas.value
+      const sheet = sheets.get(clip.sheet)
+      if (!el || !sheet || !layout) return null
+      const rect = el.getBoundingClientRect()
+      if (rect.width === 0 || el.width === 0) return null
+      const { cellWidth, cellHeight, columns } = sheet.spec
+      const x0 = (clip.column + shownFrame) * cellWidth
+      const y0 = clip.row * cellHeight
+      let top = -1
+      let bottom = -1
+      let left = cellWidth
+      let right = -1
+      for (let v = 0; v < cellHeight; v++) {
+        const row = (y0 + v) * columns * cellWidth + x0
+        for (let u = 0; u < cellWidth; u++) {
+          if (sheet.alpha[row + u] <= RENDER.hitAlphaThreshold) continue
+          if (top < 0) top = v
+          bottom = v
+          if (u < left) left = u
+          if (u > right) right = u
+        }
+      }
+      if (top < 0) return null
+      // Cell pixels -> canvas pixels (spriteLayout) -> client CSS pixels.
+      const css = rect.width / el.width
+      const l = layout
+      const x = (l.originX + l.sign * l.scale * ((left + right + 1) / 2)) * css
+      const y = (v: number): number => (l.originY + l.scale * v) * css
+      return { head: { x, y: y(top) }, feet: { x, y: y(bottom + 1) } }
     }
   }
 }

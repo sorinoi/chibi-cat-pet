@@ -22,7 +22,23 @@ export interface PetBehavior {
   click(): void
   /** A recognized stroke (FR-18): plays pet and counts the bonus. */
   stroke(): void
+  /** requirement-v9.md FR-120: whether a pointer resting on the cat may open the buttons. */
+  canOpenActions(): boolean
+  /** FR-120: the pointer rested on the cat; ask main to show the quick buttons. */
+  openActions(): void
+  /** FR-121: hide the quick buttons now (right-click). */
+  closeActions(): void
+  /** FR-121: the pointer moved on or off the cat. */
+  pointerOnPet(over: boolean): void
 }
+
+export interface PetBehaviorOptions {
+  /** Whether the pointer is on the cat now (requirement-v9.md FR-122: the cat waits). */
+  pointerOnPet(): boolean
+}
+
+/** requirement-v9.md FR-120: states in which a resting pointer opens the quick buttons. */
+const REST_STATES: ReadonlySet<PetState> = new Set<PetState>(['idle', 'look', 'sleep'])
 
 /** Focus timer reaction -> state machine event (requirement-v3.md section 10). */
 const FOCUS_CUE: Record<FocusReaction, PetEvent> = {
@@ -53,7 +69,7 @@ const randomBetween = (min: number, max: number): number => min + Math.random() 
  * process to move the window for walk and drag, and reacts to care (requirement-v2.md
  * sections 5-6). The care mood comes from main; null means no pet is adopted yet.
  */
-export function usePetBehavior(scene: PetScene): PetBehavior {
+export function usePetBehavior(scene: PetScene, options: PetBehaviorOptions): PetBehavior {
   const api = window.petApi
   const state = ref<PetState>('idle')
   const careView = ref<CareView | null>(null)
@@ -75,6 +91,11 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
   /** Last jump or climb (requirement-v5.md NFR-30 cooldown, shared). */
   let lastMoveAt: number | null = null
   const unsubscribers: Array<() => void> = []
+  /**
+   * requirement-v9.md: whether main shows the quick buttons. It mirrors the buttons window, not
+   * the cat's behavior (that is the `attend` state, which an asleep cat skips).
+   */
+  let actionsShown = false
   /** requirement-v8.md FR-117: Calm, Normal or Lively (main tells; Normal until then). */
   let activity: ActivityLevel = 'normal'
   const level = (): (typeof BEHAVIOR.activity)[ActivityLevel] => BEHAVIOR.activity[activity]
@@ -86,8 +107,9 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
 
   /** The wander timer: walk, or show the hungry reminder instead (section 5). */
   function onWanderTimer(): void {
-    // Do not walk or nag while hidden from the tray or by a fullscreen app.
-    if (document.hidden) {
+    // Do not walk or nag while hidden from the tray or by a fullscreen app, and wait while the
+    // pointer rests on the cat (requirement-v9.md FR-122).
+    if (document.hidden || options.pointerOnPet()) {
       scheduleWander()
       return
     }
@@ -262,6 +284,45 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     exit(from, to)
     enter(to, from)
     syncLookWatch()
+    if (actionsShown) keepOrCloseActions(from, to)
+  }
+
+  /**
+   * requirement-v9.md FR-121: any change of what the cat does hides the buttons, except opening
+   * them (attend) and waking up under them (the cat then waits again).
+   */
+  function keepOrCloseActions(from: PetState, to: PetState): void {
+    if (to === 'attend') return
+    if (from === 'sleep' && to === 'idle') {
+      dispatch('actionsOpen')
+      return
+    }
+    closeActions()
+  }
+
+  function closeActions(): void {
+    if (!actionsShown) return
+    actionsShown = false
+    api.closeActions()
+  }
+
+  const canOpenActions = (): boolean =>
+    !actionsShown && !document.hidden && REST_STATES.has(state.value)
+
+  /** FR-120: main shows the buttons around the cat's art if it can. */
+  async function openActions(): Promise<void> {
+    if (!canOpenActions()) return
+    const art = scene.artBox()
+    if (!art) return
+    actionsShown = true
+    const shown = await api.openActions(art)
+    if (!actionsShown) return // closed while main was answering
+    if (!shown) {
+      actionsShown = false
+      return
+    }
+    // An asleep cat stays asleep under the buttons; a resting one waits (FR-122).
+    dispatch('actionsOpen')
   }
 
   /**
@@ -411,7 +472,13 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
       }),
       api.onCareRequest(onCareRequest),
       api.onFocusReaction(onFocusReaction),
-      api.onCursor(onCursor)
+      api.onCursor(onCursor),
+      // FR-121: main hid the buttons (hide delay, a button, hidden).
+      api.onActionsClosed(() => {
+        if (!actionsShown) return
+        actionsShown = false
+        dispatch('actionsClosed')
+      })
     )
     // Hidden from the tray or by a fullscreen app: stop cursor updates (NFR-21).
     document.addEventListener('visibilitychange', syncLookWatch)
@@ -451,7 +518,10 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
         },
         // Look at the mouse without moving the real cursor.
         cursor: onCursor,
-        lookWatching: () => lookWatching
+        lookWatching: () => lookWatching,
+        // requirement-v9.md: open the quick buttons as if the pointer rested on the cat.
+        actionsNow: () => void openActions(),
+        actionsOpen: () => actionsShown
       }
     }
   })
@@ -462,8 +532,21 @@ export function usePetBehavior(scene: PetScene): PetBehavior {
     if (state.value === 'walk') api.stopWalk()
     if (state.value === 'drag') api.endDrag()
     if (lookWatching) api.setLookWatch(false)
+    closeActions()
     if (import.meta.env.DEV) delete window.__petDebug
   })
 
-  return { state: readonly(state), care: readonly(careView), dispatch, click, stroke: petNow }
+  return {
+    state: readonly(state),
+    care: readonly(careView),
+    dispatch,
+    click,
+    stroke: petNow,
+    canOpenActions,
+    openActions: () => void openActions(),
+    closeActions,
+    pointerOnPet: (over) => {
+      if (actionsShown) api.setActionsPointer(over)
+    }
+  }
 }

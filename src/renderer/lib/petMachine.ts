@@ -3,13 +3,16 @@ import type { ClipName } from '../../shared/modelConfig'
 /**
  * Pet behavior states. Each state plays the clip of the same name, except `welcome`
  * (the adoption scene, FR-23), which plays `pet` and then moves on to `happy`, and
- * `toWall` (walking to a screen edge to climb it, requirement-v5.md FR-76), which plays `walk`.
+ * `toWall` (walking to a screen edge to climb it, requirement-v5.md FR-76), which plays `walk`,
+ * and `attend` (waiting while the quick buttons show, requirement-v9.md FR-122), which plays
+ * `idle`.
  */
-export type PetState = ClipName | 'welcome' | 'toWall'
+export type PetState = ClipName | 'welcome' | 'toWall' | 'attend'
 
 export function clipFor(state: PetState): ClipName {
   if (state === 'welcome') return 'pet'
   if (state === 'toWall') return 'walk'
+  if (state === 'attend') return 'idle'
   return state
 }
 
@@ -68,6 +71,11 @@ export type PetEvent =
   | 'atWall'
   /** The cat reached the top and holds on. */
   | 'holdPoint'
+  // v9 quick buttons (requirement-v9.md section 4)
+  /** The quick buttons opened over a resting cat (FR-120). */
+  | 'actionsOpen'
+  /** The quick buttons are gone (FR-121). */
+  | 'actionsClosed'
 
 /** FR-63: any cat at rest or in a reaction may be found in the air and fall (wakes it too). */
 const canFall = { fallStart: 'fall' } as const
@@ -104,6 +112,7 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
     morningStretch: 'stretch',
     nightYawn: 'yawn',
     cursorNear: 'look',
+    actionsOpen: 'attend',
     sleep: 'sleep',
     jump: 'jump',
     climbWander: 'toWall',
@@ -175,6 +184,19 @@ const TRANSITIONS: Record<PetState, Partial<Record<PetEvent, PetState>>> = {
   // wander timer does not run, so the cat keeps looking until the cursor goes away.
   look: {
     cursorAway: 'idle',
+    actionsOpen: 'attend',
+    click: 'click',
+    clickHappy: 'happy',
+    dragStart: 'drag',
+    sleep: 'sleep',
+    ...canFall,
+    ...careActions,
+    ...focusCues
+  },
+  // requirement-v9.md FR-122: waiting while the quick buttons show, a calm idle like look: the
+  // wander timer does not run. Everything a resting cat reacts to still works (and hides them).
+  attend: {
+    actionsClosed: 'idle',
     click: 'click',
     clickHappy: 'happy',
     dragStart: 'drag',
