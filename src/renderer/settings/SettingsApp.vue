@@ -135,6 +135,15 @@ function checkedFrom(event: Event): boolean {
         <label class="row check">
           <input
             type="checkbox"
+            :checked="settings.quickButtons"
+            @change="set('quickButtons', checkedFrom($event))"
+          />
+          <span class="label">{{ text.quickButtons }}</span>
+        </label>
+
+        <label class="row check">
+          <input
+            type="checkbox"
             :checked="settings.startWithWindows"
             @change="set('startWithWindows', checkedFrom($event))"
           />

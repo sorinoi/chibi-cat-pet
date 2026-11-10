@@ -46,7 +46,7 @@ Out of scope for v9.0: more or user-picked buttons, keyboard access, buttons for
 | ID | Requirement |
 | --- | --- |
 | FR-128 | Feed: the same as Feed in the cat's menu (care:request, through the pet's state machine). A full cat politely refuses as today. Without an adopted cat the button is not shown and the arc has three buttons. |
-| FR-129 | Focus: the timer's main action for its state: Start focus when stopped, Pause while running (focus or break), Resume when paused. Icon and label follow the state. |
+| FR-129 | Focus: the timer's main action for its state: Start focus when stopped, Pause while running (focus or break), Resume when paused, Start break when a break waits to be started (added in V9-M2, like the Focus menu). Icon and label follow the state. |
 | FR-130 | Settings opens (or brings to front) the settings window; Hide hides the cat like the menu's Hide (the tray brings it back). |
 | FR-131 | After a click the buttons hide, then the action runs, so the cat's reaction (eat, focusStart, ...) is not covered. |
 
@@ -54,7 +54,7 @@ Out of scope for v9.0: more or user-picked buttons, keyboard access, buttons for
 
 | ID | Requirement |
 | --- | --- |
-| FR-132 | Icons are emoji in round light buttons with a soft outline: Feed 🍗, Focus 🍅 (Pause ⏸️, Resume ▶️), Settings ⚙️, Hide 🙈. They can be swapped for drawn icons later without changing the layout. |
+| FR-132 | Icons are emoji in round light buttons with a soft outline: Feed 🍗, Focus 🍅 (Pause ⏸️, Resume ▶️, Start break ☕), Settings ⚙️, Hide 🙈. They can be swapped for drawn icons later without changing the layout. |
 | FR-133 | Appear: the buttons grow out of the head point to their places one after another (about 40 ms apart, 220 ms each). Hide: they shrink back into the head (150 ms). While shown each button bobs up and down by a few DIP, each at its own phase. Hovered button grows a little. |
 | FR-134 | Settings > General: "Buttons over the cat" (on by default; older settings files read as on). Off means the v8 behavior. |
 

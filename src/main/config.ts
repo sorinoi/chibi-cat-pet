@@ -156,7 +156,7 @@ export const STORE = {
 
 export const SETTINGS_WINDOW = {
   width: 820,
-  height: 920
+  height: 960
 } as const
 
 export const ADOPT_WINDOW = {
@@ -217,6 +217,11 @@ export const ACTIONS = {
   turnStepDeg: 5,
   /** Room around the buttons inside their window (hover growth, bobbing). */
   windowPad: 12,
+  /**
+   * FR-127: room for a label on the outer side of a button (gap + label height), and half the
+   * widest label (the page caps labels at twice this width).
+   */
+  labelRoom: { outward: 30, across: 70 },
   /** FR-121: hide this long after the pointer is on neither the cat nor a button. */
   hideDelayMs: 600
 } as const

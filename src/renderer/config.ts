@@ -52,9 +52,23 @@ export const BEHAVIOR = {
   actions: { restMs: 700, restMoveDip: 4 }
 } as const
 
-/** requirement-v9.md FR-132: how the quick buttons look. */
+/** requirement-v9.md FR-127, FR-132: how the quick buttons look. */
 export const ACTIONS_VIEW = {
   /** Emoji size as a share of the button diameter. */
   iconScale: 0.5,
-  icons: { feed: '🍗', focus: '🍅', settings: '⚙️', hide: '🙈' }
+  /** One picture per button state (the Focus button follows the timer, FR-129). */
+  icons: {
+    feed: '🍗',
+    focusStart: '🍅',
+    focusPause: '⏸️',
+    focusResume: '▶️',
+    focusStartBreak: '☕',
+    settings: '⚙️',
+    hide: '🙈'
+  },
+  /** Label: space between it and its button, and its widest size (main keeps room for it). */
+  labelGap: 4,
+  labelMaxWidth: 140,
+  /** Labels stay this far inside the window and the screen. */
+  labelInset: 2
 } as const

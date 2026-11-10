@@ -5,14 +5,23 @@ import { loadRenderer } from './renderer'
 import { layoutActionArc } from './lib/actionArc'
 import { createActionsVisibility } from './lib/actionsVisibility'
 import type { ActionsUi } from './ipc'
-import { ACTION_IDS, IpcChannel, type ActionsLayout, type ArtBox } from '../shared/ipc'
+import { IpcChannel, type ActionId, type ActionsLayout, type ArtBox } from '../shared/ipc'
+import type { ActionButton } from '../shared/quickActions'
 
 export interface QuickActions extends ActionsUi {
+  /** Redraw open buttons (the focus timer or the language changed, FR-129). */
+  refresh(): void
   dispose(): void
 }
 
 export interface QuickActionsOptions {
   petSize(): number
+  /** FR-134: the Settings switch. */
+  enabled(): boolean
+  /** The buttons to show now, left to right (FR-127..129). */
+  buttons(): ActionButton[]
+  /** FR-128..130: do what the button stands for (after the buttons are gone, FR-131). */
+  run(id: ActionId): void
   /** The buttons are gone (tell the pet, FR-121). */
   onClosed(): void
 }
@@ -87,12 +96,12 @@ export function createQuickActions(pet: BrowserWindow, options: QuickActionsOpti
     }).workArea
     const size = options.petSize()
     const buttonSize = Math.max(ACTIONS.minButtonSize, ACTIONS.buttonSize * size)
-    const ids = [...ACTION_IDS]
+    const buttons = options.buttons()
     const arc = layoutActionArc({
       head,
       feet,
       area,
-      count: ids.length,
+      count: buttons.length,
       buttonSize,
       radius: Math.max(ACTIONS.minRadius, ACTIONS.radius * size),
       spreadDeg: ACTIONS.spreadDeg,
@@ -100,12 +109,19 @@ export function createQuickActions(pet: BrowserWindow, options: QuickActionsOpti
       edgeMargin: ACTIONS.edgeMargin,
       maxTurnDeg: ACTIONS.maxTurnDeg,
       turnStepDeg: ACTIONS.turnStepDeg,
-      windowPad: ACTIONS.windowPad
+      windowPad: ACTIONS.windowPad,
+      labelRoom: ACTIONS.labelRoom
     })
     const layout: ActionsLayout = {
       size: buttonSize,
       side: arc.side,
-      buttons: arc.buttons.map((b, i) => ({ id: ids[i], x: b.x, y: b.y }))
+      buttons: arc.buttons.map((b, i) => ({ ...buttons[i], x: b.x, y: b.y })),
+      area: {
+        x: area.x - arc.window.x,
+        y: area.y - arc.window.y,
+        width: area.width,
+        height: area.height
+      }
     }
     win.webContents.send(IpcChannel.ActionsLayout, layout)
     win.setBounds(arc.window)
@@ -123,7 +139,7 @@ export function createQuickActions(pet: BrowserWindow, options: QuickActionsOpti
   return {
     window: () => (win.isDestroyed() ? null : win),
     open(art) {
-      if (!alive() || !pageReady || !pet.isVisible()) return false
+      if (!options.enabled() || !alive() || !pageReady || !pet.isVisible()) return false
       anchor = art
       place()
       win.setAlwaysOnTop(pet.isAlwaysOnTop(), 'pop-up-menu')
@@ -138,8 +154,15 @@ export function createQuickActions(pet: BrowserWindow, options: QuickActionsOpti
       if (ignore) win.setIgnoreMouseEvents(true, { forward: true })
       else win.setIgnoreMouseEvents(false)
     },
-    // V9-M1: the buttons only close; their actions come in V9-M2 (FR-128..131).
-    run: () => visibility.close(),
+    // FR-131: the buttons go first, so the cat's reaction is not covered.
+    run(id) {
+      if (!visibility.isOpen()) return
+      visibility.close()
+      options.run(id)
+    },
+    refresh() {
+      if (visibility.isOpen()) place()
+    },
     dispose() {
       visibility.dispose()
       if (!pet.isDestroyed()) {

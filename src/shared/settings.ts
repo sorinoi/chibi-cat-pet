@@ -43,6 +43,8 @@ export interface Settings extends FocusSettings {
   activityServerUrl: string
   /** requirement-v8.md FR-117, FR-118: Calm, Normal (default) or Lively. */
   activity: ActivityLevel
+  /** requirement-v9.md FR-134: quick buttons over a resting cat. On by default. */
+  quickButtons: boolean
 }
 
 export const SETTINGS_LIMITS = {
@@ -70,7 +72,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   jumpAndClimb: true,
   activityLog: false,
   activityServerUrl: '',
-  activity: 'normal'
+  activity: 'normal',
+  quickButtons: true
 }
 
 export interface Position {
@@ -153,7 +156,8 @@ export function sanitizeSettings(raw: unknown, base: Settings = DEFAULT_SETTINGS
       SETTINGS_LIMITS.activityServerUrl.maxLength,
       base.activityServerUrl
     ),
-    activity: isActivityLevel(r['activity']) ? r['activity'] : base.activity
+    activity: isActivityLevel(r['activity']) ? r['activity'] : base.activity,
+    quickButtons: bool(r['quickButtons'], base.quickButtons)
   }
 }
 

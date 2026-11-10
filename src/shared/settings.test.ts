@@ -187,3 +187,15 @@ describe('activity setting (requirement-v8.md FR-117, FR-118)', () => {
     expect(sanitizeSettings({ activity: 'crazy' }).activity).toBe('normal')
   })
 })
+
+describe('quick buttons setting (requirement-v9.md FR-134)', () => {
+  it('is on by default and for older settings files', () => {
+    expect(DEFAULT_SETTINGS.quickButtons).toBe(true)
+    expect(parsePersistedState({ settings: { gravity: true } }).settings.quickButtons).toBe(true)
+  })
+
+  it('can be turned off; bad values keep the current one', () => {
+    expect(sanitizeSettings({ quickButtons: false }).quickButtons).toBe(false)
+    expect(sanitizeSettings({ quickButtons: 'no' }).quickButtons).toBe(true)
+  })
+})

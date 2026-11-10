@@ -42,6 +42,12 @@ export interface ArcInput {
   turnStepDeg: number
   /** Room around the buttons inside the window (hover growth, bobbing) (DIP). */
   windowPad: number
+  /**
+   * FR-127: room for a button's label on the outer side of the arc (above it, or below it when
+   * the arc opens below): `outward` is kept inside the work area too; `across` is half the
+   * widest label, so the window holds it (the page keeps it on screen).
+   */
+  labelRoom: { outward: number; across: number }
 }
 
 export interface ArcLayout {
@@ -78,20 +84,23 @@ function centres(input: ArcInput, side: ArcLayout['side'], turnDeg: number): Poi
   })
 }
 
-/** How far the buttons stick out of the usable area on each side (0 = fits). */
+/** How far the buttons (and their labels' room) stick out of the usable area (0 = fits). */
 function overflow(
   points: Point[],
-  input: ArcInput
+  input: ArcInput,
+  side: ArcLayout['side']
 ): { top: number; bottom: number; left: number; right: number } {
   const half = input.buttonSize / 2 + input.edgeMargin
+  const above = side === 'above' ? input.labelRoom.outward : 0
+  const below = side === 'below' ? input.labelRoom.outward : 0
   const { area } = input
   const xs = points.map((p) => p.x)
   const ys = points.map((p) => p.y)
   return {
     left: Math.max(0, area.x - (Math.min(...xs) - half)),
     right: Math.max(0, Math.max(...xs) + half - (area.x + area.width)),
-    top: Math.max(0, area.y - (Math.min(...ys) - half)),
-    bottom: Math.max(0, Math.max(...ys) + half - (area.y + area.height))
+    top: Math.max(0, area.y - (Math.min(...ys) - half - above)),
+    bottom: Math.max(0, Math.max(...ys) + half + below - (area.y + area.height))
   }
 }
 
@@ -104,8 +113,8 @@ const horizontalFits = (o: ReturnType<typeof overflow>): boolean => o.left === 0
  * that is not enough it shifts. Every button ends up fully inside the work area.
  */
 export function layoutActionArc(input: ArcInput): ArcLayout {
-  const above = overflow(centres(input, 'above', 0), input)
-  const below = overflow(centres(input, 'below', 0), input)
+  const above = overflow(centres(input, 'above', 0), input, 'above')
+  const below = overflow(centres(input, 'below', 0), input, 'below')
   const side: ArcLayout['side'] =
     verticalFits(above) ||
     (!verticalFits(below) && above.top + above.bottom <= below.top + below.bottom)
@@ -115,12 +124,12 @@ export function layoutActionArc(input: ArcInput): ArcLayout {
   // Turn toward the middle: buttons sticking out on the left turn toward the right.
   let turnDeg = 0
   let points = centres(input, side, 0)
-  const first = overflow(points, input)
+  const first = overflow(points, input, side)
   if (!horizontalFits(first)) {
     const sign = first.left > first.right ? 1 : -1
     for (let turn = input.turnStepDeg; turn <= input.maxTurnDeg; turn += input.turnStepDeg) {
       const turned = centres(input, side, sign * turn)
-      const o = overflow(turned, input)
+      const o = overflow(turned, input, side)
       turnDeg = sign * turn
       points = turned
       if (horizontalFits(o) && verticalFits(o)) break
@@ -128,16 +137,22 @@ export function layoutActionArc(input: ArcInput): ArcLayout {
   }
 
   // Whatever still sticks out: shift the whole arc back inside.
-  const o = overflow(points, input)
+  const o = overflow(points, input, side)
   const dx = o.left - o.right
   const dy = o.top - o.bottom
   points = points.map((p) => ({ x: p.x + dx, y: p.y + dy }))
 
   const reach = input.buttonSize / 2 + input.windowPad
-  const left = Math.floor(Math.min(...points.map((p) => p.x)) - reach)
-  const top = Math.floor(Math.min(...points.map((p) => p.y)) - reach)
-  const right = Math.ceil(Math.max(...points.map((p) => p.x)) + reach)
-  const bottom = Math.ceil(Math.max(...points.map((p) => p.y)) + reach)
+  const across = Math.max(reach, input.labelRoom.across)
+  const { outward } = input.labelRoom
+  const left = Math.floor(Math.min(...points.map((p) => p.x)) - across)
+  const top = Math.floor(
+    Math.min(...points.map((p) => p.y)) - reach - (side === 'above' ? outward : 0)
+  )
+  const right = Math.ceil(Math.max(...points.map((p) => p.x)) + across)
+  const bottom = Math.ceil(
+    Math.max(...points.map((p) => p.y)) + reach + (side === 'below' ? outward : 0)
+  )
   return {
     side,
     turnDeg,

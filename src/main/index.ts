@@ -12,6 +12,7 @@ import { createTray, showPetContextMenu } from './menus'
 import { createPetMotion } from './petMotion'
 import { createPetWindow } from './petWindow'
 import { createQuickActions } from './actionsWindow'
+import { actionButtons, focusCommand } from '../shared/quickActions'
 import { createWindowList } from './windowList'
 import { ACTIVE_MODEL } from '../shared/activeModel'
 import { LOOK_ID } from '../shared/modelConfig'
@@ -112,6 +113,15 @@ function start(): void {
   // requirement-v9.md: the quick buttons around the cat.
   const quickActions = createQuickActions(win, {
     petSize: () => store.settings.petSize,
+    enabled: () => store.settings.quickButtons,
+    buttons: () => actionButtons(hasPet(), toFocusView(focus.current()).kind, text()),
+    // FR-128..130: the same as the menus (FR-17, FR-35, FR-09).
+    run: (id) => {
+      if (id === 'feed') actions.feed()
+      else if (id === 'settings') actions.openSettings()
+      else if (id === 'hide') actions.hidePet()
+      else focus[focusCommand(toFocusView(focus.current()).kind)]()
+    },
     onClosed: () => sendToPet(IpcChannel.PetActionsClosed)
   })
 
@@ -186,6 +196,7 @@ function start(): void {
     sendToPet(IpcChannel.FocusState, view)
     settingsWindow.get()?.webContents.send(IpcChannel.FocusState, view)
     updateTrayTooltip()
+    quickActions.refresh() // requirement-v9.md FR-129: the Focus button follows the timer
     if (events.length === 0) return
     // FR-38: the pet renderer decides whether the cat can react (drag, hidden, busy).
     const reaction = focusReaction(events)
@@ -401,11 +412,14 @@ function start(): void {
       settlePet()
     // requirement-v8.md FR-118: the pet uses the new level from its next wander.
     if (next.activity !== previous.activity) sendToPet(IpcChannel.PetActivityChanged, next.activity)
+    // requirement-v9.md FR-121, FR-134: switched off hides open buttons.
+    if (!next.quickButtons) quickActions.close()
     if (next.language !== previous.language) {
       // FR-44: open windows switch at once; menus and dialogs read the language when shown.
       sendToPet(IpcChannel.AppLanguageChanged, next.language)
       adoptWindow.get()?.webContents.send(IpcChannel.AppLanguageChanged, next.language)
       publishCare()
+      quickActions.refresh()
     }
   })
 

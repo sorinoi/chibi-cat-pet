@@ -17,6 +17,7 @@ function input(over: Partial<ArcInput> = {}): ArcInput {
     maxTurnDeg: 75,
     turnStepDeg: 5,
     windowPad: 10,
+    labelRoom: { outward: 0, across: 0 },
     ...over
   }
 }
@@ -27,11 +28,13 @@ const onScreen = (layout: ArcLayout): Array<{ x: number; y: number }> =>
 
 function expectInside(layout: ArcLayout, i: ArcInput): void {
   const half = i.buttonSize / 2 + i.edgeMargin
+  const up = layout.side === 'above' ? i.labelRoom.outward : 0
+  const down = layout.side === 'below' ? i.labelRoom.outward : 0
   for (const p of onScreen(layout)) {
     expect(p.x - half).toBeGreaterThanOrEqual(i.area.x - 1e-6)
     expect(p.x + half).toBeLessThanOrEqual(i.area.x + i.area.width + 1e-6)
-    expect(p.y - half).toBeGreaterThanOrEqual(i.area.y - 1e-6)
-    expect(p.y + half).toBeLessThanOrEqual(i.area.y + i.area.height + 1e-6)
+    expect(p.y - half - up).toBeGreaterThanOrEqual(i.area.y - 1e-6)
+    expect(p.y + half + down).toBeLessThanOrEqual(i.area.y + i.area.height + 1e-6)
   }
 }
 
@@ -119,5 +122,25 @@ describe('layoutActionArc (requirement-v9.md FR-124, FR-125)', () => {
     expect(pts).toHaveLength(3)
     expect(pts[1].x).toBeCloseTo(i.head.x)
     expect(pts[1].y).toBeLessThan(pts[0].y)
+  })
+
+  it('keeps room for the labels on the outer side, on screen and in the window (FR-127)', () => {
+    const labelRoom = { outward: 30, across: 60 }
+    // Just enough room above for the buttons, not for their labels: the arc opens below.
+    const tight = input({ head: { x: 800, y: 105 }, feet: { x: 800, y: 205 }, labelRoom })
+    expect(
+      layoutActionArc(input({ head: { x: 800, y: 105 }, feet: { x: 800, y: 205 } })).side
+    ).toBe('above')
+    const layout = layoutActionArc(tight)
+    expect(layout.side).toBe('below')
+    expectInside(layout, tight)
+    // The window holds every label: half a label beside each button, the room below each one.
+    const roomy = input({ labelRoom })
+    const l = layoutActionArc(roomy)
+    for (const b of l.buttons) {
+      expect(b.x - labelRoom.across).toBeGreaterThanOrEqual(0)
+      expect(b.x + labelRoom.across).toBeLessThanOrEqual(l.window.width)
+      expect(b.y - roomy.buttonSize / 2 - labelRoom.outward).toBeGreaterThanOrEqual(0)
+    }
   })
 })

@@ -64,6 +64,8 @@ const EN = {
     gravity: 'Fall down when dropped (gravity)',
     sitOnWindows: 'Land and sit on other windows',
     jumpAndClimb: 'Jump and climb now and then',
+    /** requirement-v9.md FR-134. */
+    quickButtons: 'Buttons over the cat when the mouse rests on it',
     startWithWindows: 'Start with Windows',
     startWithWindowsDevNote: 'Saved, but only applied in the installed app.',
     sleepAfter: 'Sleep after (minutes without input)',
@@ -100,6 +102,12 @@ const EN = {
     black: 'Black',
     white: 'White'
   } as Record<string, string>,
+  /** requirement-v9.md FR-127: labels of the quick buttons (focus uses focus.*). */
+  actions: {
+    feed: 'Feed',
+    settings: 'Settings',
+    hide: 'Hide the cat'
+  },
   adopt: {
     title: 'Adopt a cat',
     heading: 'A cat is looking for a home',
@@ -246,6 +254,7 @@ const TH: Strings = {
     gravity: 'ปล่อยแล้วตกลงพื้น (แรงโน้มถ่วง)',
     sitOnWindows: 'ลงไปนั่งบนหน้าต่างอื่นได้',
     jumpAndClimb: 'กระโดดและปีนบ้างเป็นครั้งคราว',
+    quickButtons: 'แสดงปุ่มเหนือตัวแมวเมื่อวางเมาส์นิ่งบนตัวน้อง',
     startWithWindows: 'เปิดพร้อม Windows',
     startWithWindowsDevNote: 'บันทึกแล้ว แต่จะมีผลเฉพาะแอปที่ติดตั้งแล้วเท่านั้น',
     sleepAfter: 'หลับเมื่อไม่ได้ใช้เครื่อง (นาที)',
@@ -280,6 +289,11 @@ const TH: Strings = {
     gray: 'เทาลายสลิด',
     black: 'ดำ',
     white: 'ขาว'
+  },
+  actions: {
+    feed: 'ให้อาหาร',
+    settings: 'ตั้งค่า',
+    hide: 'ซ่อนน้องแมว'
   },
   adopt: {
     title: 'รับเลี้ยงแมว',

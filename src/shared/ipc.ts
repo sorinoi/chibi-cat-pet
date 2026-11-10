@@ -6,6 +6,7 @@ import type { Mood, Needs } from './needs'
 import type { ActivityLevel, Settings } from './settings'
 import type { Language } from './strings'
 import type { FocusReaction, FocusView } from './focusText'
+import type { ActionVariant } from './quickActions'
 
 export const IpcChannel = {
   /** renderer -> main (send): boolean, true = mouse passes through the window. */
@@ -215,7 +216,10 @@ export interface ActionsLayout {
   /** Button diameter (DIP). */
   size: number
   side: 'above' | 'below'
-  buttons: Array<{ id: ActionId; x: number; y: number }>
+  /** Button centres; `variant` picks the icon (FR-132), `label` is shown on hover (FR-127). */
+  buttons: Array<{ id: ActionId; variant: ActionVariant; label: string; x: number; y: number }>
+  /** The display's work area relative to the window, to keep labels on screen. */
+  area: { x: number; y: number; width: number; height: number }
 }
 
 /** climb: at the wall, going up; hold: at the top, holding on (then a fall). */
