@@ -1,6 +1,6 @@
 # Requirement v8: A livelier cat — more walking and hopping
 
-Status: APPROVED by the user on 2026-11-08 as written (open questions on their defaults). Not built yet; implementation starts with V8-M1 when the user says go. Open questions (section 12) use the defaults written here until decided. v7 (requirement-v7.md, released as 7.0.0) stays the base: everything in v1 to v7 keeps working. V6-M4 (server deploy) still waits for the user's VPS and is not part of v8.
+Status: DONE. Approved by the user on 2026-11-08 as written (open questions on their defaults); done and accepted 2026-11-10, released as 8.0.0. Open questions (section 12) use the defaults written here until decided. v7 (requirement-v7.md, released as 7.0.0) stays the base: everything in v1 to v7 keeps working. V6-M4 (server deploy) still waits for the user's VPS and is not part of v8.
 
 ## 1. Overview
 
@@ -54,7 +54,7 @@ Out of scope for v8.0: new clips other than `hop`, chasing the mouse, hopping on
 
 | ID | Area | Requirement |
 | --- | --- | --- |
-| NFR-45 | Cost | No new timers while the cat sits; walks and hops move the window at most 30 times per second (NFR-02) only while moving. Idle CPU and RAM stay within NFR-01 at every activity level; a minute of Lively stays under 2 % of one core on average. |
+| NFR-45 | Cost | No new timers while the cat sits; walks and hops move the window at most 30 times per second (NFR-02) only while moving. Idle CPU and RAM stay within NFR-01 at every activity level; a minute of Lively stays under 0.5 % of the machine on average (changed by the user on 2026-11-10 from "2 % of one core": a moving cat costs about 9 % of one core and a Lively cat moves over half of the time; walks keep 30 Hz). |
 | NFR-46 | Click-through | Clicks pass through empty areas during hops, as during walks and jumps (FR-05). |
 | NFR-47 | Language | All new text in both language tables (NFR-20). |
 | NFR-48 | Gentle | Calm keeps the cat as quiet as in v7; even Lively never hops more than once in 20 s. |
@@ -79,15 +79,15 @@ Same phase approval rule as before.
 | V8-M1 | Walking more: timing, distance, direction toward room; Activity setting (TH/EN) | Unit tests; in the app the cat roams the whole floor; Calm behaves like v7 | Done 2026-11-08, approved |
 | V8-M2 | Hop art: `--drop-shadows`, hop sheet for all four looks (previews approved by the user) | Hop frames fit the cell with feet on one line, no shadows; layout test passes | Done 2026-11-08, approved |
 | V8-M3 | Hop runs: hop state, main motion, planning, interruptions | Hops on the floor and on a perch; catch and lost perch handled; click-through | Done 2026-11-08, approved |
-| V8-M4 | Polish: tuning, NFR-01/45 measurement, README, installer 8.0.0, upgrade from 7.0.0 | Acceptance criteria below pass | - |
+| V8-M4 | Polish: tuning, NFR-01/45 measurement, README, installer 8.0.0, upgrade from 7.0.x | Acceptance criteria below pass | Done 2026-11-10, accepted (released as 8.0.0; upgrade checked over 7.0.0 on this PC) |
 
 ## 11. Acceptance criteria (v8)
 
-- [ ] At Normal the cat walks noticeably more and reaches both ends of the floor within a few minutes.
-- [ ] Now and then it hops along in a short run, in every look, on the floor and on a window edge.
-- [ ] Calm behaves like v7; Lively is busier but never hops more than once in 20 s.
-- [ ] A catch during a hop works like a catch during a walk; a lost perch during a hop makes it fall.
-- [ ] Idle CPU and RAM still meet NFR-01 at every level.
+- [x] At Normal the cat walks noticeably more and reaches both ends of the floor within a few minutes (V8-M1: 1391 -> 106 DIP in 4 min, then back; V8-M4: 5 walks in a minute).
+- [x] Now and then it hops along in a short run, in every look, on the floor and on a window edge (V8-M3 floor and Perch A; V8-M4 all four looks, frames 0-7, lift 48 DIP at size 0.7).
+- [x] Calm behaves like v7; Lively is busier but never hops more than once in 20 s (Calm uses the v7 timings and no hops; the 20 s gap is in BEHAVIOR.hop and unit tested).
+- [x] A catch during a hop works like a catch during a walk; a lost perch during a hop makes it fall (V8-M3).
+- [x] Idle CPU and RAM still meet NFR-01 at every level (section 13).
 
 ## 12. Open questions
 
@@ -96,3 +96,19 @@ Defaults are used until the user decides:
 - The Activity setting with three levels (default: yes, Normal by default).
 - How often hops come at Normal (default: 1 in 4 wanders) and how high (default: up to 0.3 of the pet's height).
 - Should hops also need the "Jump and climb now and then" switch? (default: no; hops follow the Activity setting only, Calm has none.)
+
+## 13. Measurements (V8-M4, 2026-11-10)
+
+Production build, isolated data, pet size 0.7, 2560 x 1600 at 125 %, 16 logical processors. CPU is the app's four processes together; RAM is private bytes.
+
+| Check | Result | Target |
+| --- | --- | --- |
+| NFR-01 Calm, 60 s | CPU 0.11 % of the machine, 191 MB | Pass |
+| NFR-01 Normal, 60 s (5 walks, 1 hop run) | CPU 0.31 % of the machine, 215 MB | Pass |
+| NFR-01 / NFR-45 Lively, 60 s (moving 41 s: 2 walks, a climb) | CPU 0.44 % of the machine (7.1 % of one core), 213 MB | Pass (under 0.5 % of the machine) |
+| Cost per second | moving (walk or hop) about 9.4 % of one core, sitting about 0.9 % | - |
+
+Notes:
+
+- The first target in NFR-45 (2 % of one core) could not be met: a Lively cat moves more than half of the time and moving the window 30 times a second costs about 9 % of one core (main 46 %, GPU 30 %, renderer 22 %). A trial at 20 Hz walks cut moving to 7.2 % (Lively about 4 %); the user chose to keep 30 Hz and change the target (2026-11-10).
+- A cat that stops next to a parked mouse looks at it and does not wander until the mouse moves (v4 FR-56, unchanged). With more walking this happens more often.

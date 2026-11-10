@@ -7,7 +7,7 @@
 **A little cat that lives on your Windows desktop, wants you to look after it, and cheers on your focus sessions.**<br>
 **แมวน้อยที่มาอยู่บนเดสก์ท็อป Windows ของคุณ รอให้คุณดูแล และคอยเชียร์ตอนคุณโฟกัสทำงาน**
 
-![version](https://img.shields.io/badge/version-7.0.1-f4a261)
+![version](https://img.shields.io/badge/version-8.0.0-f4a261)
 ![platform](https://img.shields.io/badge/platform-Windows%20x64-2a9d8f)
 ![offline](https://img.shields.io/badge/works-100%25%20offline-264653)
 ![stack](https://img.shields.io/badge/Electron%20%2B%20Vue%203-TypeScript-6c757d)
@@ -60,7 +60,7 @@ Every animation below is rendered straight from the app's sprite sheets.<br>
     <td align="center"><img src="docs/images/clip-fall.png" width="128" alt="fall"><br><sub><b>fall</b><br>ร่วงลงมา</sub></td>
     <td align="center"><img src="docs/images/clip-climb.png" width="128" alt="climb"><br><sub><b>climb</b><br>ปีนขอบจอ</sub></td>
     <td align="center"><img src="docs/images/clip-hang.png" width="128" alt="hang"><br><sub><b>hang</b><br>เกาะผนัง</sub></td>
-    <td></td>
+    <td align="center"><img src="docs/images/clip-hop.png" width="128" alt="hop"><br><sub><b>hop</b><br>กระโดดดึ๋ง</sub></td>
   </tr>
 </table>
 
@@ -161,6 +161,15 @@ Pick a coat when you adopt, or change it later in Settings.<br>
 - 🎨 Four coats: orange, gray tabby, black and white. Pick one when you adopt, or change it any
   time in Settings > Your cat; the cat repaints at once and keeps its name, needs and treats.
 
+**On the move (v8)**
+
+- 🚶 Walks more often and farther, and patrols from one end of the floor (or the window edge it
+  sits on) to the other instead of pacing around one spot.
+- 🐇 Now and then it **hops** along in a short run of little jumps, on the floor or on a window
+  edge. Catch it mid-hop like any other time.
+- ⚙️ **Activity level** in Settings > General: Calm (as quiet as v7, no hops), Normal (the
+  default) or Lively (busier, but at most one hop run every 20 seconds).
+
 ### Install
 
 **[Download the latest installer](https://github.com/sorinoi/chibi-cat-pet/releases/latest)**
@@ -199,7 +208,7 @@ npm run dev
 | `npm run dist` | Build plus the NSIS installer in `dist/` |
 | `npm run icons:build` | Regenerate `resources/*.png` and `build/icon.ico` |
 | `npm run sprite:prepare -- <in.png> <out.png> [cols] [rows]` | Clean a sprite sheet and print its cell boxes |
-| `npm run sprite:regrid -- <in.png> <out.png> [scale] [cols] [rows] [--painted-background]` | Rebuild an off-spec sheet: clear a hazy background, cut frames by their art, 224 px grid, feet on one line. `--painted-background` first clears a "transparent" checkerboard painted into an opaque image |
+| `npm run sprite:regrid -- <in.png> <out.png> [scale] [cols] [rows] [--painted-background] [--drop-shadows]` | Rebuild an off-spec sheet: clear a hazy background, cut frames by their art, 224 px grid, feet on one line. `--painted-background` first clears a "transparent" checkerboard painted into an opaque image; `--drop-shadows` removes flat grey ground shadows drawn under the cat |
 | `npm run readme:art` | Re-render the animated README images in `docs/images/` |
 | `npm run sprite:recolor -- <look>` | Make a coat-color variant of every sprite sheet, with a side-by-side preview in `dist/` |
 
@@ -292,6 +301,12 @@ Pet-care tuning lives in `src/shared/careConfig.ts`, focus timer defaults in
 
 - 🎨 สีขน 4 แบบ: ส้ม เทาลายสลิด ดำ และขาว เลือกตอนรับเลี้ยง หรือเปลี่ยนเมื่อไหร่ก็ได้ในหน้าตั้งค่า > น้องแมวของคุณ น้องเปลี่ยนสีทันที ชื่อ ความอิ่ม ความสุข และขนมยังอยู่ครบ
 
+**ซนขึ้น (v8)**
+
+- 🚶 เดินบ่อยขึ้นและไกลขึ้น เดินตรวจตราจากสุดพื้นด้านหนึ่งไปอีกด้าน (หรือสุดขอบหน้าต่างที่นั่งอยู่) แทนการวนอยู่แถวเดิม
+- 🐇 บางครั้งจะ**กระโดดดึ๋ง ๆ** ไปข้างหน้าหลายครั้งติดกัน ทั้งบนพื้นและบนขอบหน้าต่าง คว้าน้องกลางทางได้เหมือนเดิม
+- ⚙️ **ความซน** ในหน้าตั้งค่า > ทั่วไป: สงบ (เงียบเหมือน v7 ไม่กระโดด) ปกติ (ค่าเริ่มต้น) หรือซน (ขยับบ่อยขึ้น แต่กระโดดไม่เกินหนึ่งชุดทุก 20 วินาที)
+
 ### ติดตั้ง
 
 **[ดาวน์โหลดตัวติดตั้งล่าสุด](https://github.com/sorinoi/chibi-cat-pet/releases/latest)** (ไฟล์ `desktop-pet-setup-<version>.exe` ในหัวข้อ _Assets_) แล้วรันได้เลย
@@ -332,6 +347,7 @@ npm run dev
 | [requirement-v5.md](requirement-v5.md) | Gravity, window perches, jump and climb |
 | [requirement-v6.md](requirement-v6.md) | Activity log server and dashboard |
 | [requirement-v7.md](requirement-v7.md) | Coats (looks) and the recolor tool |
+| [requirement-v8.md](requirement-v8.md) | Walking more, hop runs, Activity level |
 | [WORK-LOG.md](WORK-LOG.md) | Progress log and where to resume |
 | [CLAUDE.md](CLAUDE.md) · [AGENTS.md](AGENTS.md) | Working rules for coding agents |
 
@@ -342,5 +358,5 @@ artwork is included. See [cat-sprite.LICENSE.txt](assets/models/cat-sprite.LICEN
 ภาพแมวสร้างโดยเจ้าของโปรเจกต์ด้วย Claude (claude.ai) ไม่มีภาพจากบุคคลอื่น
 
 <div align="center">
-<sub>v7.0.1 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
+<sub>v8.0.0 · personal project, not distributed · โปรเจกต์ส่วนตัว ไม่ได้แจกจ่าย</sub>
 </div>

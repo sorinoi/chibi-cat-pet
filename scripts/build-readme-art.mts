@@ -205,18 +205,36 @@ const PREVIEW_CLIPS: ClipName[] = [
   'jump',
   'fall',
   'climb',
-  'hang'
+  'hang',
+  'hop'
 ]
 const previews = PREVIEW_CLIPS.filter((name) => model.clips[name]).map((name) => ({
   name,
   cels: clipCels(name)
 }))
+/**
+ * Clips whose art reaches far above the others (the hop stretches up at its top frames). They
+ * get the shared box grown to fit them, so the other previews keep their size.
+ */
+const TALL_CLIPS: ClipName[] = ['hop']
 // One shared box for all clip previews, so every picture has the same size and baseline.
-const sharedBox = contentBox(previews.flatMap((p) => p.cels))
+const sharedBox = contentBox(
+  previews.filter((p) => !TALL_CLIPS.includes(p.name)).flatMap((p) => p.cels)
+)
 
 for (const { name, cels } of previews) {
   const file = join(OUT_DIR, `clip-${name}.png`)
-  const png = toApng(cels, sharedBox, CLIP_SCALE)
+  let box = sharedBox
+  if (TALL_CLIPS.includes(name)) {
+    const own = contentBox(cels)
+    box = {
+      left: Math.min(sharedBox.left, own.left),
+      top: Math.min(sharedBox.top, own.top),
+      right: Math.max(sharedBox.right, own.right),
+      bottom: Math.max(sharedBox.bottom, own.bottom)
+    }
+  }
+  const png = toApng(cels, box, CLIP_SCALE)
   writeFileSync(file, png)
   console.log(`${file}  ${cels.length} frames  ${(png.length / 1024).toFixed(0)} KB`)
 }
